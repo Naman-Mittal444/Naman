@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Companion Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        .title-font { font-family: 'Orbitron', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+        }
+        
+        .anime-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4);
+            background-size: 200% 100%;
+            animation: gradient 3s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        
+        .tab-active {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+        }
+        
+        .genre-tag {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(139, 92, 246, 0.3));
+            border: 1px solid rgba(139, 92, 246, 0.5);
+        }
+        
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(139, 92, 246, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); }
+        }
+        
+        .scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scroll-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            border-radius: 10px;
+        }
+        
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .anime-poster {
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .anime-poster:hover {
+            transform: scale(1.05);
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .playing-indicator {
+            display: inline-flex;
+            align-items: flex-end;
+            height: 16px;
+            gap: 2px;
+        }
+        
+        .playing-indicator span {
+            width: 3px;
+            background: #22c55e;
+            animation: playing 0.5s ease-in-out infinite alternate;
+        }
+        
+        .playing-indicator span:nth-child(1) { height: 30%; animation-delay: 0s; }
+        .playing-indicator span:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+        .playing-indicator span:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .playing-indicator span:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+        
+        @keyframes playing {
+            to { height: 100%; }
+        }
+
+        .recommendation-card {
+            background: linear-gradient(145deg, rgba(15, 12, 41, 0.9), rgba(48, 43, 99, 0.9));
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="particles"></div>
+    
+    <!-- Main Container -->
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="title-font text-4xl md:text-6xl font-bold glow-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent mb-3">
+                🎌 Anime Companion Hub
+            </h1>
+            <p class="text-gray-400 text-lg">Track • Discover • Enjoy</p>
+            <p class="text-gray-500 text-sm mt-1">Powered by Jikan API (MyAnimeList)</p>
+        </header>
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap justify-center gap-3 mb-8">
+            <button onclick="switchTab('watchlist')" id="tab-watchlist" class="tab-active px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center gap-2">
+                📺 Watchlist
+            </button>
+            <button onclick="switchTab('recommend')" id="tab-recommend" class="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center gap-2">
+                🤖 Recommendations
+            </button>
+            <button onclick="switchTab('openings')" id="tab-openings" class="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center gap-2">
+                🎵 Openings
+            </button>
+        </nav>
+        
+        <!-- ===== WATCHLIST MODULE ===== -->
+        <section id="module-watchlist" class="module">
+            <div class="anime-card rounded-2xl p-6 mb-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-3xl">📺</span> Add New Anime
+                </h2>
+                <div class="relative">
+                    <input type="text" id="anime-search" placeholder="Search anime... (powered by MyAnimeList)" 
+                        oninput="debounceSearch(this.value)"
+                        class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all">
+                    <div id="search-loading" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
+                        <div class="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </div>
+                
+                <!-- Search Results Dropdown -->
+                <div id="search-results" class="hidden mt-2 bg-gray-900/95 rounded-xl border border-white/20 search-results">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="anime-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-pink-400" id="stat-total">0</div>
+                    <div class="text-gray-400 text-sm">Total Anime</div>
+                </div>
+                <div class="anime-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-purple-400" id="stat-watching">0</div>
+                    <div class="text-gray-400 text-sm">Watching</div>
+                </div>
+                <div class="anime-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-cyan-400" id="stat-completed">0</div>
+                    <div class="text-gray-400 text-sm">Completed</div>
+                </div>
+                <div class="anime-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-green-400" id="stat-episodes">0</div>
+                    <div class="text-gray-400 text-sm">Episodes Watched</div>
+                </div>
+            </div>
+            
+            <!-- Watchlist Grid -->
+            <div id="watchlist-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-container max-h-[800px] overflow-y-auto pr-2">
+                <!-- Anime cards will be inserted here -->
+            </div>
+            
+            <div id="empty-watchlist" class="text-center py-16 text-gray-500 hidden">
+                <div class="text-6xl mb-4">📭</div>
+                <p class="text-xl">Your watchlist is empty!</p>
+                <p>Search and add some anime to start tracking.</p>
+            </div>
+        </section>
+        
+        <!-- ===== RECOMMENDATION MODULE ===== -->
+        <section id="module-recommend" class="module hidden">
+            <div class="anime-card rounded-2xl p-6 mb-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-3xl">🤖</span> Get Recommendations
+                </h2>
+                <p class="text-gray-400 mb-4">Based on your watchlist, we'll find similar anime you might love!</p>
+                
+                <!-- Your Watchlist for Recommendations -->
+                <div class="mb-4">
+                    <label class="text-sm text-gray-400 mb-2 block">Select anime from your watchlist:</label>
+                    <div class="flex flex-wrap gap-2" id="watchlist-selector">
+                        <!-- Watchlist items will be inserted here -->
+                    </div>
+                </div>
+                
+                <button onclick="getRecommendations()" id="get-rec-btn"
+                    class="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 px-8 py-3 rounded-xl font-semibold transition-all w-full md:w-auto flex items-center justify-center gap-2">
+                    <span>✨ Get Recommendations</span>
+                    <div id="rec-loading" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+            
+            <!-- Recommendations Results -->
+            <div id="recommendations-results" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Recommendation cards will be inserted here -->
+            </div>
+            
+            <div id="no-recommendations" class="text-center py-16 text-gray-500">
+                <div class="text-6xl mb-4">🔮</div>
+                <p class="text-xl">Add anime to your watchlist first!</p>
+                <p>We'll find the perfect recommendations based on what you watch.</p>
+            </div>
+        </section>
+        
+        <!-- ===== OPENINGS MODULE ===== -->
+        <section id="module-openings" class="module hidden">
+            <div class="anime-card rounded-2xl p-6 mb-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-3xl">🎵</span> Anime Opening & Ending Finder
+                </h2>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" id="opening-search" placeholder="Search anime for openings..." 
+                            oninput="debounceOpeningSearch(this.value)"
+                            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all">
+                        <div id="opening-search-loading" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
+                            <div class="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+                    <button onclick="getRandomAnimeThemes()" 
+                        class="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                        🎲 Random Anime
+                    </button>
+                </div>
+                
+                <!-- Opening Search Results -->
+                <div id="opening-search-results" class="hidden mt-2 bg-gray-900/95 rounded-xl border border-white/20 search-results">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Quick Access from Watchlist -->
+            <div id="watchlist-themes-section" class="anime-card rounded-2xl p-6 mb-6 hidden">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    📺 Quick Access - Your Watchlist
+                </h3>
+                <div id="watchlist-themes-list" class="flex flex-wrap gap-2">
+                    <!-- Watchlist items for quick theme access -->
+                </div>
+            </div>
+            
+            <!-- Favorites -->
+            <div id="favorites-section" class="anime-card rounded-2xl p-6 mb-6 hidden">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    ⭐ Favorite Songs
+                </h3>
+                <div id="favorites-list" class="space-y-2">
+                    <!-- Favorite songs will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Opening Results -->
+            <div id="openings-results" class="space-y-6">
+                <!-- Opening cards will be inserted here -->
+            </div>
+            
+            <div id="no-openings" class="text-center py-16 text-gray-500">
+                <div class="text-6xl mb-4">🎶</div>
+                <p class="text-xl">Search for an anime above!</p>
+                <p>Discover amazing openings and endings.</p>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
+        <div class="anime-card rounded-2xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Edit Progress</h3>
+            <div id="edit-modal-content">
+                <!-- Edit form will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 rounded-xl shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // ===== JIKAN API BASE =====
+        const JIKAN_API = 'https://api.jikan.moe/v4';
+        
+        // ===== STATE =====
+        let watchlist = JSON.parse(localStorage.getItem('animeWatchlist')) || {};
+        let favoriteOpenings = JSON.parse(localStorage.getItem('favoriteOpenings')) || [];
+        let selectedForRec = [];
+        let searchTimeout = null;
+        let apiCallQueue = [];
+        let lastApiCall = 0;
+        const API_DELAY = 400; // Jikan rate limit: ~3 requests per second
+        
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            renderWatchlist();
+            updateStats();
+            renderFavorites();
+            renderWatchlistSelector();
+            renderWatchlistThemes();
+        });
+        
+        // ===== RATE LIMITED API CALL =====
+        async function rateLimitedFetch(url) {
+            const now = Date.now();
+            const timeSinceLastCall = now - lastApiCall;
+            
+            if (timeSinceLastCall < API_DELAY) {
+                await new Promise(resolve => setTimeout(resolve, API_DELAY - timeSinceLastCall));
+            }
+            
+            lastApiCall = Date.now();
+            const response = await fetch(url);
+            
+            if (response.status === 429) {
+                // Rate limited, wait and retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return rateLimitedFetch(url);
+            }
+            
+            return response;
+        }
+        
+        // ===== PARTICLE EFFECTS =====
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // ===== TAB SWITCHING =====
+        function switchTab(tab) {
+            document.querySelectorAll('.module').forEach(m => m.classList.add('hidden'));
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('tab-active');
+                b.classList.add('bg-white/10');
+            });
+            
+            document.getElementById(`module-${tab}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`tab-${tab}`);
+            activeTab.classList.add('tab-active');
+            activeTab.classList.remove('bg-white/10');
+            
+            if (tab === 'recommend') {
+                renderWatchlistSelector();
+            } else if (tab === 'openings') {
+                renderWatchlistThemes();
+            }
+        }
+        
+        // ===== SEARCH ANIME (WATCHLIST) =====
+        function debounceSearch(query) {
+            clearTimeout(searchTimeout);
+            const resultsDiv = document.getElementById('search-results');
+            const loadingDiv = document.getElementById('search-loading');
+            
+            if (query.length < 3) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            loadingDiv.classList.remove('hidden');
+            
+            searchTimeout = setTimeout(() => {
+                searchAnime(query);
+            }, 500);
+        }
+        
+        async function searchAnime(query) {
+            const resultsDiv = document.getElementById('search-results');
+            const loadingDiv = document.getElementById('search-loading');
+            
+            try {
+                const response = await rateLimitedFetch(`${JIKAN_API}/anime?q=${encodeURIComponent(query)}&limit=10&sfw=true`);
+                const data = await response.json();
+                
+                loadingDiv.classList.add('hidden');
+                
+                if (data.data && data.data.length > 0) {
+                    resultsDiv.innerHTML = data.data.map(anime => `
+                        <div class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer transition-all border-b border-white/10 last:border-0"
+                            onclick="addAnimeToWatchlist(${anime.mal_id})">
+                            <img src="${anime.images.jpg.small_image_url}" alt="${anime.title}" class="w-12 h-16 object-cover rounded-lg">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold truncate">${anime.title}</div>
+                                <div class="text-sm text-gray-400">
+                                    ${anime.episodes || '?'} episodes • ${anime.type || 'TV'} • ⭐ ${anime.score || 'N/A'}
+                                </div>
+                                <div class="text-xs text-purple-400">${(anime.genres || []).map(g => g.name).join(', ') || 'No genres'}</div>
+                            </div>
+                            <div class="text-2xl">➕</div>
+                        </div>
+                    `).join('');
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-400">No anime found</div>';
+                    resultsDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                console.error('Search error:', error);
+                showToast('Search failed. Please try again.');
+            }
+        }
+        
+        async function addAnimeToWatchlist(malId) {
+            const resultsDiv = document.getElementById('search-results');
+            const searchInput = document.getElementById('anime-search');
+            
+            resultsDiv.classList.add('hidden');
+            searchInput.value = '';
+            
+            try {
+                showToast('Adding anime... 🔄');
+                const response = await rateLimitedFetch(`${JIKAN_API}/anime/${malId}/full`);
+                const data = await response.json();
+                const anime = data.data;
+                
+                if (watchlist[malId]) {
+                    showToast('Anime already in watchlist!');
+                    return;
+                }
+                
+                watchlist[malId] = {
+                    mal_id: malId,
+                    title: anime.title,
+                    title_english: anime.title_english,
+                    image: anime.images.jpg.large_image_url || anime.images.jpg.image_url,
+                    episodes: anime.episodes || 0,
+                    watched: 0,
+                    score: anime.score,
+                    genres: (anime.genres || []).map(g => g.name),
+                    status: anime.status,
+                    synopsis: anime.synopsis ? anime.synopsis.substring(0, 150) + '...' : 'No synopsis available'
+                };
+                
+                saveWatchlist();
+                renderWatchlist();
+                updateStats();
+                showToast(`Added "${anime.title}" to watchlist! 🎉`);
+            } catch (error) {
+                console.error('Add anime error:', error);
+                showToast('Failed to add anime. Please try again.');
+            }
+        }
+        
+        function saveWatchlist() {
+            localStorage.setItem('animeWatchlist', JSON.stringify(watchlist));
+        }
+        
+        function renderWatchlist() {
+            const grid = document.getElementById('watchlist-grid');
+            const empty = document.getElementById('empty-watchlist');
+            const entries = Object.entries(watchlist);
+            
+            if (entries.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            
+            grid.classList.remove('hidden');
+            empty.classList.add('hidden');
+            
+            grid.innerHTML = entries.map(([id, anime]) => {
+                const total = anime.episodes || 0;
+                const progress = total > 0 ? Math.round((anime.watched / total) * 100) : 0;
+                const isCompleted = total > 0 && anime.watched >= total;
+                const isOngoing = anime.status === 'Currently Airing';
+                
+                return `
+                    <div class="anime-card rounded-xl overflow-hidden ${isCompleted ? 'pulse-glow' : ''}">
+                        <div class="relative h-48">
+                            <img src="${anime.image}" alt="${anime.title}" class="w-full h-full object-cover anime-poster">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                            <div class="absolute top-2 right-2 flex gap-2">
+                                ${isOngoing ? '<span class="bg-green-500 text-xs px-2 py-1 rounded-full">🔴 Airing</span>' : ''}
+                                ${isCompleted ? '<span class="bg-cyan-500 text-xs px-2 py-1 rounded-full">✓ Done</span>' : ''}
+                            </div>
+                            <div class="absolute bottom-2 left-2 right-2">
+                                <h3 class="font-bold text-lg leading-tight line-clamp-2">${anime.title}</h3>
+                                ${anime.score ? `<div class="text-yellow-400 text-sm">⭐ ${anime.score}</div>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="flex flex-wrap gap-1 mb-3">
+                                ${(anime.genres || []).slice(0, 3).map(g => `
+                                    <span class="genre-tag text-xs px-2 py-0.5 rounded-full">${g}</span>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Progress</span>
+                                    <span class="text-purple-400">${anime.watched}/${total || '?'} episodes</span>
+                                </div>
+                                <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="progress-bar h-full rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                                </div>
+                                <div class="text-right text-xs text-gray-400 mt-1">${progress}%</div>
+                            </div>
+                            
+                            <div class="flex gap-2 mb-2">
+                                <button onclick="decrementEpisode('${id}')" class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-lg transition-all">−</button>
+                                <button onclick="incrementEpisode('${id}')" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 py-2 rounded-lg transition-all font-semibold">+ Ep</button>
+                                <button onclick="openEditModal('${id}')" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all" title="Edit">✏️</button>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="viewAnimeRecommendations('${id}')" class="flex-1 bg-purple-500/30 hover:bg-purple-500/50 py-2 rounded-lg text-sm transition-all">
+                                    🤖 Similar
+                                </button>
+                                <button onclick="viewAnimeOpenings('${id}')" class="flex-1 bg-cyan-500/30 hover:bg-cyan-500/50 py-2 rounded-lg text-sm transition-all">
+                                    🎵 Songs
+                                </button>
+                                <button onclick="removeAnime('${id}')" class="bg-red-500/30 hover:bg-red-500/50 px-3 py-2 rounded-lg text-sm transition-all" title="Remove">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function incrementEpisode(id) {
+            const anime = watchlist[id];
+            const maxEp = anime.episodes || 9999;
+            if (anime.watched < maxEp) {
+                anime.watched++;
+                saveWatchlist();
+                renderWatchlist();
+                updateStats();
+                
+                if (anime.episodes && anime.watched >= anime.episodes) {
+                    showToast(`🎊 Completed "${anime.title}"! Amazing!`);
+                }
+            }
+        }
+        
+        function decrementEpisode(id) {
+            if (watchlist[id].watched > 0) {
+                watchlist[id].watched--;
+                saveWatchlist();
+                renderWatchlist();
+                updateStats();
+            }
+        }
+        
+        function openEditModal(id) {
+            const anime = watchlist[id];
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-modal-content');
+            
+            content.innerHTML = `
+                <div class="flex gap-4 mb-4">
+                    <img src="${anime.image}" alt="${anime.title}" class="w-20 h-28 object-cover rounded-lg">
+                    <div>
+                        <h4 class="font-bold">${anime.title}</h4>
+                        <p class="text-sm text-gray-400">Total: ${anime.episodes || 'Unknown'} episodes</p>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-2">Episodes Watched:</label>
+                    <input type="number" id="edit-watched" value="${anime.watched}" min="0" max="${anime.episodes || 9999}"
+                        class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-2">Total Episodes (if unknown):</label>
+                    <input type="number" id="edit-total" value="${anime.episodes || ''}" min="1" placeholder="Leave empty if ongoing"
+                        class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveEdit('${id}')" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 py-3 rounded-xl font-semibold">
+                        💾 Save
+                    </button>
+                    <button onclick="closeEditModal()" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function saveEdit(id) {
+            const watched = parseInt(document.getElementById('edit-watched').value) || 0;
+            const total = document.getElementById('edit-total').value;
+            
+            watchlist[id].watched = watched;
+            if (total) {
+                watchlist[id].episodes = parseInt(total);
+            }
+            
+            saveWatchlist();
+            renderWatchlist();
+            updateStats();
+            closeEditModal();
+            showToast('Progress updated! ✅');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+        
+        function removeAnime(id) {
+            if (confirm(`Remove "${watchlist[id].title}" from watchlist?`)) {
+                delete watchlist[id];
+                saveWatchlist();
+                renderWatchlist();
+                updateStats();
+                showToast('Removed from watchlist');
+            }
+        }
+        
+        function updateStats() {
+            const entries = Object.values(watchlist);
+            const total = entries.length;
+            const completed = entries.filter(a => a.episodes && a.watched >= a.episodes).length;
+            const watching = total - completed;
+            const episodes = entries.reduce((acc, a) => acc + (a.watched || 0), 0);
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-watching').textContent = watching;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-episodes').textContent = episodes;
+        }
+        
+        // ===== RECOMMENDATIONS =====
+        function renderWatchlistSelector() {
+            const container = document.getElementById('watchlist-selector');
+            const entries = Object.entries(watchlist);
+            
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No anime in watchlist yet. Add some first!</p>';
+                return;
+            }
+            
+            container.innerHTML = entries.map(([id, anime]) => `
+                <button onclick="toggleRecSelection('${id}')" 
+                    class="flex items-center gap-2 px-3 py-2 rounded-full text-sm transition-all ${selectedForRec.includes(id) ? 'bg-pink-500' : 'bg-white/10 hover:bg-white/20'}">
+                    <img src="${anime.image}" class="w-6 h-6 rounded-full object-cover">
+                    <span class="max-w-[150px] truncate">${anime.title}</span>
+                </button>
+            `).join('');
+        }
+        
+        function toggleRecSelection(id) {
+            const idx = selectedForRec.indexOf(id);
+            if (idx > -1) {
+                selectedForRec.splice(idx, 1);
+            } else {
+                selectedForRec.push(id);
+            }
+            renderWatchlistSelector();
+        }
+        
+        async function getRecommendations() {
+            const results = document.getElementById('recommendations-results');
+            const noResults = document.getElementById('no-recommendations');
+            const loading = document.getElementById('rec-loading');
+            const btn = document.getElementById('get-rec-btn');
+            
+            // If nothing selected, use all watchlist
+            let animeIds = selectedForRec.length > 0 ? selectedForRec : Object.keys(watchlist);
+            
+            if (animeIds.length === 0) {
+                showToast('Add anime to your watchlist first!');
+                return;
+            }
+            
+            btn.disabled = true;
+            loading.classList.remove('hidden');
+            results.innerHTML = '';
+            noResults.classList.add('hidden');
+            
+            // Show loading skeleton
+            results.innerHTML = Array(8).fill(0).map(() => `
+                <div class="anime-card rounded-xl overflow-hidden">
+                    <div class="skeleton h-48 w-full"></div>
+                    <div class="p-4 space-y-2">
+                        <div class="skeleton h-4 w-3/4 rounded"></div>
+                        <div class="skeleton h-3 w-1/2 rounded"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            try {
+                let allRecommendations = [];
+                
+                // Fetch recommendations for up to 3 anime (to avoid rate limits)
+                const idsToFetch = animeIds.slice(0, 3);
+                
+                for (const id of idsToFetch) {
+                    try {
+                        const response = await rateLimitedFetch(`${JIKAN_API}/anime/${id}/recommendations`);
+                        const data = await response.json();
+                        
+                        if (data.data) {
+                            allRecommendations = [...allRecommendations, ...data.data.slice(0, 6)];
+                        }
+                    } catch (e) {
+                        console.error('Rec fetch error for', id, e);
+                    }
+                }
+                
+                // Remove duplicates and already in watchlist
+                const seen = new Set(Object.keys(watchlist).map(k => parseInt(k)));
+                const uniqueRecs = [];
+                
+                for (const rec of allRecommendations) {
+                    if (!seen.has(rec.entry.mal_id)) {
+                        seen.add(rec.entry.mal_id);
+                        uniqueRecs.push(rec);
+                    }
+                }
+                
+                // Sort by votes
+                uniqueRecs.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+                
+                if (uniqueRecs.length === 0) {
+                    results.innerHTML = '';
+                    noResults.innerHTML = `
+                        <div class="text-6xl mb-4">🤔</div>
+                        <p class="text-xl">No recommendations found!</p>
+                        <p>Try adding more diverse anime to your watchlist.</p>
+                    `;
+                    noResults.classList.remove('hidden');
+                } else {
+                    results.innerHTML = uniqueRecs.slice(0, 12).map(rec => `
+                        <div class="recommendation-card rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-all">
+                            <div class="relative h-56">
+                                <img src="${rec.entry.images.jpg.large_image_url || rec.entry.images.jpg.image_url}" 
+                                    alt="${rec.entry.title}" class="w-full h-full object-cover anime-poster">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                                <div class="absolute top-2 right-2 bg-purple-500/80 text-xs px-2 py-1 rounded-full">
+                                    👍 ${rec.votes || 0} votes
+                                </div>
+                                <div class="absolute bottom-2 left-2 right-2">
+                                    <h3 class="font-bold leading-tight line-clamp-2">${rec.entry.title}</h3>
+                                </div>
+                            </div>
+                            <div class="p-3 flex gap-2">
+                                <button onclick="addAnimeToWatchlist(${rec.entry.mal_id})" 
+                                    class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 py-2 rounded-lg text-sm font-semibold transition-all">
+                                    ➕ Add
+                                </button>
+                                <button onclick="viewAnimeOpeningsById(${rec.entry.mal_id}, '${rec.entry.title.replace(/'/g, "\\'")}')" 
+                                    class="bg-cyan-500/30 hover:bg-cyan-500/50 px-4 py-2 rounded-lg text-sm transition-all">
+                                    🎵
+                                </button>
+                                <a href="https://myanimelist.net/anime/${rec.entry.mal_id}" target="_blank"
+                                    class="bg-blue-500/30 hover:bg-blue-500/50 px-4 py-2 rounded-lg text-sm transition-all">
+                                    MAL
+                                </a>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Recommendations error:', error);
+                results.innerHTML = '';
+                noResults.innerHTML = `
+                    <div class="text-6xl mb-4">😢</div>
+                    <p class="text-xl">Failed to fetch recommendations</p>
+                    <p>Please try again later.</p>
+                `;
+                noResults.classList.remove('hidden');
+            }
+            
+            btn.disabled = false;
+            loading.classList.add('hidden');
+        }
+        
+        function viewAnimeRecommendations(id) {
+            selectedForRec = [id];
+            switchTab('recommend');
+            renderWatchlistSelector();
+            getRecommendations();
+        }
+        
+        // ===== OPENINGS =====
+        function debounceOpeningSearch(query) {
+            clearTimeout(searchTimeout);
+            const resultsDiv = document.getElementById('opening-search-results');
+            const loadingDiv = document.getElementById('opening-search-loading');
+            
+            if (query.length < 3) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            loadingDiv.classList.remove('hidden');
+            
+            searchTimeout = setTimeout(() => {
+                searchOpenings(query);
+            }, 500);
+        }
+        
+        async function searchOpenings(query) {
+            const resultsDiv = document.getElementById('opening-search-results');
+            const loadingDiv = document.getElementById('opening-search-loading');
+            
+            try {
+                const response = await rateLimitedFetch(`${JIKAN_API}/anime?q=${encodeURIComponent(query)}&limit=8&sfw=true`);
+                const data = await response.json();
+                
+                loadingDiv.classList.add('hidden');
+                
+                if (data.data && data.data.length > 0) {
+                    resultsDiv.innerHTML = data.data.map(anime => `
+                        <div class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer transition-all border-b border-white/10 last:border-0"
+                            onclick="fetchAnimeThemes(${anime.mal_id}, '${anime.title.replace(/'/g, "\\'")}', '${anime.images.jpg.large_image_url || anime.images.jpg.image_url}')">
+                            <img src="${anime.images.jpg.small_image_url}" alt="${anime.title}" class="w-12 h-16 object-cover rounded-lg">
+                            <div class="flex-1">
+                                <div class="font-semibold">${anime.title}</div>
+                                <div class="text-sm text-gray-400">${anime.type || 'TV'} • ${anime.year || 'N/A'}</div>
+                            </div>
+                            <div class="text-2xl">🎵</div>
+                        </div>
+                    `).join('');
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-400">No anime found</div>';
+                    resultsDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                console.error('Search error:', error);
+            }
+        }
+        
+        async function fetchAnimeThemes(malId, title, imageUrl) {
+            const resultsDiv = document.getElementById('openings-results');
+            const noResults = document.getElementById('no-openings');
+            const searchResults = document.getElementById('opening-search-results');
+            const searchInput = document.getElementById('opening-search');
+            
+            searchResults.classList.add('hidden');
+            searchInput.value = title;
+            noResults.classList.add('hidden');
+            
+            // Show loading
+            resultsDiv.innerHTML = `
+                <div class="anime-card rounded-xl p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="skeleton w-24 h-32 rounded-lg"></div>
+                        <div class="space-y-2">
+                            <div class="skeleton h-6 w-48 rounded"></div>
+                            <div class="skeleton h-4 w-32 rounded"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="skeleton h-12 w-full rounded-lg"></div>
+                        <div class="skeleton h-12 w-full rounded-lg"></div>
+                        <div class="skeleton h-12 w-full rounded-lg"></div>
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const response = await rateLimitedFetch(`${JIKAN_API}/anime/${malId}/themes`);
+                const data = await response.json();
+                
+                const openings = data.data?.openings || [];
+                const endings = data.data?.endings || [];
+                
+                if (openings.length === 0 && endings.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="anime-card rounded-xl p-6 text-center">
+                            <img src="${imageUrl}" alt="${title}" class="w-32 h-44 object-cover rounded-lg mx-auto mb-4">
+                            <h3 class="text-xl font-bold mb-2">${title}</h3>
+                            <p class="text-gray-400">No theme songs found for this anime.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="anime-card rounded-xl overflow-hidden">
+                        <div class="relative h-48 md:h-64">
+                            <img src="${imageUrl}" alt="${title}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                            <div class="absolute bottom-4 left-4 right-4">
+                                <h3 class="text-2xl md:text-3xl font-bold">${title}</h3>
+                                <p class="text-gray-300">${openings.length} openings • ${endings.length} endings</p>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6">
+                            ${openings.length > 0 ? `
+                                <div class="mb-6">
+                                    <h4 class="text-xl font-bold text-pink-400 mb-3 flex items-center gap-2">
+                                        🎵 Opening Themes
+                                    </h4>
+                                    <div class="space-y-2">
+                                        ${openings.map((op, i) => renderThemeSong(op, 'OP', i + 1, title, malId)).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${endings.length > 0 ? `
+                                <div>
+                                    <h4 class="text-xl font-bold text-cyan-400 mb-3 flex items-center gap-2">
+                                        🎶 Ending Themes
+                                    </h4>
+                                    <div class="space-y-2">
+                                        ${endings.map((ed, i) => renderThemeSong(ed, 'ED', i + 1, title, malId)).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="mt-6 pt-4 border-t border-white/10 flex flex-wrap gap-2">
+                                <button onclick="addAnimeToWatchlist(${malId})" 
+                                    class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+                                    ➕ Add to Watchlist
+                                </button>
+                                <a href="https://myanimelist.net/anime/${malId}" target="_blank"
+                                    class="bg-blue-500/30 hover:bg-blue-500/50 px-4 py-2 rounded-lg text-sm transition-all">
+                                    View on MAL
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Theme fetch error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="anime-card rounded-xl p-6 text-center">
+                        <div class="text-4xl mb-4">😢</div>
+                        <p>Failed to fetch theme songs. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderThemeSong(theme, type, num, animeTitle, malId) {
+            // Parse the theme string (format: "Title" by Artist (eps X-Y))
+            const songId = `${malId}-${type}${num}`;
+            const isFav = favoriteOpenings.some(f => f.id === songId);
+            
+            // Clean up the theme text
+            let displayText = theme;
+            let searchQuery = `${animeTitle} ${type}${num}`;
+            
+            // Try to extract song title for search
+            const match = theme.match(/"([^"]+)"/);
+            if (match) {
+                searchQuery = `${animeTitle} ${match[1]} ${type}`;
+            }
+            
+            return `
+                <div class="flex items-center gap-3 bg-white/5 hover:bg-white/10 rounded-lg p-3 transition-all group">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r ${type === 'OP' ? 'from-pink-500 to-purple-500' : 'from-cyan-500 to-blue-500'} flex items-center justify-center font-bold text-sm">
+                        ${type}${num}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium truncate">${displayText}</div>
+                    </div>
+                    <div class="flex gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <button onclick="toggleFavoriteSong('${songId}', '${displayText.replace(/'/g, "\\'")}', '${animeTitle.replace(/'/g, "\\'")}')" 
+                            class="p-2 hover:bg-white/20 rounded-lg transition-all ${isFav ? 'text-yellow-400' : ''}" title="Favorite">
+                            ${isFav ? '⭐' : '☆'}
+                        </button>
+                        <button onclick="copyToClipboard('${displayText.replace(/'/g, "\\'")}')" 
+                            class="p-2 hover:bg-white/20 rounded-lg transition-all" title="Copy">
+                            📋
+                        </button>
+                        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}" 
+                            target="_blank" class="p-2 hover:bg-red-500/30 rounded-lg transition-all flex items-center gap-1" title="Search on YouTube">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                        <a href="https://open.spotify.com/search/${encodeURIComponent(displayText.split('"')[1] || displayText)}" 
+                            target="_blank" class="p-2 hover:bg-green-500/30 rounded-lg transition-all" title="Search on Spotify">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function viewAnimeOpenings(id) {
+            const anime = watchlist[id];
+            switchTab('openings');
+            fetchAnimeThemes(id, anime.title, anime.image);
+        }
+        
+        function viewAnimeOpeningsById(malId, title) {
+            switchTab('openings');
+            fetchAnimeThemes(malId, title, `https://cdn.myanimelist.net/images/anime/${malId}.jpg`);
+        }
+        
+        async function getRandomAnimeThemes() {
+            showToast('Finding a random anime... 🎲');
+            try {
+                const randomPage = Math.floor(Math.random() * 100) + 1;
+                const response = await rateLimitedFetch(`${JIKAN_API}/top/anime?page=${randomPage}&limit=25`);
+                const data = await response.json();
+                
+                if (data.data && data.data.length > 0) {
+                    const randomAnime = data.data[Math.floor(Math.random() * data.data.length)];
+                    document.getElementById('opening-search').value = randomAnime.title;
+                    fetchAnimeThemes(randomAnime.mal_id, randomAnime.title, randomAnime.images.jpg.large_image_url);
+                }
+            } catch (error) {
+                console.error('Random anime error:', error);
+                showToast('Failed to get random anime');
+            }
+        }
+        
+        function renderWatchlistThemes() {
+            const section = document.getElementById('watchlist-themes-section');
+            const list = document.getElementById('watchlist-themes-list');
+            const entries = Object.entries(watchlist);
+            
+            if (entries.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            list.innerHTML = entries.map(([id, anime]) => `
+                <button onclick="fetchAnimeThemes(${id}, '${anime.title.replace(/'/g, "\\'")}', '${anime.image}')"
+                    class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all">
+                    <img src="${anime.image}" class="w-8 h-10 rounded object-cover">
+                    <span class="text-sm max-w-[120px] truncate">${anime.title}</span>
+                </button>
+            `).join('');
+        }
+        
+        function toggleFavoriteSong(id, text, anime) {
+            const idx = favoriteOpenings.findIndex(f => f.id === id);
+            
+            if (idx > -1) {
+                favoriteOpenings.splice(idx, 1);
+                showToast('Removed from favorites');
+            } else {
+                favoriteOpenings.push({ id, text, anime });
+                showToast('Added to favorites! ⭐');
+            }
+            
+            localStorage.setItem('favoriteOpenings', JSON.stringify(favoriteOpenings));
+            renderFavorites();
+            
+            // Re-render current results if visible
+            const searchInput = document.getElementById('opening-search');
+            if (searchInput.value) {
+                // Trigger a re-render by finding and clicking the current anime
+            }
+        }
+        
+        function renderFavorites() {
+            const section = document.getElementById('favorites-section');
+            const list = document.getElementById('favorites-list');
+            
+            if (favoriteOpenings.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            list.innerHTML = favoriteOpenings.map(fav => `
+                <div class="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                    <span class="text-xl">⭐</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium truncate">${fav.text}</div>
+                        <div class="text-sm text-gray-400">${fav.anime}</div>
+                    </div>
+                    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(fav.anime + ' ' + fav.text)}" 
+                        target="_blank" class="p-2 hover:bg-white/20 rounded-lg transition-all">
+                        ▶
+                    </a>
+                    <button onclick="removeFavorite('${fav.id}')" class="p-2 hover:bg-red-500/30 rounded-lg text-red-400 transition-all">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function removeFavorite(id) {
+            favoriteOpenings = favoriteOpenings.filter(f => f.id !== id);
+            localStorage.setItem('favoriteOpenings', JSON.stringify(favoriteOpenings));
+            renderFavorites();
+            showToast('Removed from favorites');
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied to clipboard! 📋');
+        }
+        
+        // ===== TOAST =====
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-x-full');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+        
+        // Close modal on outside click
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-modal') {
+                closeEditModal();
+            }
+        });
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            const searchResults = document.getElementById('search-results');
+            const openingSearchResults = document.getElementById('opening-search-results');
+            
+            if (!e.target.closest('#anime-search') && !e.target.closest('#search-results')) {
+                searchResults.classList.add('hidden');
+            }
+            if (!e.target.closest('#opening-search') && !e.target.closest('#opening-search-results')) {
+                openingSearchResults.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

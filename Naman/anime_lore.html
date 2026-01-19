@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎌 Anime Lore Explorer - Complete Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%); }
+        .card-hover { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .card-hover:hover { transform: translateY(-8px) scale(1.02); }
+        .glow { box-shadow: 0 0 30px rgba(233, 69, 96, 0.6); }
+        .glow-cyan { box-shadow: 0 0 30px rgba(79, 172, 254, 0.6); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .slide-in { animation: slideIn 0.4s ease forwards; }
+        .pulse { animation: pulse 1.5s infinite; }
+        .bounce-anim { animation: bounce 2s infinite; }
+        .episode-card { transition: all 0.3s ease; }
+        .episode-card:hover { background: rgba(233, 69, 96, 0.15); transform: translateX(5px); }
+        .watched { border-left: 4px solid #10b981 !important; background: rgba(16, 185, 129, 0.1) !important; }
+        .spoiler-blur { filter: blur(8px); user-select: none; cursor: pointer; transition: filter 0.3s ease; }
+        .spoiler-blur:hover { filter: blur(4px); }
+        .spoiler-revealed { filter: none !important; cursor: default; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .anime-card { transition: all 0.3s ease; }
+        .anime-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .char-img { object-fit: cover; object-position: top center; }
+        .nav-link { position: relative; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 50%; width: 0; height: 2px; background: linear-gradient(90deg, #e94560, #4facfe); transition: all 0.3s ease; transform: translateX(-50%); }
+        .nav-link:hover::after, .nav-link.active::after { width: 80%; }
+        .hero-gradient { background: radial-gradient(ellipse at center, rgba(233, 69, 96, 0.2) 0%, transparent 70%); }
+        .gradient-border { background: linear-gradient(135deg, #e94560, #4facfe); padding: 2px; }
+        .gradient-border > div { background: #16213e; }
+        .countdown-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .filter-btn.active { background: linear-gradient(135deg, #e94560, #4facfe); }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .power-tag { background: linear-gradient(135deg, #e94560, #ff6b6b); }
+        .anime-tag { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #e94560, #4facfe); border-radius: 4px; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="showSection('home')">
+                    <span class="text-3xl group-hover:bounce-anim">🎌</span>
+                    <h1 class="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                        Anime Lore Explorer
+                    </h1>
+                </div>
+                <nav class="flex gap-1 flex-wrap">
+                    <button onclick="showSection('home')" id="nav-home" 
+                        class="nav-link px-4 py-2 rounded-xl hover:bg-white/10 transition flex items-center gap-2 font-medium text-sm">
+                        <span>🏠</span> <span class="hidden sm:inline">Home</span>
+                    </button>
+                    <button onclick="showSection('anime')" id="nav-anime" 
+                        class="nav-link px-4 py-2 rounded-xl hover:bg-white/10 transition flex items-center gap-2 font-medium text-sm">
+                        <span>📺</span> <span class="hidden sm:inline">All Anime</span>
+                    </button>
+                    <button onclick="showSection('characters')" id="nav-characters" 
+                        class="nav-link px-4 py-2 rounded-xl hover:bg-white/10 transition flex items-center gap-2 font-medium text-sm">
+                        <span>👤</span> <span class="hidden sm:inline">Characters</span>
+                    </button>
+                    <button onclick="showSection('episodes')" id="nav-episodes"
+                        class="nav-link px-4 py-2 rounded-xl hover:bg-white/10 transition flex items-center gap-2 font-medium text-sm">
+                        <span>🎬</span> <span class="hidden sm:inline">Episodes</span>
+                    </button>
+                </nav>
+                <div class="flex items-center gap-2">
+                    <span id="animeCount" class="text-xs text-gray-400 hidden md:block">Loading...</span>
+                    <div class="relative">
+                        <button onclick="showSection('watchlist')" class="p-2 rounded-xl hover:bg-white/10 transition">
+                            ❤️ <span id="watchlistCount" class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div id="progressContainer" class="hidden fixed top-16 left-0 right-0 z-40 bg-black/80 backdrop-blur-sm p-4">
+        <div class="max-w-2xl mx-auto">
+            <div class="flex items-center gap-4 mb-2">
+                <div class="w-8 h-8 border-3 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+                <span id="progressText" class="text-sm">Initializing...</span>
+            </div>
+            <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-pink-500 to-cyan-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all z-50">
+        <span id="toastMessage">Message</span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Home Section -->
+        <section id="section-home" class="fade-in">
+            <div class="text-center py-8 relative">
+                <div class="hero-gradient absolute inset-0 pointer-events-none"></div>
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
+                    Explore the Anime Universe
+                </h2>
+                <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+                    Your complete database of 9000+ anime series, characters, and episodes. Discover new shows, track your progress, and dive deep into character lore.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                    <div onclick="showSection('anime')" class="cursor-pointer glass p-6 rounded-2xl card-hover border border-pink-500/30 hover:border-pink-500">
+                        <span class="text-4xl block mb-2">📺</span>
+                        <h3 class="font-bold">All Anime</h3>
+                        <p class="text-sm text-gray-400" id="homeAnimeCount">Loading...</p>
+                    </div>
+                    <div onclick="showSection('characters')" class="cursor-pointer glass p-6 rounded-2xl card-hover border border-cyan-500/30 hover:border-cyan-500">
+                        <span class="text-4xl block mb-2">👤</span>
+                        <h3 class="font-bold">Characters</h3>
+                        <p class="text-sm text-gray-400">Encyclopedia</p>
+                    </div>
+                    <div onclick="showSection('episodes')" class="cursor-pointer glass p-6 rounded-2xl card-hover border border-purple-500/30 hover:border-purple-500">
+                        <span class="text-4xl block mb-2">🎬</span>
+                        <h3 class="font-bold">Episodes</h3>
+                        <p class="text-sm text-gray-400">Guide & Tracker</p>
+                    </div>
+                    <div onclick="showSection('watchlist')" class="cursor-pointer glass p-6 rounded-2xl card-hover border border-rose-500/30 hover:border-rose-500">
+                        <span class="text-4xl block mb-2">❤️</span>
+                        <h3 class="font-bold">Watchlist</h3>
+                        <p class="text-sm text-gray-400" id="homeWatchlistCount">0 saved</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trending Now -->
+            <div class="mb-10">
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-green-400">📡</span> Currently Airing
+                </h3>
+                <div id="airingShowcase" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            </div>
+
+            <!-- Top Rated -->
+            <div class="mb-10">
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-yellow-400">⭐</span> Top Rated
+                </h3>
+                <div id="topShowcase" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            </div>
+
+            <!-- Upcoming -->
+            <div class="mb-10">
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-purple-400">⏳</span> Upcoming
+                </h3>
+                <div id="upcomingShowcase" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            </div>
+        </section>
+
+        <!-- All Anime Section -->
+        <section id="section-anime" class="hidden">
+            <!-- Filters -->
+            <div class="glass rounded-2xl p-4 mb-6">
+                <div class="flex flex-wrap gap-3 items-center mb-4">
+                    <input type="text" id="animeSearch" placeholder="🔍 Search 9000+ anime..."
+                        class="flex-1 min-w-[200px] bg-white/10 border border-white/20 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-500 text-sm">
+                    <select id="genreFilter" class="bg-white/10 border border-white/20 rounded-xl px-4 py-2 focus:outline-none cursor-pointer text-sm">
+                        <option value="">All Genres</option>
+                        <option value="1">Action</option>
+                        <option value="2">Adventure</option>
+                        <option value="4">Comedy</option>
+                        <option value="8">Drama</option>
+                        <option value="10">Fantasy</option>
+                        <option value="14">Horror</option>
+                        <option value="22">Romance</option>
+                        <option value="24">Sci-Fi</option>
+                        <option value="36">Slice of Life</option>
+                        <option value="30">Sports</option>
+                        <option value="37">Supernatural</option>
+                        <option value="7">Mystery</option>
+                        <option value="25">Shoujo</option>
+                        <option value="27">Shounen</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button data-filter="all" class="filter-btn active px-4 py-2 rounded-xl text-sm font-medium transition">📊 All</button>
+                    <button data-filter="airing" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">📡 Airing</button>
+                    <button data-filter="upcoming" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">⏳ Upcoming</button>
+                    <button data-filter="top" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">🏆 Top Rated</button>
+                    <button data-filter="popular" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">🔥 Popular</button>
+                </div>
+            </div>
+
+            <!-- Anime Grid -->
+            <div id="animeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+            
+            <!-- Loading State -->
+            <div id="animeLoading" class="hidden text-center py-12">
+                <div class="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p>Loading anime...</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="animeEmpty" class="hidden text-center py-12 text-gray-400">
+                <span class="text-6xl block mb-4">🔍</span>
+                <p class="text-xl">No anime found</p>
+                <p class="text-sm">Try a different search or filter</p>
+            </div>
+
+            <!-- Load More / Pagination -->
+            <div id="animeLoadMore" class="hidden text-center mt-8">
+                <button onclick="loadMoreAnime()" class="px-8 py-3 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-medium hover:opacity-90 transition">
+                    Load More Anime
+                </button>
+                <p id="animePageInfo" class="text-sm text-gray-400 mt-2"></p>
+            </div>
+        </section>
+
+        <!-- Watchlist Section -->
+        <section id="section-watchlist" class="hidden">
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                <span>❤️</span> My Watchlist
+            </h2>
+            <div id="watchlistGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+            <div id="watchlistEmpty" class="hidden text-center py-12 text-gray-400">
+                <span class="text-6xl block mb-4">💔</span>
+                <p class="text-xl">Your watchlist is empty</p>
+                <p class="text-sm">Click ❤️ on any anime to add it here</p>
+            </div>
+        </section>
+
+        <!-- Characters Section -->
+        <section id="section-characters" class="hidden">
+            <div class="glass rounded-2xl p-4 mb-6">
+                <div class="flex flex-wrap gap-3 items-center mb-4">
+                    <input type="text" id="charSearch" placeholder="🔍 Search any character (e.g., Naruto, Goku, Eren)..."
+                        class="flex-1 min-w-[200px] bg-white/10 border border-white/20 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-500 text-sm">
+                    <button onclick="searchCharacters()" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-medium hover:opacity-90 transition text-sm">
+                        Search
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="loadTopCharacters()" class="filter-btn char-filter active px-4 py-2 rounded-xl text-sm font-medium transition">⭐ Top Characters</button>
+                    <button onclick="loadCharactersByCategory('anime')" class="filter-btn char-filter px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">📺 From Popular Anime</button>
+                    <button onclick="loadCharactersByCategory('favorites')" class="filter-btn char-filter px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition">❤️ Most Favorited</button>
+                </div>
+                
+                <!-- Search Anime for Characters -->
+                <div class="mt-4 pt-4 border-t border-white/10">
+                    <p class="text-sm text-gray-400 mb-2">Or search for an anime to view all its characters:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <input type="text" id="animeCharSearch" placeholder="🔍 Search anime name..."
+                            class="flex-1 min-w-[200px] bg-white/10 border border-white/20 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-500 text-sm">
+                        <button onclick="searchAnimeForCharacters()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-medium hover:opacity-90 transition text-sm">
+                            Find Anime
+                        </button>
+                    </div>
+                    <div id="animeCharResults" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-48 overflow-y-auto hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Character Stats -->
+            <div class="flex items-center justify-between mb-4">
+                <p id="charResultsInfo" class="text-sm text-gray-400">Loading top characters...</p>
+            </div>
+            
+            <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+            
+            <!-- Character Loading -->
+            <div id="charLoading" class="hidden text-center py-12">
+                <div class="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p>Loading characters...</p>
+            </div>
+            
+            <!-- Load More Characters -->
+            <div id="charLoadMore" class="hidden text-center mt-8">
+                <button onclick="loadMoreCharacters()" class="px-8 py-3 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-medium hover:opacity-90 transition">
+                    Load More Characters
+                </button>
+                <p id="charPageInfo" class="text-sm text-gray-400 mt-2"></p>
+            </div>
+        </section>
+
+        <!-- Episodes Section -->
+        <section id="section-episodes" class="hidden">
+            <div class="glass rounded-2xl p-4 mb-6">
+                <h3 class="text-lg font-semibold mb-3">Search Any Anime</h3>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <input type="text" id="episodeAnimeSearch" placeholder="🔍 Search any anime for episodes..."
+                        class="flex-1 min-w-[200px] bg-white/10 border border-white/20 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-500 text-sm">
+                    <button onclick="searchAnimeForEpisodes()" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-medium hover:opacity-90 transition text-sm">
+                        Search
+                    </button>
+                </div>
+                <div id="episodeAnimeTabs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-80 overflow-y-auto"></div>
+            </div>
+
+            <div id="episodeContent" class="hidden">
+                <div id="animeHeader" class="glass rounded-2xl p-6 mb-6">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <img id="animeCover" src="" alt="" class="w-full md:w-48 h-64 object-cover rounded-xl shadow-lg">
+                        <div class="flex-1">
+                            <h3 id="selectedAnimeTitle" class="text-3xl font-bold mb-2"></h3>
+                            <p id="animeSynopsis" class="text-gray-400 text-sm mb-4 line-clamp-3"></p>
+                            <div class="flex flex-wrap items-center gap-4 mb-4">
+                                <span id="episodeCount" class="text-sm text-gray-300 flex items-center gap-1"><span class="text-pink-500">📺</span></span>
+                                <span id="animeScore" class="text-sm text-gray-300 flex items-center gap-1"><span class="text-yellow-500">⭐</span></span>
+                                <span id="animeStatus" class="text-sm text-gray-300 flex items-center gap-1"><span class="text-green-500">📡</span></span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer glass px-3 py-2 rounded-lg text-sm">
+                                    <input type="checkbox" id="spoilerToggle" class="w-4 h-4 accent-pink-500">
+                                    <span>Reveal All Spoilers</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <div id="progressBar2" class="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
+                                        <div id="progressFill" class="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all" style="width: 0%"></div>
+                                    </div>
+                                    <span id="progressText2" class="text-xs text-gray-400"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="animeCharactersSection" class="mb-6">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2"><span>👥</span> Characters</h4>
+                    <div id="animeCharactersList" class="flex gap-3 overflow-x-auto pb-3 scrollbar-hide"></div>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2"><span>📋</span> Episodes</h4>
+                <div id="episodeList" class="space-y-2"></div>
+                
+                <div id="loadMoreContainer" class="text-center mt-6 hidden">
+                    <button onclick="loadMoreEpisodes()" class="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-medium hover:opacity-90 transition text-sm">
+                        Load More Episodes
+                    </button>
+                </div>
+            </div>
+
+            <div id="noAnimeSelected" class="text-center py-16 text-gray-400">
+                <span class="text-6xl block mb-4">📺</span>
+                <p class="text-xl">Search for any anime above</p>
+                <p class="text-sm">Type an anime name and click Search to view episodes</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Character Modal -->
+    <div id="characterModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button onclick="closeCharacterModal()" class="absolute top-3 right-3 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition z-10">✕</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Power Modal -->
+    <div id="powerModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+        <div class="glass rounded-2xl max-w-md w-full p-6 relative">
+            <button onclick="closePowerModal()" class="absolute top-3 right-3 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition">✕</button>
+            <div id="powerModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Anime Detail Modal -->
+    <div id="animeModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button onclick="closeAnimeModal()" class="absolute top-3 right-3 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition z-10">✕</button>
+            <div id="animeModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 mt-12 py-6 text-center text-gray-400 text-sm">
+        <p>🎌 Anime Lore Explorer — Powered by Jikan API (MyAnimeList)</p>
+    </footer>
+
+    <script>
+        // ==================== CONFIG ====================
+        const JIKAN_BASE = 'https://api.jikan.moe/v4';
+        
+        // ==================== STATE ====================
+        let allAnime = [];
+        let filteredAnime = [];
+        let searchResults = [];
+        let currentFilter = 'all';
+        let currentGenre = '';
+        let currentSearchQuery = '';
+        let watchlist = JSON.parse(localStorage.getItem('animeWatchlist')) || [];
+        let watchedEpisodes = JSON.parse(localStorage.getItem('watchedEpisodes')) || {};
+        let selectedAnime = null;
+        let currentEpisodePage = 1;
+        let totalEpisodePages = 1;
+        let cachedEpisodes = {};
+        let revealedSpoilers = new Set();
+        let showAllSpoilers = false;
+        let isSearching = false;
+
+        // Pagination state
+        let currentAnimePage = 1;
+        let totalAnimePages = 1;
+        let paginationState = {
+            airing: { page: 1, data: [], hasMore: true },
+            upcoming: { page: 1, data: [], hasMore: true },
+            top: { page: 1, data: [], hasMore: true },
+            popular: { page: 1, data: [], hasMore: true },
+            search: { page: 1, data: [], hasMore: true }
+        };
+
+        // Episode search state
+        let episodeSearchResults = [];
+
+        // ==================== CHARACTER STATE ====================
+        let apiCharacters = [];
+        let currentCharPage = 1;
+        let totalCharPages = 1;
+        let currentCharCategory = 'top';
+        let charSearchQuery = '';
+        let isLoadingChars = false;
+        let characterAnimeCache = {}; // Cache for character anime info
+
+        // ==================== LEGACY CHARACTER DATA (for reference) ====================
+        const characters = [
+            {
+                id: 1, malId: 17, name: "Naruto Uzumaki", anime: "Naruto", role: "Protagonist",
+                powers: [
+                    { name: "Shadow Clone Jutsu", description: "Creates solid clones that fight independently. Each clone divides his chakra. When dispelled, memories transfer back to the original." },
+                    { name: "Rasengan", description: "A spinning sphere of concentrated chakra. Evolved into Rasenshuriken with wind nature, causing cellular-level damage." },
+                    { name: "Sage Mode", description: "Gathers natural energy to enhance all abilities. Grants enhanced perception, strength, and senjutsu techniques." },
+                    { name: "Nine-Tails Chakra Mode", description: "Taps into Kurama's vast chakra. Full mode grants golden cloak, immense speed, and can share chakra with armies." },
+                    { name: "Six Paths Sage Mode", description: "Granted by Hagoromo. Combines Six Paths chakra with Sage Mode, enabling flight and Truth-Seeking Balls." }
+                ],
+                description: "Naruto Uzumaki is the Seventh Hokage of Konohagakure. Born as host of the Nine-Tailed Fox Kurama, he was shunned throughout childhood. His unwavering determination transformed him from lonely outcast to the most respected ninja in history.",
+                color: "from-orange-500 to-amber-600"
+            },
+            {
+                id: 2, malId: 13, name: "Sasuke Uchiha", anime: "Naruto", role: "Antagonist",
+                powers: [
+                    { name: "Sharingan", description: "Uchiha dojutsu granting enhanced perception, technique copying, and powerful genjutsu. Evolves through emotional trauma." },
+                    { name: "Mangekyou Sharingan", description: "Awakened after Itachi's death. Grants Amaterasu (inextinguishable black flames) and Kagutsuchi (flame control)." },
+                    { name: "Rinnegan", description: "Legendary eye from Hagoromo. Enables space-time jutsu, chakra absorption, and Six Paths techniques." },
+                    { name: "Chidori", description: "Lightning assassination technique. Concentrates lightning chakra in hand for high-speed piercing attacks." },
+                    { name: "Susanoo", description: "Manifests giant chakra warrior. Perfect Susanoo rivals Tailed Beasts and wields various weapons." }
+                ],
+                description: "Prince of the Uchiha clan, massacred by his brother Itachi. This tragedy drove him toward vengeance at any cost. Learning the truth about Itachi's sacrifice shattered and rebuilt his worldview multiple times.",
+                color: "from-indigo-600 to-purple-700"
+            },
+            {
+                id: 3, malId: 45627, name: "Eren Yeager", anime: "Attack on Titan", role: "Protagonist",
+                powers: [
+                    { name: "Attack Titan", description: "15-meter Titan with exceptional combat. True power: seeing memories of future inheritors, granting limited future sight." },
+                    { name: "Founding Titan", description: "The coordinate controlling all Titans and Eldian biology. Can alter memories and command Pure Titans." },
+                    { name: "War Hammer Titan", description: "Stolen from Tybur family. Creates weapons from hardened Titan flesh. User can operate remotely via cable." },
+                    { name: "Hardening", description: "Crystallizes Titan flesh into diamond-hard armor for defense and offense." },
+                    { name: "The Rumbling", description: "Awakens millions of Colossal Titans within walls, capable of flattening the entire world." }
+                ],
+                description: "Eren's journey is one of anime's most tragic arcs. Beginning as a boy who witnessed his mother's death by Titans, discovering the truth about his world broke something inside him, transforming him from freedom fighter to perpetrator.",
+                color: "from-emerald-600 to-teal-700"
+            },
+            {
+                id: 4, malId: 45628, name: "Levi Ackerman", anime: "Attack on Titan", role: "Supporting",
+                powers: [
+                    { name: "Ackerman Power", description: "Bloodline ability granting peak human prowess. Can access combat experience of all predecessors through Paths." },
+                    { name: "ODM Gear Mastery", description: "Unparalleled vertical maneuvering skill. Changes direction mid-air with perfect balance." },
+                    { name: "Combat Expertise", description: "Humanity's strongest soldier. Speed and tactical genius defeat Titans that overwhelm entire squads." },
+                    { name: "Spinning Attack", description: "Signature move—spinning rapidly while slashing to maximize cutting power against armored Titans." }
+                ],
+                description: "Captain Levi is humanity's strongest soldier. Born in Underground City slums, raised by Kenny the Ripper. His cold demeanor masks deep loyalty—every death weighs heavily on him.",
+                color: "from-gray-600 to-slate-700"
+            },
+            {
+                id: 5, malId: 80, name: "Light Yagami", anime: "Death Note", role: "Protagonist",
+                powers: [
+                    { name: "Death Note", description: "Supernatural notebook killing anyone whose name is written. Can specify time, cause, and circumstances of death." },
+                    { name: "Genius Intellect", description: "Top student in Japan, IQ exceeding 150. Thinks dozens of moves ahead with elaborate contingency plans." },
+                    { name: "Master Manipulation", description: "Expertly reads and manipulates emotions. Maintains false personas indefinitely while pursuing hidden agendas." },
+                    { name: "Shinigami Eyes", description: "Available through deal (half lifespan). See anyone's name and lifespan by looking at their face." }
+                ],
+                description: "Japan's most promising student—handsome, athletic, academically perfect. The Death Note awakened his god complex. His descent from idealistic vigilante to ruthless murderer is a masterclass in corrupting power.",
+                color: "from-red-700 to-black"
+            },
+            {
+                id: 6, malId: 71, name: "L Lawliet", anime: "Death Note", role: "Supporting",
+                powers: [
+                    { name: "Super Deduction", description: "World's greatest detective. His deductive abilities border on supernatural, solving impossible cases." },
+                    { name: "Psychological Profiling", description: "Accurately predicts human behavior, sets traps based on personality analysis." },
+                    { name: "Resource Network", description: "Commands vast resources through Watari. Mobilizes surveillance and personnel worldwide." },
+                    { name: "Capoeira Combat", description: "Despite frail appearance, skilled in capoeira martial arts—surprising physical competence." }
+                ],
+                description: "The world's greatest detective, a shadowy figure who solved every case. Eccentric habits belie a mind operating on a different level. Views justice as intellectual puzzle rather than moral imperative.",
+                color: "from-slate-600 to-gray-800"
+            },
+            {
+                id: 7, malId: 146157, name: "Tanjiro Kamado", anime: "Demon Slayer", role: "Protagonist",
+                powers: [
+                    { name: "Water Breathing", description: "Main breathing style with 10 forms emphasizing fluidity, adaptability, and constant motion like water." },
+                    { name: "Sun Breathing", description: "Original and most powerful style, passed through Tanjiro's family as ritual dance. All others are derivatives." },
+                    { name: "Enhanced Smell", description: "Detects demons, emotions, and 'opening thread' revealing optimal strike moments." },
+                    { name: "Demon Slayer Mark", description: "Birthmark awakening during danger, boosting physical abilities at cost of reduced lifespan." },
+                    { name: "Transparent World", description: "Sees through opponents' bodies, perceiving muscles and predicting movements." }
+                ],
+                description: "Embodies pure-hearted determination. After demons slaughtered his family and transformed sister Nezuko, he became a Demon Slayer while seeking a cure. His compassion extends even to defeated enemies.",
+                color: "from-cyan-500 to-blue-600"
+            },
+            {
+                id: 8, malId: 146154, name: "Nezuko Kamado", anime: "Demon Slayer", role: "Supporting",
+                powers: [
+                    { name: "Exploding Blood", description: "Blood ignites into flames harming only demons. Enhances Nichirin swords to boost demon-slaying power." },
+                    { name: "Regeneration", description: "Heals rapidly like all demons. Unlike most, regenerates through sleep rather than human blood." },
+                    { name: "Size Manipulation", description: "Shrinks to fit in a box or grows to adult size for combat." },
+                    { name: "Sunlight Resistance", description: "First demon to conquer sunlight weakness. Makes Muzan obsessively pursue her." }
+                ],
+                description: "Defies everything known about demons. Transformed by Muzan, she retained humanity through willpower and love. Regenerates through sleep, making her unique in demon history.",
+                color: "from-pink-500 to-fuchsia-600"
+            },
+            {
+                id: 9, malId: 246, name: "Goku", anime: "Dragon Ball Z", role: "Protagonist",
+                powers: [
+                    { name: "Kamehameha", description: "Master Roshi's technique learned instantly. Concentrates ki into adjustable beam from small to planet-destroying." },
+                    { name: "Super Saiyan", description: "Legendary transformation triggered by emotion. Each level multiplies power exponentially." },
+                    { name: "Ultra Instinct", description: "Technique even gods struggle to master. Body moves independently achieving perfect offense and defense." },
+                    { name: "Instant Transmission", description: "Teleports to any location by locking onto ki signature. Crosses universal distances instantly." },
+                    { name: "Spirit Bomb", description: "Gathers energy from all living things. Universe's ultimate technique defeating beings outclassing Goku." }
+                ],
+                description: "Son Goku, born Kakarot, is a Saiyan raised on Earth. A head injury removed his violent programming. His pure love of fighting and protection of loved ones defines Dragon Ball.",
+                color: "from-orange-500 to-yellow-500"
+            },
+            {
+                id: 10, malId: 913, name: "Vegeta", anime: "Dragon Ball Z", role: "Supporting",
+                powers: [
+                    { name: "Final Flash", description: "Ultimate technique requiring charging but outputting enough power to threaten Perfect Cell." },
+                    { name: "Galick Gun", description: "Purple beam similar to Kamehameha. Original signature attack from Earth arrival." },
+                    { name: "Big Bang Attack", description: "Concentrated ki sphere exploding on impact. Go-to attack after achieving Super Saiyan." },
+                    { name: "Ultra Ego", description: "Answer to Ultra Instinct from God of Destruction. Grows stronger taking damage." },
+                    { name: "Super Saiyan Blue Evolution", description: "Form beyond regular Blue through breaking limits. Refuses to copy Goku's path." }
+                ],
+                description: "Prince Vegeta's arc spans from genocidal conqueror to family man. His rivalry with Goku—always chasing, rarely surpassing—drives his evolution. His sacrifice against Buu remains one of anime's most powerful redemptions.",
+                color: "from-blue-600 to-indigo-700"
+            },
+            {
+                id: 11, malId: 40882, name: "Mikasa Ackerman", anime: "Attack on Titan", role: "Supporting",
+                powers: [
+                    { name: "Ackerman Power", description: "Superhuman strength, speed, and reflexes. Worth a hundred ordinary soldiers." },
+                    { name: "ODM Expertise", description: "Among top ODM users ever. Kills rival Levi's despite young age." },
+                    { name: "Combat Instincts", description: "Awakened during childhood trauma. Reacts to threats faster than conscious thought." },
+                    { name: "Thunder Spear Proficiency", description: "Master of anti-Titan explosives, precisely targeting weak points on evasive shifters." }
+                ],
+                description: "Last of Azumabito bloodline and an Ackerman. After Eren saved her from traffickers, she imprinted completely. Her journey learning to make choices independent of Eren is deeply poignant.",
+                color: "from-red-600 to-rose-700"
+            },
+            {
+                id: 12, malId: 16, name: "Sakura Haruno", anime: "Naruto", role: "Supporting",
+                powers: [
+                    { name: "Chakra Enhanced Strength", description: "Concentrates chakra into fists, releasing on impact. Single punch shatters ground." },
+                    { name: "Medical Ninjutsu", description: "Master healer treating fatal injuries. Performs complex surgeries and develops antidotes mid-battle." },
+                    { name: "Mitotic Regeneration", description: "Strength of Hundred Seal stores chakra over years. Enables near-instant healing of any injury." },
+                    { name: "Summoning Jutsu", description: "Summons Katsuyu, giant slug dividing to heal multiple people across battlefields." }
+                ],
+                description: "Evolved from lovestruck student to world's most powerful kunoichi. Initially weakest of Team 7, trained under Tsunade to become legendary medical ninja standing beside Naruto and Sasuke as equals.",
+                color: "from-pink-500 to-rose-600"
+            }
+        ];
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (response.status === 429) {
+                        await delay(1500 * (i + 1));
+                        continue;
+                    }
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await delay(1000);
+                }
+            }
+        }
+
+        async function fetchAllPages(endpoint, maxPages = 10) {
+            const results = [];
+            for (let page = 1; page <= maxPages; page++) {
+                try {
+                    const data = await fetchWithRetry(`${endpoint}&page=${page}`);
+                    if (data.data?.length > 0) {
+                        results.push(...data.data);
+                        if (!data.pagination?.has_next_page) break;
+                    } else break;
+                    await delay(400);
+                } catch (error) {
+                    console.error(`Error page ${page}:`, error);
+                    break;
+                }
+            }
+            return results;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000);
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWatchlistCount();
+            initFetch();
+            setupEventListeners();
+        });
+
+        async function initFetch() {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressContainer.classList.remove('hidden');
+            allAnime = [];
+
+            try {
+                // Fetch currently airing - more pages
+                progressText.textContent = '📡 Fetching airing anime...';
+                progressBar.style.width = '5%';
+                paginationState.airing.data = await fetchAllPages(`${JIKAN_BASE}/seasons/now?limit=25`, 15);
+                progressBar.style.width = '20%';
+
+                // Fetch upcoming - more pages
+                progressText.textContent = '⏳ Fetching upcoming anime...';
+                await delay(500);
+                paginationState.upcoming.data = await fetchAllPages(`${JIKAN_BASE}/seasons/upcoming?limit=25`, 15);
+                progressBar.style.width = '40%';
+
+                // Fetch top rated - more pages
+                progressText.textContent = '🏆 Fetching top rated...';
+                await delay(500);
+                paginationState.top.data = await fetchAllPages(`${JIKAN_BASE}/top/anime?limit=25`, 20);
+                progressBar.style.width = '60%';
+
+                // Fetch popular - more pages
+                progressText.textContent = '🔥 Fetching popular anime...';
+                await delay(500);
+                paginationState.popular.data = await fetchAllPages(`${JIKAN_BASE}/top/anime?limit=25&filter=bypopularity`, 20);
+                progressBar.style.width = '80%';
+
+                // Fetch additional anime pages
+                progressText.textContent = '📚 Loading more anime...';
+                await delay(500);
+                const additionalAnime = await fetchAllPages(`${JIKAN_BASE}/anime?limit=25&order_by=score&sort=desc`, 15);
+                progressBar.style.width = '90%';
+
+                // Combine and deduplicate
+                progressText.textContent = '✨ Processing database...';
+                const allData = [
+                    ...paginationState.airing.data,
+                    ...paginationState.upcoming.data,
+                    ...paginationState.top.data,
+                    ...paginationState.popular.data,
+                    ...additionalAnime
+                ];
+
+                const animeMap = new Map();
+                allData.forEach(anime => {
+                    if (!animeMap.has(anime.mal_id)) {
+                        animeMap.set(anime.mal_id, anime);
+                    }
+                });
+
+                allAnime = Array.from(animeMap.values());
+                allAnime.sort((a, b) => {
+                    if (a.airing && !b.airing) return -1;
+                    if (!a.airing && b.airing) return 1;
+                    return (b.score || 0) - (a.score || 0);
+                });
+
+                progressBar.style.width = '100%';
+                progressText.textContent = `🎉 Loaded ${allAnime.length} anime! (Search for 9000+ more)`;
+
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    renderHome();
+                    applyAnimeFilters();
+                }, 1000);
+
+                document.getElementById('animeCount').textContent = `📊 ${allAnime.length}+ anime`;
+                document.getElementById('homeAnimeCount').textContent = `${allAnime.length}+ series`;
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                progressText.textContent = '❌ Error loading data. Refresh to retry.';
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Anime filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.add('bg-white/10');
+                    });
+                    btn.classList.add('active');
+                    btn.classList.remove('bg-white/10');
+                    currentFilter = btn.dataset.filter;
+                    currentAnimePage = 1;
+                    applyAnimeFilters();
+                });
+            });
+
+            document.getElementById('animeSearch').addEventListener('input', debounce(handleAnimeSearch, 500));
+            document.getElementById('genreFilter').addEventListener('change', () => {
+                currentAnimePage = 1;
+                applyAnimeFilters();
+            });
+            document.getElementById('charSearch').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchCharacters();
+            });
+            document.getElementById('animeCharSearch').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchAnimeForCharacters();
+            });
+            document.getElementById('episodeAnimeSearch').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchAnimeForEpisodes();
+            });
+            document.getElementById('spoilerToggle').addEventListener('change', (e) => {
+                showAllSpoilers = e.target.checked;
+                if (selectedAnime) renderEpisodeList();
+            });
+
+            // Modal close on backdrop click
+            ['characterModal', 'powerModal', 'animeModal'].forEach(id => {
+                document.getElementById(id).addEventListener('click', (e) => {
+                    if (e.target.id === id) {
+                        document.getElementById(id).classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    ['characterModal', 'powerModal', 'animeModal'].forEach(id => {
+                        document.getElementById(id).classList.add('hidden');
+                    });
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // ==================== NAVIGATION ====================
+        function showSection(section) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${section}`).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            const navBtn = document.getElementById(`nav-${section}`);
+            if (navBtn) navBtn.classList.add('active');
+
+            if (section === 'home') renderHome();
+            if (section === 'anime') applyAnimeFilters();
+            if (section === 'characters') {
+                if (apiCharacters.length === 0) loadTopCharacters();
+            }
+            if (section === 'episodes') renderEpisodeAnimeTabs();
+            if (section === 'watchlist') renderWatchlist();
+        }
+
+        // ==================== HOME SECTION ====================
+        function renderHome() {
+            renderShowcase('airingShowcase', paginationState.airing.data.slice(0, 12));
+            renderShowcase('topShowcase', paginationState.top.data.slice(0, 12));
+            renderShowcase('upcomingShowcase', paginationState.upcoming.data.slice(0, 12));
+            document.getElementById('homeWatchlistCount').textContent = `${watchlist.length} saved`;
+        }
+
+        function renderShowcase(containerId, animeList) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = animeList.map(anime => createSmallAnimeCard(anime)).join('');
+        }
+
+        function createSmallAnimeCard(anime) {
+            const isInWatchlist = watchlist.includes(anime.mal_id);
+            const score = anime.score || 'N/A';
+            return `
+                <div class="anime-card rounded-xl overflow-hidden cursor-pointer relative group" onclick="openAnimeModal(${anime.mal_id})">
+                    <img src="${anime.images?.jpg?.image_url || ''}" alt="${anime.title}" class="w-full aspect-[3/4] object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                    <button onclick="event.stopPropagation(); toggleWatchlist(${anime.mal_id})" 
+                        class="absolute top-2 right-2 w-8 h-8 rounded-full ${isInWatchlist ? 'bg-pink-500' : 'bg-black/50'} flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        ${isInWatchlist ? '❤️' : '🤍'}
+                    </button>
+                    ${score !== 'N/A' ? `<div class="absolute top-2 left-2 px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded">⭐ ${score}</div>` : ''}
+                    <div class="absolute bottom-0 left-0 right-0 p-3">
+                        <h4 class="font-bold text-sm line-clamp-2">${anime.title}</h4>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== ALL ANIME SECTION ====================
+        async function handleAnimeSearch() {
+            const query = document.getElementById('animeSearch').value.trim();
+            currentSearchQuery = query;
+            
+            if (query.length >= 2) {
+                isSearching = true;
+                document.getElementById('animeLoading').classList.remove('hidden');
+                document.getElementById('animeGrid').classList.add('hidden');
+                
+                try {
+                    const genre = document.getElementById('genreFilter').value;
+                    let url = `${JIKAN_BASE}/anime?q=${encodeURIComponent(query)}&limit=25&page=1`;
+                    if (genre) url += `&genres=${genre}`;
+                    
+                    const data = await fetchWithRetry(url);
+                    searchResults = data.data || [];
+                    totalAnimePages = data.pagination?.last_visible_page || 1;
+                    currentAnimePage = 1;
+                    
+                    renderSearchResults();
+                } catch (error) {
+                    console.error('Search error:', error);
+                    showToast('Search failed. Please try again.');
+                }
+                
+                document.getElementById('animeLoading').classList.add('hidden');
+            } else if (query.length === 0) {
+                isSearching = false;
+                searchResults = [];
+                applyAnimeFilters();
+            }
+        }
+
+        function renderSearchResults() {
+            const grid = document.getElementById('animeGrid');
+            const empty = document.getElementById('animeEmpty');
+            const loadMore = document.getElementById('animeLoadMore');
+
+            if (searchResults.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                loadMore.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+            grid.innerHTML = searchResults.map(anime => createAnimeCard(anime)).join('');
+
+            if (currentAnimePage < totalAnimePages) {
+                loadMore.classList.remove('hidden');
+                document.getElementById('animePageInfo').textContent = `Page ${currentAnimePage} of ${totalAnimePages}`;
+            } else {
+                loadMore.classList.add('hidden');
+            }
+        }
+
+        async function loadMoreAnime() {
+            currentAnimePage++;
+            document.getElementById('animeLoading').classList.remove('hidden');
+
+            try {
+                if (isSearching) {
+                    const genre = document.getElementById('genreFilter').value;
+                    let url = `${JIKAN_BASE}/anime?q=${encodeURIComponent(currentSearchQuery)}&limit=25&page=${currentAnimePage}`;
+                    if (genre) url += `&genres=${genre}`;
+                    
+                    const data = await fetchWithRetry(url);
+                    if (data.data?.length > 0) {
+                        searchResults.push(...data.data);
+                        renderSearchResults();
+                    }
+                } else {
+                    await loadMoreFilteredAnime();
+                }
+            } catch (error) {
+                console.error('Load more error:', error);
+                currentAnimePage--;
+            }
+
+            document.getElementById('animeLoading').classList.add('hidden');
+        }
+
+        async function loadMoreFilteredAnime() {
+            const genre = document.getElementById('genreFilter').value;
+            let endpoint = '';
+
+            switch (currentFilter) {
+                case 'airing':
+                    endpoint = `${JIKAN_BASE}/seasons/now?limit=25&page=${currentAnimePage}`;
+                    break;
+                case 'upcoming':
+                    endpoint = `${JIKAN_BASE}/seasons/upcoming?limit=25&page=${currentAnimePage}`;
+                    break;
+                case 'top':
+                    endpoint = `${JIKAN_BASE}/top/anime?limit=25&page=${currentAnimePage}`;
+                    break;
+                case 'popular':
+                    endpoint = `${JIKAN_BASE}/top/anime?limit=25&filter=bypopularity&page=${currentAnimePage}`;
+                    break;
+                default:
+                    endpoint = `${JIKAN_BASE}/anime?limit=25&order_by=score&sort=desc&page=${currentAnimePage}`;
+            }
+
+            if (genre) endpoint += `&genres=${genre}`;
+
+            const data = await fetchWithRetry(endpoint);
+            if (data.data?.length > 0) {
+                filteredAnime.push(...data.data);
+                totalAnimePages = data.pagination?.last_visible_page || currentAnimePage;
+                renderAnimeGrid();
+            }
+        }
+
+        function applyAnimeFilters() {
+            if (isSearching) {
+                renderSearchResults();
+                return;
+            }
+
+            const genre = document.getElementById('genreFilter').value;
+            let sourceData = allAnime;
+
+            if (currentFilter === 'airing') sourceData = paginationState.airing.data;
+            else if (currentFilter === 'upcoming') sourceData = paginationState.upcoming.data;
+            else if (currentFilter === 'top') sourceData = paginationState.top.data;
+            else if (currentFilter === 'popular') sourceData = paginationState.popular.data;
+
+            if (genre) {
+                filteredAnime = sourceData.filter(anime => 
+                    anime.genres?.some(g => g.mal_id == genre)
+                );
+            } else {
+                filteredAnime = [...sourceData];
+            }
+
+            // Always show some anime
+            if (filteredAnime.length === 0 && allAnime.length > 0) {
+                filteredAnime = allAnime.slice(0, 50);
+            }
+
+            renderAnimeGrid();
+        }
+
+        function renderAnimeGrid() {
+            const grid = document.getElementById('animeGrid');
+            const loading = document.getElementById('animeLoading');
+            const empty = document.getElementById('animeEmpty');
+            const loadMore = document.getElementById('animeLoadMore');
+
+            if (filteredAnime.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                loadMore.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+            grid.innerHTML = filteredAnime.map(anime => createAnimeCard(anime)).join('');
+
+            // Show load more button
+            loadMore.classList.remove('hidden');
+            document.getElementById('animePageInfo').textContent = `Showing ${filteredAnime.length} anime - Click to load more`;
+        }
+
+        function createAnimeCard(anime) {
+            const isInWatchlist = watchlist.includes(anime.mal_id);
+            const score = anime.score || 'N/A';
+            const episodes = anime.episodes || '?';
+            const status = anime.status || 'Unknown';
+            const isAiring = anime.airing || status === 'Currently Airing';
+
+            let statusBadge = '';
+            if (isAiring) {
+                statusBadge = '<span class="absolute top-2 left-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded animate-pulse">📡 AIRING</span>';
+            } else if (status === 'Not yet aired') {
+                statusBadge = '<span class="absolute top-2 left-2 px-2 py-0.5 bg-purple-500 text-white text-xs font-bold rounded">⏳ UPCOMING</span>';
+            }
+
+            return `
+                <div class="anime-card gradient-border rounded-xl overflow-hidden cursor-pointer" onclick="openAnimeModal(${anime.mal_id})">
+                    <div class="bg-[#16213e] h-full flex flex-col">
+                        <div class="relative aspect-[3/4] overflow-hidden">
+                            <img src="${anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || ''}" alt="${anime.title}" 
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+                            ${statusBadge}
+                            <button onclick="event.stopPropagation(); toggleWatchlist(${anime.mal_id})" 
+                                class="absolute top-2 right-2 w-8 h-8 rounded-full ${isInWatchlist ? 'bg-pink-500' : 'bg-black/50 hover:bg-pink-500'} flex items-center justify-center transition">
+                                ${isInWatchlist ? '❤️' : '🤍'}
+                            </button>
+                            ${score !== 'N/A' ? `<div class="absolute bottom-2 right-2 px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded">⭐ ${score}</div>` : ''}
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col">
+                            <h3 class="font-bold text-sm line-clamp-2 mb-1">${anime.title}</h3>
+                            <p class="text-xs text-gray-400">${episodes} eps • ${anime.type || 'TV'}</p>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                ${(anime.genres || []).slice(0, 2).map(g => `<span class="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded">${g.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== WATCHLIST ====================
+        function toggleWatchlist(malId) {
+            const idx = watchlist.indexOf(malId);
+            if (idx > -1) {
+                watchlist.splice(idx, 1);
+                showToast('Removed from watchlist');
+            } else {
+                watchlist.push(malId);
+                showToast('Added to watchlist! ❤️');
+            }
+            localStorage.setItem('animeWatchlist', JSON.stringify(watchlist));
+            updateWatchlistCount();
+            
+            // Refresh current view
+            if (document.getElementById('section-watchlist').classList.contains('hidden') === false) {
+                renderWatchlist();
+            } else if (document.getElementById('section-anime').classList.contains('hidden') === false) {
+                if (isSearching) renderSearchResults();
+                else renderAnimeGrid();
+            }
+        }
+
+        function updateWatchlistCount() {
+            document.getElementById('watchlistCount').textContent = watchlist.length;
+            document.getElementById('homeWatchlistCount').textContent = `${watchlist.length} saved`;
+        }
+
+        async function renderWatchlist() {
+            const grid = document.getElementById('watchlistGrid');
+            const empty = document.getElementById('watchlistEmpty');
+            
+            // Get anime from cache first
+            let watchlistAnime = allAnime.filter(a => watchlist.includes(a.mal_id));
+            
+            // Fetch any missing anime
+            const missingIds = watchlist.filter(id => !allAnime.find(a => a.mal_id === id));
+            for (const id of missingIds.slice(0, 10)) {
+                try {
+                    const data = await fetchWithRetry(`${JIKAN_BASE}/anime/${id}`);
+                    if (data.data) {
+                        watchlistAnime.push(data.data);
+                        allAnime.push(data.data);
+                    }
+                    await delay(350);
+                } catch (e) {}
+            }
+            
+            if (watchlistAnime.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                grid.classList.remove('hidden');
+                grid.innerHTML = watchlistAnime.map(anime => createAnimeCard(anime)).join('');
+            }
+        }
+
+        // ==================== ANIME MODAL ====================
+        async function openAnimeModal(malId) {
+            let anime = allAnime.find(a => a.mal_id === malId);
+            
+            // Fetch if not in cache
+            if (!anime) {
+                try {
+                    const data = await fetchWithRetry(`${JIKAN_BASE}/anime/${malId}`);
+                    anime = data.data;
+                    allAnime.push(anime);
+                } catch (e) {
+                    showToast('Failed to load anime details');
+                    return;
+                }
+            }
+
+            const modal = document.getElementById('animeModal');
+            const content = document.getElementById('animeModalContent');
+            const isInWatchlist = watchlist.includes(malId);
+
+            const genres = (anime.genres || []).map(g => g.name).join(', ') || 'Unknown';
+            const studios = (anime.studios || []).map(s => s.name).join(', ') || 'Unknown';
+
+            content.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6 p-6">
+                    <div class="md:w-1/3">
+                        <img src="${anime.images?.jpg?.large_image_url || ''}" alt="${anime.title}" class="w-full rounded-xl shadow-lg">
+                        <button onclick="toggleWatchlist(${malId}); openAnimeModal(${malId});" 
+                            class="w-full mt-4 py-3 ${isInWatchlist ? 'bg-pink-600' : 'bg-gradient-to-r from-pink-600 to-purple-600'} rounded-xl font-semibold hover:opacity-90 transition">
+                            ${isInWatchlist ? '💔 Remove from Watchlist' : '❤️ Add to Watchlist'}
+                        </button>
+                        <button onclick="closeAnimeModal(); selectAnimeForEpisodes(${malId});" 
+                            class="w-full mt-2 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-semibold hover:opacity-90 transition">
+                            📺 View Episodes
+                        </button>
+                        <button onclick="viewAnimeCharacters(${malId}, '${anime.title.replace(/'/g, "\\'")}');" 
+                            class="w-full mt-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold hover:opacity-90 transition">
+                            👥 View Characters
+                        </button>
+                    </div>
+                    <div class="md:w-2/3">
+                        <h2 class="text-3xl font-bold mb-2">${anime.title}</h2>
+                        ${anime.title_english ? `<p class="text-gray-400 mb-4">${anime.title_english}</p>` : ''}
+                        
+                        <div class="flex flex-wrap gap-3 mb-4">
+                            <span class="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm">⭐ ${anime.score || 'N/A'}</span>
+                            <span class="px-3 py-1 bg-pink-500/20 text-pink-300 rounded-full text-sm">📺 ${anime.episodes || '?'} eps</span>
+                            <span class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">${anime.status || 'Unknown'}</span>
+                            <span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">${anime.type || 'TV'}</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                            <div><span class="text-gray-400">Genres:</span> ${genres}</div>
+                            <div><span class="text-gray-400">Studios:</span> ${studios}</div>
+                            <div><span class="text-gray-400">Aired:</span> ${anime.aired?.string || 'Unknown'}</div>
+                            <div><span class="text-gray-400">Rating:</span> ${anime.rating || 'Unknown'}</div>
+                        </div>
+
+                        <h3 class="font-semibold text-lg mb-2">Synopsis</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed">${anime.synopsis || 'No synopsis available.'}</p>
+
+                        ${anime.trailer?.embed_url ? `
+                            <h3 class="font-semibold text-lg mt-4 mb-2">Trailer</h3>
+                            <div class="aspect-video rounded-xl overflow-hidden">
+                                <iframe src="${anime.trailer.embed_url}" class="w-full h-full" allowfullscreen></iframe>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAnimeModal() {
+            document.getElementById('animeModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // ==================== CHARACTERS SECTION ====================
+        
+        async function loadTopCharacters() {
+            setActiveCharFilter('top');
+            currentCharCategory = 'top';
+            currentCharPage = 1;
+            charSearchQuery = '';
+            apiCharacters = [];
+            await fetchCharactersFromAPI();
+        }
+
+        async function loadCharactersByCategory(category) {
+            setActiveCharFilter(category);
+            currentCharCategory = category;
+            currentCharPage = 1;
+            charSearchQuery = '';
+            apiCharacters = [];
+            await fetchCharactersFromAPI();
+        }
+
+        async function searchCharacters() {
+            const query = document.getElementById('charSearch').value.trim();
+            if (!query) {
+                showToast('Please enter a character name');
+                return;
+            }
+            
+            setActiveCharFilter('search');
+            charSearchQuery = query;
+            currentCharCategory = 'search';
+            currentCharPage = 1;
+            apiCharacters = [];
+            await fetchCharactersFromAPI();
+        }
+
+        function setActiveCharFilter(category) {
+            document.querySelectorAll('.char-filter').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('bg-white/10');
+            });
+            
+            if (category !== 'search') {
+                const activeBtn = document.querySelector(`.char-filter[onclick*="${category}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                    activeBtn.classList.remove('bg-white/10');
+                }
+            }
+        }
+
+        async function fetchCharactersFromAPI() {
+            const grid = document.getElementById('characterGrid');
+            const loading = document.getElementById('charLoading');
+            const loadMore = document.getElementById('charLoadMore');
+            const resultsInfo = document.getElementById('charResultsInfo');
+            
+            if (isLoadingChars) return;
+            isLoadingChars = true;
+            
+            if (currentCharPage === 1) {
+                grid.innerHTML = '';
+                loading.classList.remove('hidden');
+                loadMore.classList.add('hidden');
+            }
+
+            try {
+                let url = '';
+                let fetchFullDetails = false;
+                
+                if (currentCharCategory === 'search' && charSearchQuery) {
+                    url = `${JIKAN_BASE}/characters?q=${encodeURIComponent(charSearchQuery)}&page=${currentCharPage}&limit=20&order_by=favorites&sort=desc`;
+                    resultsInfo.textContent = `Searching for "${charSearchQuery}"...`;
+                    fetchFullDetails = true; // Search results need full details for anime info
+                } else if (currentCharCategory === 'anime') {
+                    // Get characters from top anime
+                    url = `${JIKAN_BASE}/top/characters?page=${currentCharPage}&limit=20`;
+                    resultsInfo.textContent = 'Loading popular anime characters...';
+                } else if (currentCharCategory === 'favorites') {
+                    url = `${JIKAN_BASE}/top/characters?page=${currentCharPage}&limit=20`;
+                    resultsInfo.textContent = 'Loading most favorited characters...';
+                } else {
+                    // Default: top characters
+                    url = `${JIKAN_BASE}/top/characters?page=${currentCharPage}&limit=20`;
+                    resultsInfo.textContent = 'Loading top characters...';
+                }
+
+                const data = await fetchWithRetry(url);
+                let newCharacters = data.data || [];
+                totalCharPages = data.pagination?.last_visible_page || 1;
+                
+                // For search results, fetch full details to get anime info
+                if (fetchFullDetails && newCharacters.length > 0) {
+                    resultsInfo.textContent = `Found ${newCharacters.length} characters, loading anime info...`;
+                    
+                    // Fetch full details for first 6 characters immediately
+                    for (let i = 0; i < Math.min(newCharacters.length, 6); i++) {
+                        try {
+                            await delay(350);
+                            const fullData = await fetchWithRetry(`${JIKAN_BASE}/characters/${newCharacters[i].mal_id}/full`);
+                            if (fullData.data?.anime) {
+                                newCharacters[i].anime = fullData.data.anime;
+                                characterAnimeCache[newCharacters[i].mal_id] = fullData.data.anime;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // Add to existing characters
+                apiCharacters.push(...newCharacters);
+                
+                // Render all characters
+                renderAPICharacters();
+                
+                // Update results info
+                const totalCount = data.pagination?.items?.total || apiCharacters.length;
+                if (currentCharCategory === 'search') {
+                    resultsInfo.textContent = `Found ${totalCount} characters for "${charSearchQuery}"`;
+                } else {
+                    resultsInfo.textContent = `Showing ${apiCharacters.length} of ${totalCount}+ characters`;
+                }
+
+                // Show/hide load more
+                if (currentCharPage < totalCharPages) {
+                    loadMore.classList.remove('hidden');
+                    document.getElementById('charPageInfo').textContent = `Page ${currentCharPage} of ${totalCharPages}`;
+                } else {
+                    loadMore.classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error fetching characters:', error);
+                resultsInfo.textContent = 'Error loading characters. Please try again.';
+                showToast('Failed to load characters');
+            }
+
+            loading.classList.add('hidden');
+            isLoadingChars = false;
+        }
+
+        async function loadMoreCharacters() {
+            currentCharPage++;
+            await fetchCharactersFromAPI();
+        }
+
+        function renderAPICharacters() {
+            const grid = document.getElementById('characterGrid');
+            grid.innerHTML = apiCharacters.map(char => createAPICharacterCard(char)).join('');
+            
+            // Fetch anime info for characters that don't have it
+            fetchAnimeInfoForCharacters();
+        }
+        
+        async function fetchAnimeInfoForCharacters() {
+            // Get characters that need anime info fetched
+            const charsNeedingInfo = apiCharacters.filter(char => 
+                !char.anime?.length && !characterAnimeCache[char.mal_id]
+            );
+            
+            // Fetch in batches to avoid rate limiting
+            for (let i = 0; i < Math.min(charsNeedingInfo.length, 10); i++) {
+                const char = charsNeedingInfo[i];
+                try {
+                    await delay(400); // Rate limit delay
+                    const data = await fetchWithRetry(`${JIKAN_BASE}/characters/${char.mal_id}/full`);
+                    if (data.data?.anime?.length > 0) {
+                        characterAnimeCache[char.mal_id] = data.data.anime;
+                        // Update the card in the DOM
+                        updateCharacterCardAnime(char.mal_id, data.data.anime);
+                    }
+                } catch (e) {
+                    console.log(`Failed to fetch anime for character ${char.mal_id}`);
+                }
+            }
+        }
+        
+        function updateCharacterCardAnime(malId, animeList) {
+            const card = document.querySelector(`[data-char-id="${malId}"]`);
+            if (card && animeList?.length > 0) {
+                const animeNameEl = card.querySelector('.anime-name');
+                if (animeNameEl) {
+                    animeNameEl.textContent = animeList[0].anime?.title || 'Unknown';
+                    animeNameEl.classList.remove('animate-pulse');
+                }
+            }
+        }
+
+        function createAPICharacterCard(char) {
+            const imageUrl = char.images?.jpg?.image_url || '';
+            const favorites = char.favorites || 0;
+            
+            // Check cache first, then check if char has anime info
+            const cachedAnime = characterAnimeCache[char.mal_id];
+            const animeList = cachedAnime || char.anime || [];
+            const mainAnime = animeList[0]?.anime?.title || null;
+            const isLoading = !mainAnime;
+            
+            const imageContent = imageUrl 
+                ? `<img src="${imageUrl}" alt="${char.name}" class="w-full h-72 object-cover object-top rounded-t-xl" loading="lazy">`
+                : `<div class="w-full h-72 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-6xl rounded-t-xl">👤</div>`;
+
+            return `
+                <div class="glass rounded-xl overflow-hidden card-hover cursor-pointer" onclick="openAPICharacterModal(${char.mal_id})" data-char-id="${char.mal_id}">
+                    <div class="relative">
+                        ${imageContent}
+                        <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium bg-pink-500/90">
+                            ❤️ ${favorites >= 1000 ? Math.floor(favorites/1000) + 'K' : favorites}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1 line-clamp-1">${char.name}</h3>
+                        <p class="anime-name text-xs text-cyan-400 line-clamp-1 ${isLoading ? 'animate-pulse' : ''}">${mainAnime || '📺 Loading anime...'}</p>
+                        ${char.nicknames?.length > 0 ? `
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                ${char.nicknames.slice(0, 2).map(n => `<span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300">${n}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function openAPICharacterModal(malId) {
+            const modal = document.getElementById('characterModal');
+            const content = document.getElementById('modalContent');
+
+            // Show loading state
+            content.innerHTML = `
+                <div class="p-12 text-center">
+                    <div class="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p>Loading character details...</p>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            try {
+                const data = await fetchWithRetry(`${JIKAN_BASE}/characters/${malId}/full`);
+                const char = data.data;
+                
+                if (!char) {
+                    content.innerHTML = `<div class="p-12 text-center text-red-400">Character not found</div>`;
+                    return;
+                }
+                
+                // Cache the anime info for this character
+                if (char.anime?.length > 0) {
+                    characterAnimeCache[malId] = char.anime;
+                    // Also update the card in the grid if it exists
+                    updateCharacterCardAnime(malId, char.anime);
+                }
+
+                const imageUrl = char.images?.jpg?.image_url || '';
+                const animeAppearances = char.anime || [];
+                const voiceActors = char.voices || [];
+                const about = char.about || 'No biography available.';
+                const nicknames = char.nicknames || [];
+
+                const imageContent = imageUrl 
+                    ? `<img src="${imageUrl}" alt="${char.name}" class="w-full h-96 object-cover object-top">`
+                    : `<div class="w-full h-96 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-8xl">👤</div>`;
+
+                content.innerHTML = `
+                    <div class="relative">
+                        ${imageContent}
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-6 -mt-16 relative">
+                        <div class="flex items-start justify-between mb-2">
+                            <h2 class="text-3xl font-bold">${char.name}</h2>
+                            <span class="px-3 py-1 bg-pink-500/80 rounded-full text-sm">❤️ ${char.favorites?.toLocaleString() || 0}</span>
+                        </div>
+                        
+                        ${char.name_kanji ? `<p class="text-gray-400 mb-2">${char.name_kanji}</p>` : ''}
+                        
+                        ${nicknames.length > 0 ? `
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${nicknames.slice(0, 5).map(n => `<span class="px-2 py-1 bg-purple-500/30 rounded-full text-sm text-purple-300">${n}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase">📺 Anime Appearances</h4>
+                        <div class="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+                            ${animeAppearances.slice(0, 10).map(a => `
+                                <div onclick="event.stopPropagation(); closeCharacterModal(); searchAnimeByName('${a.anime?.title?.replace(/'/g, "\\'")}')" 
+                                    class="flex-shrink-0 cursor-pointer glass rounded-lg p-2 hover:bg-white/10 transition w-28">
+                                    <img src="${a.anime?.images?.jpg?.small_image_url || ''}" alt="" class="w-full h-16 object-cover rounded mb-1">
+                                    <p class="text-xs line-clamp-2">${a.anime?.title || 'Unknown'}</p>
+                                    <span class="text-xs text-gray-400">${a.role || ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${voiceActors.length > 0 ? `
+                            <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase">🎙️ Voice Actors</h4>
+                            <div class="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+                                ${voiceActors.slice(0, 6).map(va => `
+                                    <div class="flex-shrink-0 glass rounded-lg p-2 text-center w-24">
+                                        <img src="${va.person?.images?.jpg?.image_url || ''}" alt="" class="w-12 h-12 rounded-full mx-auto mb-1 object-cover">
+                                        <p class="text-xs line-clamp-1">${va.person?.name || 'Unknown'}</p>
+                                        <span class="text-xs text-gray-400">${va.language || ''}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase">📖 About</h4>
+                        <div class="bg-white/5 rounded-xl p-4 mb-4 max-h-64 overflow-y-auto">
+                            <p class="text-gray-300 text-sm leading-relaxed whitespace-pre-line">${about.substring(0, 1500)}${about.length > 1500 ? '...' : ''}</p>
+                        </div>
+                        
+                        ${animeAppearances.length > 0 ? `
+                            <button onclick="closeCharacterModal(); searchAnimeByName('${animeAppearances[0].anime?.title?.replace(/'/g, "\\'")}')" 
+                                class="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-semibold hover:opacity-90 transition">
+                                📺 View ${animeAppearances[0].anime?.title || 'Anime'} Episodes
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error fetching character details:', error);
+                content.innerHTML = `
+                    <div class="p-12 text-center">
+                        <span class="text-6xl block mb-4">😵</span>
+                        <p class="text-red-400">Failed to load character details</p>
+                        <button onclick="closeCharacterModal()" class="mt-4 px-4 py-2 bg-white/10 rounded-xl">Close</button>
+                    </div>
+                `;
+            }
+        }
+
+        async function searchAnimeByName(animeName) {
+            if (!animeName) return;
+            
+            showSection('episodes');
+            document.getElementById('episodeAnimeSearch').value = animeName;
+            await searchAnimeForEpisodes();
+        }
+
+        // Search anime to view its characters
+        async function searchAnimeForCharacters() {
+            const query = document.getElementById('animeCharSearch').value.trim();
+            if (!query) {
+                showToast('Please enter an anime name');
+                return;
+            }
+            
+            const resultsContainer = document.getElementById('animeCharResults');
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.innerHTML = `
+                <div class="col-span-full text-center py-4">
+                    <div class="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </div>
+            `;
+            
+            try {
+                const data = await fetchWithRetry(`${JIKAN_BASE}/anime?q=${encodeURIComponent(query)}&limit=12`);
+                const animeList = data.data || [];
+                
+                if (animeList.length === 0) {
+                    resultsContainer.innerHTML = `<p class="col-span-full text-center text-gray-400 py-4">No anime found</p>`;
+                    return;
+                }
+                
+                resultsContainer.innerHTML = animeList.map(anime => `
+                    <div onclick="viewAnimeCharacters(${anime.mal_id}, '${anime.title.replace(/'/g, "\\'")}')" 
+                        class="relative rounded-lg overflow-hidden cursor-pointer card-hover h-24 group">
+                        <img src="${anime.images?.jpg?.image_url || ''}" alt="${anime.title}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                        <div class="absolute inset-0 bg-purple-500/0 group-hover:bg-purple-500/30 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="text-xl">👥</span>
+                        </div>
+                        <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h4 class="font-medium text-xs line-clamp-2">${anime.title}</h4>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error searching anime:', error);
+                resultsContainer.innerHTML = `<p class="col-span-full text-center text-red-400 py-4">Search failed. Try again.</p>`;
+            }
+        }
+
+        // View all characters from a specific anime
+        async function viewAnimeCharacters(malId, animeTitle) {
+            closeAnimeModal();
+            showSection('characters');
+            
+            // Show loading state
+            const grid = document.getElementById('characterGrid');
+            const resultsInfo = document.getElementById('charResultsInfo');
+            const loadMore = document.getElementById('charLoadMore');
+            
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <div class="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p>Loading characters from ${animeTitle}...</p>
+                </div>
+            `;
+            resultsInfo.textContent = `Loading characters from ${animeTitle}...`;
+            loadMore.classList.add('hidden');
+            
+            try {
+                // Fetch characters for this specific anime
+                const data = await fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/characters`);
+                const characters = data.data || [];
+                
+                if (characters.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full text-center py-12 text-gray-400">
+                            <span class="text-6xl block mb-4">😕</span>
+                            <p class="text-xl">No characters found for ${animeTitle}</p>
+                            <p class="text-sm">Try searching for characters manually</p>
+                        </div>
+                    `;
+                    resultsInfo.textContent = 'No characters found';
+                    return;
+                }
+                
+                resultsInfo.textContent = `Found ${characters.length} characters in ${animeTitle}`;
+                
+                // Render character cards
+                grid.innerHTML = characters.map(charData => {
+                    const char = charData.character;
+                    const role = charData.role || 'Unknown';
+                    const voiceActors = charData.voice_actors || [];
+                    const japaneseVA = voiceActors.find(va => va.language === 'Japanese');
+                    const imageUrl = char.images?.jpg?.image_url || '';
+                    
+                    const roleBg = {
+                        'Main': 'bg-green-500/90',
+                        'Supporting': 'bg-blue-500/90',
+                        'Background': 'bg-gray-500/90'
+                    };
+                    
+                    return `
+                        <div class="glass rounded-xl overflow-hidden card-hover cursor-pointer" onclick="openAPICharacterModal(${char.mal_id})" data-char-id="${char.mal_id}">
+                            <div class="relative">
+                                ${imageUrl 
+                                    ? `<img src="${imageUrl}" alt="${char.name}" class="w-full h-72 object-cover object-top rounded-t-xl" loading="lazy">`
+                                    : `<div class="w-full h-72 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-6xl rounded-t-xl">👤</div>`
+                                }
+                                <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${roleBg[role] || 'bg-gray-500/90'}">${role}</span>
+                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium bg-pink-500/90">
+                                    ❤️ ${char.favorites >= 1000 ? Math.floor(char.favorites/1000) + 'K' : char.favorites || 0}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-lg mb-1 line-clamp-1">${char.name}</h3>
+                                <p class="text-xs text-cyan-400 line-clamp-1">📺 ${animeTitle}</p>
+                                ${japaneseVA ? `
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <img src="${japaneseVA.person?.images?.jpg?.image_url || ''}" alt="" class="w-6 h-6 rounded-full object-cover">
+                                        <span class="text-xs text-gray-400 line-clamp-1">🎙️ ${japaneseVA.person?.name || 'Unknown'}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Cache anime info for these characters
+                characters.forEach(charData => {
+                    const char = charData.character;
+                    if (!characterAnimeCache[char.mal_id]) {
+                        characterAnimeCache[char.mal_id] = [{
+                            role: charData.role,
+                            anime: {
+                                mal_id: malId,
+                                title: animeTitle,
+                                images: { jpg: { small_image_url: '' } }
+                            }
+                        }];
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error fetching anime characters:', error);
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-red-400">
+                        <span class="text-6xl block mb-4">😵</span>
+                        <p class="text-xl">Failed to load characters</p>
+                        <p class="text-sm">Please try again later</p>
+                        <button onclick="viewAnimeCharacters(${malId}, '${animeTitle.replace(/'/g, "\\'")}')" 
+                            class="mt-4 px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+                resultsInfo.textContent = 'Error loading characters';
+            }
+        }
+
+        function closeCharacterModal() {
+            document.getElementById('characterModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function closePowerModal() {
+            document.getElementById('powerModal').classList.add('hidden');
+        }
+
+        // ==================== EPISODES SECTION ====================
+        async function searchAnimeForEpisodes() {
+            const search = document.getElementById('episodeAnimeSearch').value.trim();
+            if (!search) {
+                showToast('Please enter an anime name');
+                return;
+            }
+
+            const container = document.getElementById('episodeAnimeTabs');
+            container.innerHTML = '<div class="col-span-full text-center py-8"><div class="w-8 h-8 border-3 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div><p class="mt-2 text-sm text-gray-400">Searching...</p></div>';
+
+            try {
+                const data = await fetchWithRetry(`${JIKAN_BASE}/anime?q=${encodeURIComponent(search)}&limit=24`);
+                episodeSearchResults = data.data || [];
+                renderEpisodeAnimeTabs();
+            } catch (error) {
+                console.error('Episode search error:', error);
+                container.innerHTML = '<p class="col-span-full text-center text-red-400">Search failed. Please try again.</p>';
+            }
+        }
+
+        function renderEpisodeAnimeTabs() {
+            const container = document.getElementById('episodeAnimeTabs');
+            
+            // Combine search results with cached anime
+            let animeToShow = episodeSearchResults.length > 0 ? episodeSearchResults : allAnime.filter(a => a.episodes && a.episodes > 0);
+
+            if (animeToShow.length === 0) {
+                container.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Search for any anime to view its episodes</p>';
+                return;
+            }
+
+            container.innerHTML = animeToShow.slice(0, 60).map(anime => `
+                <div onclick="selectAnimeForEpisodes(${anime.mal_id})" 
+                    class="relative rounded-lg overflow-hidden cursor-pointer card-hover h-28 ${selectedAnime?.mal_id === anime.mal_id ? 'ring-2 ring-pink-500 glow' : ''}">
+                    <img src="${anime.images?.jpg?.image_url || ''}" alt="${anime.title}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h4 class="font-medium text-xs line-clamp-2">${anime.title}</h4>
+                        <p class="text-xs text-gray-400">${anime.episodes || '?'} eps</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectAnimeForEpisodes(malId) {
+            // Find anime in cache or search results
+            selectedAnime = allAnime.find(a => a.mal_id === malId) || 
+                            episodeSearchResults.find(a => a.mal_id === malId);
+            
+            // Fetch if not found
+            if (!selectedAnime) {
+                try {
+                    const data = await fetchWithRetry(`${JIKAN_BASE}/anime/${malId}`);
+                    selectedAnime = data.data;
+                    allAnime.push(selectedAnime);
+                } catch (e) {
+                    showToast('Failed to load anime');
+                    return;
+                }
+            }
+
+            currentEpisodePage = 1;
+            revealedSpoilers.clear();
+
+            document.getElementById('episodeContent').classList.remove('hidden');
+            document.getElementById('noAnimeSelected').classList.add('hidden');
+
+            await renderAnimeHeader();
+            await renderEpisodeList();
+            renderAnimeCharacters();
+            renderEpisodeAnimeTabs();
+        }
+
+        function selectAnimeByName(animeName) {
+            closeCharacterModal();
+            showSection('episodes');
+            document.getElementById('episodeAnimeSearch').value = animeName;
+            searchAnimeForEpisodes();
+        }
+
+        async function renderAnimeHeader() {
+            const a = selectedAnime;
+            document.getElementById('selectedAnimeTitle').textContent = a.title;
+            document.getElementById('animeSynopsis').textContent = a.synopsis || 'No synopsis available.';
+            document.getElementById('animeCover').src = a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || '';
+            document.getElementById('episodeCount').innerHTML = `<span class="text-pink-500">📺</span> ${a.episodes || '?'} Episodes`;
+            document.getElementById('animeScore').innerHTML = `<span class="text-yellow-500">⭐</span> ${a.score || 'N/A'} Rating`;
+            document.getElementById('animeStatus').innerHTML = `<span class="text-green-500">📡</span> ${a.status || 'Unknown'}`;
+            updateEpisodeProgress();
+        }
+
+        async function renderEpisodeList() {
+            const cacheKey = `${selectedAnime.mal_id}_${currentEpisodePage}`;
+            
+            let episodeData;
+            if (cachedEpisodes[cacheKey]) {
+                episodeData = cachedEpisodes[cacheKey];
+            } else {
+                try {
+                    episodeData = await fetchWithRetry(`${JIKAN_BASE}/anime/${selectedAnime.mal_id}/episodes?page=${currentEpisodePage}`);
+                    cachedEpisodes[cacheKey] = episodeData;
+                } catch (e) {
+                    episodeData = { data: [], pagination: { last_visible_page: 1 } };
+                }
+            }
+
+            const eps = episodeData.data || [];
+            totalEpisodePages = episodeData.pagination?.last_visible_page || 1;
+
+            const html = eps.map(ep => {
+                const isWatched = watchedEpisodes[selectedAnime.mal_id]?.includes(ep.mal_id);
+                const isRevealed = revealedSpoilers.has(ep.mal_id) || showAllSpoilers;
+                const synopsis = ep.synopsis || 'Episode synopsis not available. Watch to discover what happens!';
+
+                return `
+                    <div class="episode-card glass rounded-xl p-4 border border-white/10 ${isWatched ? 'watched' : ''}" data-ep="${ep.mal_id}">
+                        <div class="flex gap-4">
+                            <button onclick="toggleWatchedEp(${ep.mal_id})"
+                                class="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-sm ${isWatched ? 'bg-green-500 text-white' : 'bg-white/10 hover:bg-white/20'} transition">
+                                ${isWatched ? '✓' : ep.mal_id}
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2 mb-1">
+                                    <h4 class="font-semibold">${ep.title || `Episode ${ep.mal_id}`}</h4>
+                                    <div class="flex gap-1">
+                                        ${ep.filler ? '<span class="text-xs bg-yellow-500/80 px-2 py-0.5 rounded">Filler</span>' : ''}
+                                        ${ep.recap ? '<span class="text-xs bg-purple-500/80 px-2 py-0.5 rounded">Recap</span>' : ''}
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <p class="text-gray-400 text-sm ${!isRevealed ? 'spoiler-blur' : 'spoiler-revealed'}" 
+                                        onclick="revealSpoiler(${ep.mal_id}, this)">
+                                        ${synopsis}
+                                    </p>
+                                    ${!isRevealed ? '<span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-pink-400 bg-black/80 px-2 py-1 rounded-full pointer-events-none">🔒 Click to reveal</span>' : ''}
+                                </div>
+                                ${ep.aired ? `<p class="text-xs text-gray-500 mt-1">📅 ${new Date(ep.aired).toLocaleDateString()}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (currentEpisodePage === 1) {
+                document.getElementById('episodeList').innerHTML = html;
+            } else {
+                document.getElementById('episodeList').innerHTML += html;
+            }
+
+            const loadMore = document.getElementById('loadMoreContainer');
+            if (currentEpisodePage < totalEpisodePages) {
+                loadMore.classList.remove('hidden');
+            } else {
+                loadMore.classList.add('hidden');
+            }
+        }
+
+        function revealSpoiler(epId, element) {
+            revealedSpoilers.add(epId);
+            element.classList.remove('spoiler-blur');
+            element.classList.add('spoiler-revealed');
+            const overlay = element.parentElement.querySelector('.pointer-events-none');
+            if (overlay) overlay.remove();
+        }
+
+        async function loadMoreEpisodes() {
+            currentEpisodePage++;
+            await renderEpisodeList();
+        }
+
+        function toggleWatchedEp(epId) {
+            const malId = selectedAnime.mal_id;
+            if (!watchedEpisodes[malId]) watchedEpisodes[malId] = [];
+
+            const idx = watchedEpisodes[malId].indexOf(epId);
+            if (idx > -1) {
+                watchedEpisodes[malId].splice(idx, 1);
+            } else {
+                watchedEpisodes[malId].push(epId);
+            }
+
+            localStorage.setItem('watchedEpisodes', JSON.stringify(watchedEpisodes));
+
+            // Update UI
+            const card = document.querySelector(`[data-ep="${epId}"]`);
+            if (card) {
+                card.classList.toggle('watched');
+                const btn = card.querySelector('button');
+                const isNowWatched = watchedEpisodes[malId].includes(epId);
+                btn.className = `w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-sm ${isNowWatched ? 'bg-green-500 text-white' : 'bg-white/10 hover:bg-white/20'} transition`;
+                btn.textContent = isNowWatched ? '✓' : epId;
+            }
+
+            updateEpisodeProgress();
+        }
+
+        function updateEpisodeProgress() {
+            const watched = watchedEpisodes[selectedAnime.mal_id]?.length || 0;
+            const total = selectedAnime.episodes || 0;
+            const percent = total > 0 ? (watched / total) * 100 : 0;
+
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressText2').textContent = `${watched}/${total}`;
+        }
+
+        function renderAnimeCharacters() {
+            const container = document.getElementById('animeCharactersList');
+            const animeChars = characters.filter(c => 
+                selectedAnime.title?.toLowerCase().includes(c.anime.toLowerCase()) ||
+                c.anime.toLowerCase().includes(selectedAnime.title?.toLowerCase().split(' ')[0] || '')
+            );
+
+            if (animeChars.length === 0) {
+                document.getElementById('animeCharactersSection').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('animeCharactersSection').classList.remove('hidden');
+            container.innerHTML = animeChars.map(char => `
+                <div onclick="openCharacterModal(${char.id})" 
+                    class="flex-shrink-0 glass rounded-xl cursor-pointer card-hover w-32 overflow-hidden">
+                    <div class="w-full h-24 bg-gradient-to-br ${char.color} flex items-center justify-center text-3xl">👤</div>
+                    <div class="p-2">
+                        <h5 class="font-semibold text-xs truncate">${char.name}</h5>
+                        <span class="text-xs text-gray-400">${char.role}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        showSection('home');
+    </script>
+</body>
+</html>

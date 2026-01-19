@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎌 AniVerse - Complete Anime Database & Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Outfit', sans-serif; }
+        
+        .dark { --bg-primary: #0f0f1a; --bg-secondary: #1a1a2e; --bg-card: #16213e; }
+        .light { --bg-primary: #f8fafc; --bg-secondary: #e2e8f0; --bg-card: #ffffff; }
+        
+        .anime-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anime-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .gradient-border {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            padding: 2px;
+        }
+        
+        .countdown-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #1a1a2e 25%, #2d2d44 50%, #1a1a2e 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass {
+            background: rgba(15, 15, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #764ba2;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 100%;
+            animation: gradient-move 2s linear infinite;
+        }
+        
+        @keyframes gradient-move {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 50%, rgba(240, 147, 251, 0.1) 100%);
+        }
+        
+        .author-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .genre-btn.active {
+            background: rgba(139, 92, 246, 0.5);
+            border-color: rgba(139, 92, 246, 0.8);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="dark bg-[#0f0f1a] min-h-screen text-white">
+    <!-- Author Credit Top Banner -->
+    <div class="bg-gradient-to-r from-purple-900/50 via-pink-900/50 to-purple-900/50 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-2">
+            <span class="text-sm text-gray-300">✨ Crafted with passion by</span>
+            <span class="author-badge px-3 py-1 rounded-full text-sm font-semibold text-white">Naman Mittal</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl float-animation">🎌</span>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent glow-text">
+                            AniVerse
+                        </h1>
+                        <p class="text-gray-400 text-sm">Your Ultimate Anime Database & Tracker</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Search -->
+                    <div class="relative flex-1 md:flex-none">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search anime..." 
+                            class="w-full md:w-72 px-4 py-2.5 pl-10 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                        >
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- Dark Mode Toggle -->
+                    <button id="themeToggle" class="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all">
+                        <span id="themeIcon">🌙</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button class="filter-btn active px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="all">
+                    📺 All Anime
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="airing">
+                    📡 Currently Airing
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="upcoming">
+                    ⏳ Upcoming
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="today">
+                    ⚡ Airing Today
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="week">
+                    📅 This Week
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="top">
+                    🏆 Top Rated
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="popular">
+                    🔥 Most Popular
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium" data-filter="watchlist">
+                    ❤️ My Watchlist (<span id="watchlistCount">0</span>)
+                </button>
+            </div>
+            
+            <!-- Genre Filters -->
+            <div class="flex flex-wrap gap-2 mt-3">
+                <span class="text-gray-400 text-sm py-1.5">Genres:</span>
+                <button class="genre-btn active px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="all">All</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Action">Action</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Adventure">Adventure</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Comedy">Comedy</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Drama">Drama</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Fantasy">Fantasy</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Romance">Romance</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Sci-Fi">Sci-Fi</button>
+                <button class="genre-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-500/30 transition-all text-xs font-medium" data-genre="Supernatural">Supernatural</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="hero-gradient border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 text-sm">
+                <div class="flex items-center gap-6">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        <span class="text-gray-400">Live Data from</span>
+                        <span class="font-semibold text-purple-400">Jikan API</span>
+                    </span>
+                    <span class="text-gray-600">|</span>
+                    <span id="animeCount" class="text-gray-300 font-medium">Loading...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="loadingStatus" class="text-purple-400 flex items-center hidden">
+                        <span class="inline-block loading-spinner mr-2"></span>
+                        Fetching anime...
+                    </span>
+                    <span id="lastUpdated" class="text-gray-400">Last updated: --</span>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div id="progressContainer" class="hidden mt-3">
+                <div class="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                    <div id="progressBar" class="progress-bar h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-xs text-gray-400 mt-2 text-center">Loading anime database...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Loading State -->
+        <div id="loadingState" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Skeleton Cards -->
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+            <div class="skeleton rounded-2xl h-96"></div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden text-center py-20">
+            <span class="text-6xl mb-4 block">😵</span>
+            <h2 class="text-2xl font-bold mb-2">Oops! Something went wrong</h2>
+            <p class="text-gray-400 mb-4">Failed to fetch anime data. Please try again.</p>
+            <button onclick="initFetch()" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold hover:opacity-90 transition-all hover:shadow-lg hover:shadow-purple-500/30">
+                🔄 Retry
+            </button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <span class="text-6xl mb-4 block">🔍</span>
+            <h2 class="text-2xl font-bold mb-2">No anime found</h2>
+            <p class="text-gray-400">Try adjusting your filters or search query</p>
+        </div>
+
+        <!-- Anime Grid -->
+        <div id="animeGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Anime cards will be inserted here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 mt-12 bg-gradient-to-b from-transparent to-purple-900/10">
+        <div class="max-w-7xl mx-auto px-4 py-10">
+            <!-- Main Footer Content -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <!-- Brand -->
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start gap-2 mb-3">
+                        <span class="text-3xl">🎌</span>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">AniVerse</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">Your ultimate destination for discovering and tracking anime. Stay updated with the latest releases and build your perfect watchlist.</p>
+                </div>
+                
+                <!-- Credits -->
+                <div class="text-center">
+                    <h3 class="font-semibold text-white mb-3">Created By</h3>
+                    <div class="author-badge inline-block px-6 py-2 rounded-full">
+                        <span class="font-bold text-white">Naman Mittal</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mt-3">Built with ❤️ for anime fans</p>
+                </div>
+                
+                <!-- Data Source -->
+                <div class="text-center md:text-right">
+                    <h3 class="font-semibold text-white mb-3">Data Source</h3>
+                    <p class="text-gray-400 text-sm">Powered by</p>
+                    <a href="https://jikan.moe" target="_blank" class="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Jikan API</a>
+                    <p class="text-gray-500 text-xs mt-1">(MyAnimeList Unofficial API)</p>
+                </div>
+            </div>
+            
+            <!-- Divider -->
+            <div class="border-t border-white/10 pt-6">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p class="text-gray-500 text-sm text-center md:text-left">
+                        © 2024 AniVerse by Naman Mittal. All rights reserved.
+                    </p>
+                    <p class="text-gray-600 text-xs text-center md:text-right">
+                        This website is for educational purposes only. All anime content and images are property of their respective owners.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl shadow-lg shadow-purple-500/30 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span id="toastMessage">Added to watchlist!</span>
+    </div>
+
+    <script>
+        // State
+        let allAnime = [];
+        let filteredAnime = [];
+        let displayedAnime = [];
+        let currentFilter = 'all';
+        let currentGenre = 'all';
+        let watchlist = JSON.parse(localStorage.getItem('animeWatchlist')) || [];
+        let isDarkMode = true;
+        let isLoading = false;
+        let totalFetched = 0;
+        
+        // Pagination state for different endpoints - fetch more pages
+        let paginationState = {
+            airing: { page: 1, hasMore: true, data: [] },
+            upcoming: { page: 1, hasMore: true, data: [] },
+            top: { page: 1, hasMore: true, data: [] },
+            popular: { page: 1, hasMore: true, data: [] }
+        };
+
+        // DOM Elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const emptyState = document.getElementById('emptyState');
+        const animeGrid = document.getElementById('animeGrid');
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const genreBtns = document.querySelectorAll('.genre-btn');
+        const themeToggle = document.getElementById('themeToggle');
+        const watchlistCountEl = document.getElementById('watchlistCount');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWatchlistCount();
+            initFetch();
+            setupEventListeners();
+        });
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Filter buttons
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    applyFilters();
+                });
+            });
+            
+            // Genre buttons
+            genreBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    genreBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentGenre = btn.dataset.genre;
+                    applyFilters();
+                });
+            });
+
+            // Search
+            searchInput.addEventListener('input', debounce(() => {
+                applyFilters();
+            }, 300));
+
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Delay function for rate limiting
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Fetch with retry for rate limiting
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (response.status === 429) {
+                        await delay(1500 * (i + 1));
+                        continue;
+                    }
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await delay(1000);
+                }
+            }
+        }
+
+        // Fetch all pages from an endpoint
+        async function fetchAllPages(endpoint, maxPages = 4) {
+            const results = [];
+            for (let page = 1; page <= maxPages; page++) {
+                try {
+                    const data = await fetchWithRetry(`${endpoint}&page=${page}`);
+                    if (data.data && data.data.length > 0) {
+                        results.push(...data.data);
+                        if (!data.pagination?.has_next_page) break;
+                    } else {
+                        break;
+                    }
+                    await delay(400);
+                } catch (error) {
+                    console.error(`Error fetching page ${page}:`, error);
+                    break;
+                }
+            }
+            return results;
+        }
+
+        // Initialize fetching from multiple endpoints
+        async function initFetch() {
+            showLoading();
+            progressContainer.classList.remove('hidden');
+            loadingStatus.classList.remove('hidden');
+            allAnime = [];
+            totalFetched = 0;
+            
+            try {
+                // Fetch currently airing (all pages up to 100 items)
+                progressText.textContent = '🎬 Fetching currently airing anime...';
+                progressBar.style.width = '5%';
+                
+                const airingData = await fetchAllPages('https://api.jikan.moe/v4/seasons/now?limit=25', 4);
+                paginationState.airing.data = airingData;
+                progressBar.style.width = '25%';
+                
+                // Fetch upcoming
+                progressText.textContent = '⏳ Fetching upcoming anime...';
+                await delay(500);
+                
+                const upcomingData = await fetchAllPages('https://api.jikan.moe/v4/seasons/upcoming?limit=25', 4);
+                paginationState.upcoming.data = upcomingData;
+                progressBar.style.width = '50%';
+                
+                // Fetch top rated
+                progressText.textContent = '🏆 Fetching top rated anime...';
+                await delay(500);
+                
+                const topData = await fetchAllPages('https://api.jikan.moe/v4/top/anime?limit=25', 4);
+                paginationState.top.data = topData;
+                progressBar.style.width = '75%';
+                
+                // Fetch popular
+                progressText.textContent = '🔥 Fetching popular anime...';
+                await delay(500);
+                
+                const popularData = await fetchAllPages('https://api.jikan.moe/v4/top/anime?limit=25&filter=bypopularity', 4);
+                paginationState.popular.data = popularData;
+                progressBar.style.width = '90%';
+                
+                progressText.textContent = '✨ Processing anime database...';
+                
+                // Combine and deduplicate all anime
+                const allData = [
+                    ...paginationState.airing.data,
+                    ...paginationState.upcoming.data,
+                    ...paginationState.top.data,
+                    ...paginationState.popular.data
+                ];
+                
+                // Deduplicate by mal_id
+                const animeMap = new Map();
+                allData.forEach(anime => {
+                    if (!animeMap.has(anime.mal_id)) {
+                        animeMap.set(anime.mal_id, anime);
+                    }
+                });
+                
+                allAnime = Array.from(animeMap.values());
+                
+                // Sort by popularity/score
+                allAnime.sort((a, b) => {
+                    if (a.airing && !b.airing) return -1;
+                    if (!a.airing && b.airing) return 1;
+                    return (b.score || 0) - (a.score || 0);
+                });
+                
+                totalFetched = allAnime.length;
+                
+                progressBar.style.width = '100%';
+                progressText.textContent = `🎉 Loaded ${totalFetched} anime successfully!`;
+                
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    loadingStatus.classList.add('hidden');
+                }, 1500);
+                
+                document.getElementById('animeCount').textContent = `📊 ${allAnime.length} anime loaded`;
+                document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Error fetching anime:', error);
+                progressContainer.classList.add('hidden');
+                loadingStatus.classList.add('hidden');
+                showError();
+            }
+        }
+
+        // Apply Filters
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekEnd = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            let sourceData = allAnime;
+            
+            // Use specific data source based on filter
+            if (currentFilter === 'airing') {
+                sourceData = paginationState.airing.data;
+            } else if (currentFilter === 'upcoming') {
+                sourceData = paginationState.upcoming.data;
+            } else if (currentFilter === 'top') {
+                sourceData = paginationState.top.data;
+            } else if (currentFilter === 'popular') {
+                sourceData = paginationState.popular.data;
+            }
+
+            filteredAnime = sourceData.filter(anime => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    anime.title?.toLowerCase().includes(searchTerm) ||
+                    anime.title_english?.toLowerCase().includes(searchTerm) ||
+                    anime.title_japanese?.includes(searchTerm);
+
+                if (!matchesSearch) return false;
+                
+                // Genre filter
+                if (currentGenre !== 'all') {
+                    const hasGenre = anime.genres?.some(g => g.name === currentGenre) ||
+                                    anime.themes?.some(t => t.name === currentGenre);
+                    if (!hasGenre) return false;
+                }
+
+                const dateInfo = getDateInfo(anime);
+                const releaseDate = dateInfo.releaseDate;
+                const isDateConfirmed = dateInfo.isDateConfirmed;
+                const isCurrentlyAiring = anime.airing === true || anime.status === 'Currently Airing';
+                
+                switch (currentFilter) {
+                    case 'airing':
+                        return isCurrentlyAiring;
+                    
+                    case 'upcoming':
+                        return anime.status === 'Not yet aired';
+                    
+                    case 'today':
+                        if (!isCurrentlyAiring) return false;
+                        const todayDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                        if (anime.broadcast?.day) {
+                            return anime.broadcast.day.includes(todayDay);
+                        }
+                        return true;
+                    
+                    case 'week':
+                        if (isCurrentlyAiring) return true;
+                        if (!releaseDate || !isDateConfirmed) return false;
+                        return releaseDate >= today && releaseDate <= weekEnd;
+                    
+                    case 'top':
+                        return (anime.score || 0) >= 7;
+                    
+                    case 'popular':
+                        return anime.members >= 100000 || anime.popularity <= 1000;
+                    
+                    case 'watchlist':
+                        return watchlist.includes(anime.mal_id);
+                    
+                    default:
+                        return true;
+                }
+            });
+
+            // Sort based on filter
+            if (currentFilter === 'top') {
+                filteredAnime.sort((a, b) => (b.score || 0) - (a.score || 0));
+            } else if (currentFilter === 'popular') {
+                filteredAnime.sort((a, b) => (a.popularity || 99999) - (b.popularity || 99999));
+            } else if (currentFilter === 'upcoming') {
+                filteredAnime.sort((a, b) => {
+                    const dateA = a.aired?.from ? new Date(a.aired.from) : new Date('2099-12-31');
+                    const dateB = b.aired?.from ? new Date(b.aired.from) : new Date('2099-12-31');
+                    return dateA - dateB;
+                });
+            }
+
+            renderAnime();
+        }
+
+        // Render Anime Cards
+        function renderAnime() {
+            if (filteredAnime.length === 0) {
+                showEmpty();
+                return;
+            }
+
+            // Show all anime at once
+            displayedAnime = filteredAnime;
+            
+            animeGrid.innerHTML = displayedAnime.map(anime => createAnimeCard(anime)).join('');
+            showGrid();
+            
+            // Update count
+            document.getElementById('animeCount').textContent = `📊 ${allAnime.length} total | Showing ${displayedAnime.length}`;
+        }
+
+        // Get Date Info
+        function getDateInfo(anime) {
+            const prop = anime.aired?.prop?.from;
+            const hasYear = prop?.year !== null && prop?.year !== undefined;
+            const hasMonth = prop?.month !== null && prop?.month !== undefined;
+            const hasDay = prop?.day !== null && prop?.day !== undefined;
+            
+            const releaseDate = anime.aired?.from ? new Date(anime.aired.from) : null;
+            
+            let dateStatus = 'tba';
+            let formattedDate = 'TBA';
+            let isDateConfirmed = false;
+            
+            if (hasYear && hasMonth && hasDay) {
+                dateStatus = 'confirmed';
+                isDateConfirmed = true;
+                formattedDate = releaseDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } else if (hasYear && hasMonth && !hasDay) {
+                dateStatus = 'partial';
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                formattedDate = `${monthNames[prop.month - 1]} ${prop.year}`;
+            } else if (hasYear && !hasMonth) {
+                dateStatus = 'year_only';
+                formattedDate = `Upcoming ${prop.year}`;
+            } else if (!hasYear && releaseDate) {
+                dateStatus = 'confirmed';
+                isDateConfirmed = true;
+                formattedDate = releaseDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+            
+            return {
+                releaseDate,
+                formattedDate,
+                dateStatus,
+                isDateConfirmed,
+                year: prop?.year
+            };
+        }
+
+        // Create Anime Card
+        function createAnimeCard(anime) {
+            const dateInfo = getDateInfo(anime);
+            const { releaseDate, formattedDate, dateStatus, isDateConfirmed } = dateInfo;
+            
+            const isCurrentlyAiring = anime.airing === true || anime.status === 'Currently Airing';
+            const isNotYetAired = anime.status === 'Not yet aired';
+            
+            const daysUntil = (releaseDate && isDateConfirmed) ? Math.ceil((releaseDate - new Date()) / (1000 * 60 * 60 * 24)) : null;
+            const isInWatchlist = watchlist.includes(anime.mal_id);
+            
+            const studios = anime.studios?.map(s => s.name).join(', ') || 'Unknown Studio';
+            const genres = anime.genres?.slice(0, 3).map(g => g.name) || [];
+            const score = anime.score || 'N/A';
+            const episodes = anime.episodes || '?';
+            const members = anime.members ? (anime.members > 1000000 ? `${(anime.members/1000000).toFixed(1)}M` : `${(anime.members/1000).toFixed(0)}K`) : '?';
+            
+            const broadcastDay = anime.broadcast?.day || '';
+            const broadcastTime = anime.broadcast?.time || '';
+            const broadcastInfo = broadcastDay ? `${broadcastDay}${broadcastTime ? ' ' + broadcastTime : ''}` : '';
+            
+            let statusBadge = '';
+            
+            if (isCurrentlyAiring) {
+                statusBadge = '<span class="absolute top-3 left-3 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full animate-pulse shadow-lg shadow-green-500/30">📡 AIRING</span>';
+            } else if (dateStatus === 'year_only') {
+                statusBadge = `<span class="absolute top-3 left-3 px-3 py-1 bg-blue-500/90 text-white text-xs font-bold rounded-full">📆 ${dateInfo.year} (TBA)</span>`;
+            } else if (dateStatus === 'partial') {
+                statusBadge = `<span class="absolute top-3 left-3 px-3 py-1 bg-indigo-500/90 text-white text-xs font-bold rounded-full">📅 ${formattedDate}</span>`;
+            } else if (dateStatus === 'tba') {
+                statusBadge = '<span class="absolute top-3 left-3 px-3 py-1 bg-gray-500/90 text-white text-xs font-bold rounded-full">🔮 Coming Soon</span>';
+            } else if (daysUntil !== null && isNotYetAired) {
+                if (daysUntil <= 0) {
+                    statusBadge = '<span class="countdown-badge absolute top-3 left-3 px-3 py-1 text-white text-xs font-bold rounded-full">🎬 Premiering Soon</span>';
+                } else if (daysUntil <= 7) {
+                    statusBadge = `<span class="countdown-badge absolute top-3 left-3 px-3 py-1 text-white text-xs font-bold rounded-full">⏰ ${daysUntil} day${daysUntil === 1 ? '' : 's'}</span>`;
+                } else if (daysUntil <= 30) {
+                    statusBadge = `<span class="absolute top-3 left-3 px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">📅 ${daysUntil} days</span>`;
+                } else {
+                    statusBadge = `<span class="absolute top-3 left-3 px-3 py-1 bg-purple-500/90 text-white text-xs font-bold rounded-full">📅 ${formattedDate}</span>`;
+                }
+            } else if (anime.status === 'Finished Airing') {
+                statusBadge = '<span class="absolute top-3 left-3 px-3 py-1 bg-gray-600/90 text-white text-xs font-bold rounded-full">✅ Finished</span>';
+            }
+
+            return `
+                <div class="anime-card gradient-border rounded-2xl overflow-hidden group" data-mal-id="${anime.mal_id}">
+                    <div class="bg-[#16213e] h-full flex flex-col">
+                        <!-- Image -->
+                        <div class="relative aspect-[3/4] overflow-hidden">
+                            <img 
+                                src="${anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}" 
+                                alt="${anime.title}"
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                loading="lazy"
+                            >
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                            ${statusBadge}
+                            
+                            <!-- Watchlist Button -->
+                            <button 
+                                onclick="toggleWatchlist(${anime.mal_id})" 
+                                class="absolute top-3 right-3 w-10 h-10 rounded-full ${isInWatchlist ? 'bg-pink-500 shadow-lg shadow-pink-500/30' : 'bg-black/50 hover:bg-pink-500'} flex items-center justify-center transition-all transform hover:scale-110"
+                            >
+                                <span class="text-xl">${isInWatchlist ? '❤️' : '🤍'}</span>
+                            </button>
+                            
+                            <!-- Score Badge -->
+                            ${score !== 'N/A' ? `
+                                <div class="absolute bottom-3 right-3 px-2.5 py-1 bg-yellow-500 text-black text-sm font-bold rounded-lg flex items-center gap-1 shadow-lg">
+                                    ⭐ ${score}
+                                </div>
+                            ` : ''}
+                            
+                            <!-- Members Badge -->
+                            <div class="absolute bottom-3 left-3 px-2.5 py-1 bg-black/70 text-white text-xs rounded-lg backdrop-blur-sm">
+                                👥 ${members} fans
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-4 flex-1 flex flex-col">
+                            <h3 class="font-bold text-lg mb-1 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                                ${anime.title}
+                            </h3>
+                            ${anime.title_english && anime.title_english !== anime.title ? `
+                                <p class="text-gray-400 text-sm mb-2 line-clamp-1">${anime.title_english}</p>
+                            ` : ''}
+                            
+                            <div class="text-sm text-gray-400 mb-3 space-y-1.5">
+                                <p class="flex items-center gap-2">
+                                    <span>🎬</span>
+                                    <span class="line-clamp-1">${studios}</span>
+                                </p>
+                                ${isCurrentlyAiring && broadcastInfo ? `
+                                    <p class="flex items-center gap-2">
+                                        <span>📺</span>
+                                        <span class="text-green-400 font-medium">${broadcastInfo}</span>
+                                    </p>
+                                ` : ''}
+                                <p class="flex items-center gap-2">
+                                    <span>📅</span>
+                                    <span class="${dateStatus === 'year_only' || dateStatus === 'partial' ? 'text-amber-400' : ''}">${formattedDate}${dateStatus === 'year_only' ? ' <span class="text-xs text-amber-300">(Date TBA)</span>' : ''}</span>
+                                </p>
+                                <p class="flex items-center gap-2">
+                                    <span>🎞️</span>
+                                    <span>${episodes} Episodes • ${anime.type || 'TV'}</span>
+                                </p>
+                                <p class="flex items-center gap-2">
+                                    <span>${isCurrentlyAiring ? '📡' : '⏳'}</span>
+                                    <span class="${isCurrentlyAiring ? 'text-green-400 font-medium' : 'text-gray-400'}">${anime.status || 'Unknown'}</span>
+                                </p>
+                            </div>
+                            
+                            <!-- Genres -->
+                            ${genres.length > 0 ? `
+                                <div class="flex flex-wrap gap-1.5 mt-auto">
+                                    ${genres.map(g => `
+                                        <span class="px-2.5 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-purple-300">${g}</span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Footer -->
+                        <a 
+                            href="https://myanimelist.net/anime/${anime.mal_id}" 
+                            target="_blank"
+                            class="block p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-center text-sm font-medium hover:from-purple-500/30 hover:to-pink-500/30 transition-all border-t border-white/5"
+                        >
+                            View on MyAnimeList →
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle Watchlist
+        function toggleWatchlist(malId) {
+            const index = watchlist.indexOf(malId);
+            if (index > -1) {
+                watchlist.splice(index, 1);
+                showToast('Removed from watchlist');
+            } else {
+                watchlist.push(malId);
+                showToast('Added to watchlist! ❤️');
+            }
+            localStorage.setItem('animeWatchlist', JSON.stringify(watchlist));
+            updateWatchlistCount();
+            
+            if (currentFilter === 'watchlist') {
+                applyFilters();
+            } else {
+                const card = document.querySelector(`[data-mal-id="${malId}"]`);
+                if (card) {
+                    const btn = card.querySelector('button');
+                    const isNowInWatchlist = watchlist.includes(malId);
+                    btn.className = `absolute top-3 right-3 w-10 h-10 rounded-full ${isNowInWatchlist ? 'bg-pink-500 shadow-lg shadow-pink-500/30' : 'bg-black/50 hover:bg-pink-500'} flex items-center justify-center transition-all transform hover:scale-110`;
+                    btn.innerHTML = `<span class="text-xl">${isNowInWatchlist ? '❤️' : '🤍'}</span>`;
+                }
+            }
+        }
+
+        // Update Watchlist Count
+        function updateWatchlistCount() {
+            watchlistCountEl.textContent = watchlist.length;
+        }
+
+        // Toggle Theme
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            
+            if (isDarkMode) {
+                body.classList.remove('light', 'bg-gray-100', 'text-gray-900');
+                body.classList.add('dark', 'bg-[#0f0f1a]', 'text-white');
+                icon.textContent = '🌙';
+            } else {
+                body.classList.remove('dark', 'bg-[#0f0f1a]', 'text-white');
+                body.classList.add('light', 'bg-gray-100', 'text-gray-900');
+                icon.textContent = '☀️';
+            }
+        }
+
+        // Show Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2000);
+        }
+
+        // State Management
+        function showLoading() {
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            animeGrid.classList.add('hidden');
+        }
+
+        function showError() {
+            loadingState.classList.add('hidden');
+            errorState.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            animeGrid.classList.add('hidden');
+        }
+
+        function showEmpty() {
+            loadingState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            animeGrid.classList.add('hidden');
+        }
+
+        function showGrid() {
+            loadingState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            animeGrid.classList.remove('hidden');
+        }
+
+        // Debounce Utility
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>
