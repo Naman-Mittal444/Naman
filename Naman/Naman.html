@@ -504,6 +504,11 @@
             height: 48px;
             object-fit: contain;
         }
+        .tool-icon[data-category="goku"] img {
+            width: 80px;
+            height: 80px;
+        
+        }
 
         .tool-title {
             font-size: 1.25rem;
@@ -580,6 +585,11 @@
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.3);
             color: #22c55e;
+        }
+        .tool-card[data-category="Anime"] .category-tag {
+            background: rgba(137, 142, 3, 0.177);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #ffd105;
         }
 
         /* Filter Buttons */
@@ -804,7 +814,7 @@
             Available for Projects
         </div>
         <h1 class="hero-title">
-            Hi, I'm <span class="gradient-text">Naman Mittal</span>
+            Hi, I'm <span class="gradient-text">Naman Mittal </span><p></p><img src="https://cdn3.emoji.gg/emojis/971161-minecraft-letter-o.png" width="64px" height="64px" alt="minecraft_letter_O"><img src="https://cdn3.emoji.gg/emojis/975275-minecraft-letter-g.png" width="64px" height="64px" alt="minecraft_letter_G">
         </h1>
         <p class="hero-subtitle">Building the Future with AI ✨</p>
         <div class="hero-buttons">
@@ -834,7 +844,7 @@
                 <div class="stat-label">Technologies</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" data-count="5">5</div>
+                <div class="stat-number" data-count="5">6</div>
                 <div class="stat-label">Categories</div>
             </div>
             <div class="stat-item">
@@ -942,6 +952,8 @@
                 <button class="filter-btn" data-filter="puzzle">Puzzles</button>
                 <button class="filter-btn" data-filter="creative">Creative</button>
                 <button class="filter-btn" data-filter="finance">Finance</button>
+                <button class="filter-btn" data-filter="Anime">Anime</button> 
+                
             </div>
 
             <div class="tools-grid">
@@ -1199,7 +1211,7 @@
                 <!-- Solitaire -->
                 <div class="tool-card" data-category="game">
                     <span class="category-tag">Game</span>
-                    <div class="tool-icon">🃏</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/675510-cards.png" width="64px" height="64px" alt="cards"></div>
                     <h3 class="tool-title">Solitaire</h3>
                     <p class="tool-desc">Classic card game</p>
                     <a href="Solitare.html" class="launch-button-link">
@@ -1210,7 +1222,7 @@
                 <!-- Archery -->
                 <div class="tool-card" data-category="game">
                     <span class="category-tag">Game</span>
-                    <div class="tool-icon">🎯</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/16819-alienangel.gif" width="64px" height="64px" alt="AlienAngel"></div>
                     <h3 class="tool-title">Archery</h3>
                     <p class="tool-desc">Hit the bullseye</p>
                     <a href="Archery.html" class="launch-button-link">
@@ -1243,7 +1255,7 @@
                 <!-- Minecraft -->
                 <div class="tool-card" data-category="game">
                     <span class="category-tag">Game</span>
-                    <div class="tool-icon">⛏️</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/403691-minecraft.png" width="64px" height="64px" alt="minecraft"></div>
                     <h3 class="tool-title">Minecraft Mod Library</h3>
                     <p class="tool-desc">Get Mods</p>
                     <a href="Minecraft/main.html" class="launch-button-link">
@@ -1256,7 +1268,7 @@
                 <!-- AI Assistant -->
                 <div class="tool-card" data-category="utility">
                     <span class="category-tag">Utility</span>
-                    <div class="tool-icon">🤖</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/927402-baldwinsilence.png" width="64px" height="64px" alt="BaldwinSilence"></div>
                     <h3 class="tool-title">AI Assistant</h3>
                     <p class="tool-desc">Chat with AI</p>
                     <a href="Utility Web/AI.html" class="launch-button-link">
@@ -1278,7 +1290,7 @@
                 <!-- Crypto Calculator -->
                 <div class="tool-card" data-category="finance">
                     <span class="category-tag">Finance</span>
-                    <div class="tool-icon">₿</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/2891-bitcoin.gif" width="64px" height="64px" alt="BitCoin"></div>
                     <h3 class="tool-title">Crypto Arbitrage</h3>
                     <p class="tool-desc">Calculate crypto fees</p>
                     <a href="Utility Web/crypto-arbitrage-fee-calculator/crypto.html" class="launch-button-link">
@@ -1289,7 +1301,7 @@
                 <!-- Stocks -->
                 <div class="tool-card" data-category="finance">
                     <span class="category-tag">Finance</span>
-                    <div class="tool-icon">📈</div>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/999284-cash.gif" width="64px" height="64px" alt="Cash"></div>
                     <h3 class="tool-title">Stock Tracker</h3>
                     <p class="tool-desc">Track stock prices</p>
                     <a href="Utility Web/Stock.html" class="launch-button-link">
@@ -1351,9 +1363,68 @@
                         <button class="launch-button">Launch Tool</button>
                     </a>
                 </div>
+
+                <!--AniVerse-->
+        <div class="tool-card" data-category="Anime">
+                    <span class="category-tag">Anime</span>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/16392-goku.png" width="1024px" height="1024px" alt="Goku"></a></div>
+                    <h3 class="tool-title">AniVerse</h3>
+                    <p class="tool-desc">Check Which anime is coming soon !</p>
+                    <a href="Anime_.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
+                </div>
+
+                <!--AnimeHub-->
+                <div class="tool-card" data-category="Anime">
+                    <span class="category-tag">Anime</span>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/657759-gojoooooo.gif" width="64px" height="64px" alt="Gojoooooo"></div>
+                    <h3 class="tool-title">Anime Hub</h3>
+                    <p class="tool-desc">Get Recommendation of anime by creating watchlist and get opening of every anime</p>
+                    <a href="anime_hub.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
+                </div>
+
+                <!--AnimeKit-->
+                <div class="tool-card" data-category="Anime">
+                    <span class="category-tag">Anime</span>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/7716_shieldbro_grin.png" width="64px" height="64px" alt="shieldbro_grin"></div>
+                    <h3 class="tool-title">Anime Tools</h3>
+                    <p class="tool-desc">Creative Anime Studio </p>
+                    <a href="anime_kit.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
+                </div>
+
+                <!--AnimeLore-->
+                <div class="tool-card" data-category="Anime">
+                    <span class="category-tag">Anime</span>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/69220-sukuna-no.gif" width="64px" height="64px" alt="sukuna_no"></div>
+                    <h3 class="tool-title">Anime Lore</h3>
+                    <p class="tool-desc">Explore about anime get name of every anime create watchlist get the list of every chracter of any anime you want</p>
+                    <a href="anime_lore.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
+                </div>
+
+
+                <div class="tool-card" data-category="Anime">
+                    <span class="category-tag">Anime</span>
+                    <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/94567-ssrtier.png" width="64px" height="64px" alt="SSRTier"></div>
+                    <h3 class="tool-title">Anime Tier List</h3>
+                    <p class="tool-desc">Rate Anime</p>
+                    <a href="anime_tier.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
+                </div>
+
             </div>
         </div>
+       
+      
     </section>
+
 
     <!-- Modal Overlay -->
     <div id="modalOverlay" class="modal-overlay">
