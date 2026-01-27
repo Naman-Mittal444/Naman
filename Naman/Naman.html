@@ -1050,22 +1050,26 @@
                     <button class="launch-button" onclick="openTool('passwordgen')">Launch Tool</button>
                 </div>
 
-                <!-- Snake Game -->
-                <div class="tool-card" data-category="game" data-tool="snake">
+                <!-- Snake game -->
+                <div class="tool-card" data-category="game">
                     <span class="category-tag">Game</span>
                     <div class="tool-icon">🐍</div>
-                    <h3 class="tool-title">Classic Snake</h3>
-                    <p class="tool-desc">The timeless arcade game</p>
-                    <button class="launch-button" onclick="openTool('snake')">Launch Tool</button>
+                    <h3 class="tool-title">Snake Game</h3>
+                    <p class="tool-desc"></p>
+                    <a href="snake.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
                 </div>
 
                 <!-- Memory Card Game -->
-                <div class="tool-card" data-category="puzzle" data-tool="memory">
+                <div class="tool-card" data-category="puzzle">
                     <span class="category-tag">Puzzle</span>
                     <div class="tool-icon">🧠</div>
-                    <h3 class="tool-title">Memory Card Game</h3>
+                    <h3 class="tool-title">>Memory Card Game</h3>
                     <p class="tool-desc">Test your memory skills</p>
-                    <button class="launch-button" onclick="openTool('memory')">Launch Tool</button>
+                    <a href="memory.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
                 </div>
 
                 <!-- Infinite Craft -->
@@ -2352,156 +2356,6 @@ function checkWaterSortWin() {
     }
 }
 
-// ============================================
-// TOOL 5: POMODORO TIMER
-// ============================================
-
-function generatePomodoro() {
-    return `
-        <h2 class="modal-title">Pomodoro Timer</h2>
-        <div class="pomodoro">
-            <div class="timer-display" id="timerDisplay">25:00</div>
-            <div class="timer-controls">
-                <button class="timer-btn" onclick="setPomodoroTime(25)">25 min</button>
-                <button class="timer-btn" onclick="setPomodoroTime(15)">15 min</button>
-                <button class="timer-btn" onclick="setPomodoroTime(5)">5 min</button>
-            </div>
-            <div style="margin: 1.5rem 0; text-align: center;">
-                <label style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Custom Time (minutes):</label>
-                <input type="number" id="customTimeInput" class="length-input" 
-                       placeholder="Enter minutes (1-180)" min="1" max="180" 
-                       style="max-width: 200px; margin: 0 auto;">
-            </div>
-            <div class="timer-controls">
-                <button class="timer-btn" onclick="startPomodoro()" id="startBtn">Start</button>
-                <button class="timer-btn" onclick="pausePomodoro()" id="pauseBtn">Pause</button>
-                <button class="timer-btn" onclick="resetPomodoro()">Reset</button>
-            </div>
-            <svg class="progress-ring" id="progressRing">
-                <circle id="progressCircle" cx="100" cy="100" r="90" fill="none" 
-                        stroke="var(--neon-blue)" stroke-width="8" 
-                        stroke-dasharray="565.48" stroke-dashoffset="0" 
-                        transform="rotate(-90 100 100)"/>
-            </svg>
-        </div>
-    `;
-}
-
-let pomodoroState = {
-    totalSeconds: 25 * 60,
-    remainingSeconds: 25 * 60,
-    isRunning: false,
-    intervalId: null,
-    customTimeSet: false
-};
-
-function initPomodoro() {
-    resetPomodoro();
-    // Clear custom input on init
-    const customInput = document.getElementById('customTimeInput');
-    if (customInput) {
-        customInput.value = '';
-        pomodoroState.customTimeSet = false;
-    }
-}
-
-function setPomodoroTime(minutes) {
-    if (pomodoroState.isRunning) return;
-    pomodoroState.totalSeconds = minutes * 60;
-    pomodoroState.remainingSeconds = minutes * 60;
-    pomodoroState.customTimeSet = false;
-    // Clear custom input when preset is selected
-    const customInput = document.getElementById('customTimeInput');
-    if (customInput) customInput.value = '';
-    updatePomodoroDisplay();
-}
-
-function startPomodoro() {
-    if (pomodoroState.isRunning) return;
-    
-    // Check for custom time input
-    const customInput = document.getElementById('customTimeInput');
-    if (customInput && customInput.value) {
-        const customMinutes = parseInt(customInput.value);
-        if (isNaN(customMinutes) || customMinutes < 1 || customMinutes > 180) {
-            alert('Please enter a valid time between 1 and 180 minutes');
-            return;
-        }
-        pomodoroState.totalSeconds = customMinutes * 60;
-        pomodoroState.remainingSeconds = customMinutes * 60;
-        pomodoroState.customTimeSet = true;
-        updatePomodoroDisplay();
-    }
-    
-    pomodoroState.isRunning = true;
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    if (startBtn) startBtn.disabled = true;
-    if (pauseBtn) pauseBtn.disabled = false;
-    
-    pomodoroState.intervalId = setInterval(() => {
-        pomodoroState.remainingSeconds--;
-        updatePomodoroDisplay();
-        
-        if (pomodoroState.remainingSeconds <= 0) {
-            clearInterval(pomodoroState.intervalId);
-            pomodoroState.isRunning = false;
-            alert('Time\'s up! 🍅');
-            if (startBtn) startBtn.disabled = false;
-            if (pauseBtn) pauseBtn.disabled = true;
-        }
-    }, 1000);
-    
-    if (!window.activeIntervals) window.activeIntervals = [];
-    window.activeIntervals.push(pomodoroState.intervalId);
-}
-
-function pausePomodoro() {
-    if (!pomodoroState.isRunning) return;
-    
-    clearInterval(pomodoroState.intervalId);
-    pomodoroState.isRunning = false;
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    if (startBtn) startBtn.disabled = false;
-    if (pauseBtn) pauseBtn.disabled = true;
-}
-
-function resetPomodoro() {
-    clearInterval(pomodoroState.intervalId);
-    // Reset to last set time (preset or custom)
-    if (!pomodoroState.customTimeSet) {
-        pomodoroState.totalSeconds = 25 * 60;
-        pomodoroState.remainingSeconds = 25 * 60;
-    } else {
-        pomodoroState.remainingSeconds = pomodoroState.totalSeconds;
-    }
-    pomodoroState.isRunning = false;
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    if (startBtn) startBtn.disabled = false;
-    if (pauseBtn) pauseBtn.disabled = true;
-    updatePomodoroDisplay();
-}
-
-function updatePomodoroDisplay() {
-    const display = document.getElementById('timerDisplay');
-    const circle = document.getElementById('progressCircle');
-    
-    const minutes = Math.floor(pomodoroState.remainingSeconds / 60);
-    const seconds = pomodoroState.remainingSeconds % 60;
-    
-    if (display) {
-        display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-    
-    if (circle) {
-        const circumference = 2 * Math.PI * 90;
-        const progress = (pomodoroState.totalSeconds - pomodoroState.remainingSeconds) / pomodoroState.totalSeconds;
-        const offset = circumference * (1 - progress);
-        circle.style.strokeDashoffset = offset;
-    }
-}
 
 // ============================================
 // TOOL 6: PASSWORD GENERATOR
@@ -2601,179 +2455,6 @@ function copyPassword() {
     }
 }
 
-// ============================================
-// TOOL 7: SNAKE GAME
-// ============================================
-
-function generateSnake() {
-    return `
-        <h2 class="modal-title">Classic Snake</h2>
-        <div class="snake-game">
-            <div class="game-score">Score: <span id="snakeScore">0</span></div>
-            <canvas class="game-canvas" id="snakeCanvas" width="400" height="400"></canvas>
-            <div class="game-instructions">
-                Use arrow keys or WASD to control the snake. Eat the food to grow!
-            </div>
-            <button class="reset-button" onclick="resetSnake()">Restart Game</button>
-        </div>
-    `;
-}
-
-let snakeState = {
-    canvas: null,
-    ctx: null,
-    snake: [{x: 200, y: 200}],
-    direction: {x: 20, y: 0},
-    food: {x: 0, y: 0},
-    score: 0,
-    gameLoop: null,
-    gameOver: false,
-    lastUpdate: 0,
-    updateInterval: 120 // ~5x slower: 120ms between updates (was ~16ms at 60fps)
-};
-
-function initSnake() {
-    const canvas = document.getElementById('snakeCanvas');
-    if (!canvas) return;
-    
-    snakeState.canvas = canvas;
-    snakeState.ctx = canvas.getContext('2d');
-    resetSnake();
-    
-    // Keyboard controls
-    document.addEventListener('keydown', handleSnakeKey);
-    
-    startSnakeGame();
-}
-
-function resetSnake() {
-    snakeState.snake = [{x: 200, y: 200}];
-    snakeState.direction = {x: 20, y: 0};
-    snakeState.score = 0;
-    snakeState.gameOver = false;
-    snakeState.lastUpdate = 0;
-    generateFood();
-    updateSnakeScore();
-}
-
-function handleSnakeKey(e) {
-    if (snakeState.gameOver) return;
-    
-    const key = e.key.toLowerCase();
-    const dir = snakeState.direction;
-    
-    if ((key === 'arrowup' || key === 'w') && dir.y === 0) {
-        snakeState.direction = {x: 0, y: -20};
-    } else if ((key === 'arrowdown' || key === 's') && dir.y === 0) {
-        snakeState.direction = {x: 0, y: 20};
-    } else if ((key === 'arrowleft' || key === 'a') && dir.x === 0) {
-        snakeState.direction = {x: -20, y: 0};
-    } else if ((key === 'arrowright' || key === 'd') && dir.x === 0) {
-        snakeState.direction = {x: 20, y: 0};
-    }
-}
-
-function generateFood() {
-    const canvas = snakeState.canvas;
-    const x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
-    const y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
-    snakeState.food = {x, y};
-}
-
-function startSnakeGame() {
-    if (snakeState.gameLoop) {
-        cancelAnimationFrame(snakeState.gameLoop);
-    }
-    
-    snakeState.lastUpdate = performance.now();
-    
-    function gameLoop(currentTime) {
-        if (snakeState.gameOver) return;
-        
-        // Throttle updates to slow down the game (5x slower)
-        if (currentTime - snakeState.lastUpdate >= snakeState.updateInterval) {
-            updateSnake();
-            snakeState.lastUpdate = currentTime;
-        }
-        
-        // Always draw for smooth visuals
-        drawSnake();
-        
-        snakeState.gameLoop = requestAnimationFrame(gameLoop);
-    }
-    
-    snakeState.gameLoop = requestAnimationFrame(gameLoop);
-    window.activeAnimationFrame = snakeState.gameLoop;
-}
-
-function updateSnake() {
-    const head = {x: snakeState.snake[0].x + snakeState.direction.x, y: snakeState.snake[0].y + snakeState.direction.y};
-    const canvas = snakeState.canvas;
-    
-    // Wall collision
-    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-        endSnakeGame();
-        return;
-    }
-    
-    // Self collision
-    for (let segment of snakeState.snake) {
-        if (head.x === segment.x && head.y === segment.y) {
-            endSnakeGame();
-            return;
-        }
-    }
-    
-    snakeState.snake.unshift(head);
-    
-    // Check food
-    if (head.x === snakeState.food.x && head.y === snakeState.food.y) {
-        snakeState.score++;
-        updateSnakeScore();
-        generateFood();
-    } else {
-        snakeState.snake.pop();
-    }
-}
-
-function drawSnake() {
-    const ctx = snakeState.ctx;
-    const canvas = snakeState.canvas;
-    
-    // Clear canvas
-    ctx.fillStyle = '#0f0f0f';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw snake
-    ctx.fillStyle = '#00f2ff';
-    snakeState.snake.forEach((segment, index) => {
-        if (index === 0) {
-            ctx.fillStyle = '#00f2ff';
-        } else {
-            ctx.fillStyle = '#00aacc';
-        }
-        ctx.fillRect(segment.x, segment.y, 18, 18);
-    });
-    
-    // Draw food
-    ctx.fillStyle = '#bd00ff';
-    ctx.fillRect(snakeState.food.x, snakeState.food.y, 18, 18);
-}
-
-function updateSnakeScore() {
-    const scoreEl = document.getElementById('snakeScore');
-    if (scoreEl) {
-        scoreEl.textContent = snakeState.score;
-    }
-}
-
-function endSnakeGame() {
-    snakeState.gameOver = true;
-    if (snakeState.gameLoop) {
-        cancelAnimationFrame(snakeState.gameLoop);
-    }
-    alert(`Game Over! Final Score: ${snakeState.score}`);
-}
 
 // ============================================
 // TOOL 8: MEMORY CARD GAME
