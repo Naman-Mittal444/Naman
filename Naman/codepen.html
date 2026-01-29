@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Playground + DS Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        .editor-container {
+            position: relative;
+            height: 100%;
+        }
+        
+        .line-numbers {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            padding: 12px 8px;
+            text-align: right;
+            user-select: none;
+            overflow: hidden;
+        }
+        
+        .code-editor {
+            position: absolute;
+            left: 40px;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            padding: 12px;
+            resize: none;
+            outline: none;
+            border: none;
+            tab-size: 2;
+        }
+        
+        .node-circle {
+            transition: all 0.3s ease;
+        }
+        
+        .node-circle:hover {
+            filter: brightness(1.2);
+        }
+        
+        .edge-line {
+            transition: all 0.3s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .active-node {
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .theme-dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+        
+        .theme-light {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --bg-tertiary: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #2563eb;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="theme-dark">
+    <div id="app" class="min-h-screen" style="background: var(--bg-primary); color: var(--text-primary);">
+        <!-- Header -->
+        <header class="border-b px-4 py-3 flex items-center justify-between" style="background: var(--bg-secondary); border-color: var(--bg-tertiary);">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">&lt;/&gt;</span>
+                    </div>
+                    <h1 class="text-lg font-bold">Code Playground</h1>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full" style="background: var(--bg-tertiary); color: var(--text-secondary);">+ DS Visualizer</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Theme Toggle -->
+                <button id="themeToggle" class="p-2 rounded-lg hover:opacity-80 transition" style="background: var(--bg-tertiary);" title="Toggle Theme">
+                    <svg id="themeIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                    </svg>
+                </button>
+                
+                <!-- Auto-run Toggle -->
+                <label class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" style="background: var(--bg-tertiary);">
+                    <input type="checkbox" id="autoRun" class="w-4 h-4 accent-blue-500">
+                    <span class="text-sm">Auto-run</span>
+                </label>
+                
+                <!-- Speed Control -->
+                <div class="flex items-center gap-2 px-3 py-2 rounded-lg" style="background: var(--bg-tertiary);">
+                    <span class="text-sm">Speed:</span>
+                    <input type="range" id="animSpeed" min="100" max="2000" value="500" class="w-20 accent-blue-500">
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="flex" style="height: calc(100vh - 60px);">
+            <!-- Left Panel: Code Editor -->
+            <div class="w-1/2 flex flex-col border-r" style="border-color: var(--bg-tertiary);">
+                <!-- Toolbar -->
+                <div class="flex items-center gap-2 p-2 border-b" style="background: var(--bg-secondary); border-color: var(--bg-tertiary);">
+                    <button id="runBtn" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                        </svg>
+                        Run
+                    </button>
+                    <button id="stopBtn" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5.25 3A2.25 2.25 0 003 5.25v9.5A2.25 2.25 0 005.25 17h9.5A2.25 2.25 0 0017 14.75v-9.5A2.25 2.25 0 0014.75 3h-9.5z"/>
+                        </svg>
+                        Stop
+                    </button>
+                    <button id="resetBtn" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition hover:opacity-80" style="background: var(--bg-tertiary);">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Reset
+                    </button>
+                    
+                    <div class="flex-1"></div>
+                    
+                    <!-- Examples Dropdown -->
+                    <select id="examples" class="px-3 py-2 rounded-lg outline-none code-font text-sm" style="background: var(--bg-tertiary); color: var(--text-primary);">
+                        <option value="">📚 Examples</option>
+                        <option value="stack">📦 Stack Demo</option>
+                        <option value="queue">🚶 Queue Demo</option>
+                        <option value="bst">🌳 Binary Tree</option>
+                        <option value="graph">🕸️ Graph BFS/DFS</option>
+                        <option value="canvas">🎨 Canvas Art</option>
+                        <option value="animation">✨ Animation</option>
+                    </select>
+                    
+                    <span id="execTime" class="text-xs px-2 py-1 rounded" style="background: var(--bg-tertiary); color: var(--text-secondary);">⏱️ 0ms</span>
+                </div>
+                
+                <!-- Code Editor -->
+                <div class="flex-1 editor-container overflow-hidden" style="background: var(--bg-primary);">
+                    <div id="lineNumbers" class="line-numbers code-font text-xs" style="background: var(--bg-secondary); color: var(--text-secondary);">1</div>
+                    <textarea id="codeEditor" class="code-editor code-font text-sm scrollbar-thin" 
+                        style="background: var(--bg-primary); color: var(--text-primary);"
+                        spellcheck="false"
+                        placeholder="// Write your JavaScript code here..."></textarea>
+                </div>
+                
+                <!-- Console Output -->
+                <div class="h-48 flex flex-col border-t" style="border-color: var(--bg-tertiary);">
+                    <div class="flex items-center justify-between px-3 py-2" style="background: var(--bg-secondary);">
+                        <span class="text-sm font-medium">📟 Console</span>
+                        <button id="clearConsole" class="text-xs px-2 py-1 rounded hover:opacity-80" style="background: var(--bg-tertiary);">Clear</button>
+                    </div>
+                    <div id="consoleOutput" class="flex-1 p-3 overflow-auto code-font text-sm scrollbar-thin" style="background: var(--bg-primary);"></div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Visualization -->
+            <div class="w-1/2 flex flex-col">
+                <!-- Viz Toolbar -->
+                <div class="flex items-center gap-2 p-2 border-b" style="background: var(--bg-secondary); border-color: var(--bg-tertiary);">
+                    <span class="text-sm font-medium">📊 Visualization</span>
+                    <div class="flex-1"></div>
+                    <div class="flex rounded-lg overflow-hidden" style="background: var(--bg-tertiary);">
+                        <button data-viz="preview" class="viz-tab px-3 py-1.5 text-sm transition" style="background: var(--accent);">Preview</button>
+                        <button data-viz="stack" class="viz-tab px-3 py-1.5 text-sm transition hover:opacity-80">Stack</button>
+                        <button data-viz="queue" class="viz-tab px-3 py-1.5 text-sm transition hover:opacity-80">Queue</button>
+                        <button data-viz="tree" class="viz-tab px-3 py-1.5 text-sm transition hover:opacity-80">Tree</button>
+                        <button data-viz="graph" class="viz-tab px-3 py-1.5 text-sm transition hover:opacity-80">Graph</button>
+                    </div>
+                </div>
+                
+                <!-- Visualization Area -->
+                <div id="vizArea" class="flex-1 relative overflow-hidden" style="background: var(--bg-primary);">
+                    <!-- Preview iframe -->
+                    <iframe id="previewFrame" class="w-full h-full border-0" sandbox="allow-scripts"></iframe>
+                    
+                    <!-- DS Visualizations (hidden by default) -->
+                    <div id="dsViz" class="absolute inset-0 hidden">
+                        <svg id="vizSvg" class="w-full h-full"></svg>
+                        
+                        <!-- DS Controls -->
+                        <div id="dsControls" class="absolute bottom-4 left-4 right-4 flex items-center gap-2 p-3 rounded-xl" style="background: var(--bg-secondary);">
+                            <input type="text" id="dsInput" placeholder="Enter value..." class="flex-1 px-3 py-2 rounded-lg outline-none code-font" style="background: var(--bg-tertiary); color: var(--text-primary);">
+                            <button id="dsAdd" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">Add</button>
+                            <button id="dsRemove" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">Remove</button>
+                            <button id="dsTraverse" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">Traverse</button>
+                            <button id="dsRandom" class="px-4 py-2 rounded-lg font-medium transition hover:opacity-80" style="background: var(--bg-tertiary);">Random</button>
+                            <button id="dsClear" class="px-4 py-2 rounded-lg font-medium transition hover:opacity-80" style="background: var(--bg-tertiary);">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Bar -->
+                <div class="flex items-center justify-between px-3 py-2 border-t text-xs" style="background: var(--bg-secondary); border-color: var(--bg-tertiary); color: var(--text-secondary);">
+                    <span id="statusText">Ready</span>
+                    <span id="dsInfo">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ STATE ============
+        const state = {
+            theme: 'dark',
+            currentViz: 'preview',
+            autoRun: false,
+            animSpeed: 500,
+            stack: [],
+            queue: [],
+            tree: null,
+            graph: { nodes: [], edges: [] },
+            isRunning: false,
+            runTimeout: null
+        };
+
+        // ============ DOM ELEMENTS ============
+        const $ = id => document.getElementById(id);
+        const codeEditor = $('codeEditor');
+        const lineNumbers = $('lineNumbers');
+        const consoleOutput = $('consoleOutput');
+        const previewFrame = $('previewFrame');
+        const vizSvg = $('vizSvg');
+        const dsViz = $('dsViz');
+        const execTime = $('execTime');
+        const statusText = $('statusText');
+        const dsInfo = $('dsInfo');
+        const dsInput = $('dsInput');
+
+        // ============ EXAMPLES ============
+        const examples = {
+            stack: `// 📦 Stack Demo - LIFO (Last In, First Out)
+// Use the Stack tab on the right to visualize!
+
+// You can also manipulate it via code:
+DS.stack.push(10);
+DS.stack.push(20);
+DS.stack.push(30);
+
+console.log("Stack after pushes:", DS.stack.items);
+
+const popped = DS.stack.pop();
+console.log("Popped:", popped);
+console.log("Stack now:", DS.stack.items);
+console.log("Peek:", DS.stack.peek());`,
+
+            queue: `// 🚶 Queue Demo - FIFO (First In, First Out)
+// Use the Queue tab on the right to visualize!
+
+DS.queue.enqueue("Alice");
+DS.queue.enqueue("Bob");
+DS.queue.enqueue("Charlie");
+
+console.log("Queue:", DS.queue.items);
+
+const served = DS.queue.dequeue();
+console.log("Served:", served);
+console.log("Queue now:", DS.queue.items);
+console.log("Front:", DS.queue.front());`,
+
+            bst: `// 🌳 Binary Search Tree Demo
+// Use the Tree tab on the right to visualize!
+
+DS.tree.insert(50);
+DS.tree.insert(30);
+DS.tree.insert(70);
+DS.tree.insert(20);
+DS.tree.insert(40);
+DS.tree.insert(60);
+DS.tree.insert(80);
+
+console.log("BST created!");
+console.log("In-order:", DS.tree.inOrder());
+console.log("Pre-order:", DS.tree.preOrder());
+console.log("Search 40:", DS.tree.search(40) ? "Found" : "Not found");`,
+
+            graph: `// 🕸️ Graph Demo with BFS/DFS
+// Use the Graph tab on the right to visualize!
+
+// Create nodes
+DS.graph.addNode("A", 200, 100);
+DS.graph.addNode("B", 100, 200);
+DS.graph.addNode("C", 300, 200);
+DS.graph.addNode("D", 150, 300);
+DS.graph.addNode("E", 250, 300);
+
+// Create edges
+DS.graph.addEdge("A", "B");
+DS.graph.addEdge("A", "C");
+DS.graph.addEdge("B", "D");
+DS.graph.addEdge("C", "E");
+DS.graph.addEdge("D", "E");
+
+console.log("Graph created!");
+console.log("BFS from A:", DS.graph.bfs("A"));
+console.log("DFS from A:", DS.graph.dfs("A"));`,
+
+            canvas: `// 🎨 Canvas Art Demo
+const canvas = document.createElement('canvas');
+canvas.width = 400;
+canvas.height = 400;
+document.body.appendChild(canvas);
+document.body.style.display = 'flex';
+document.body.style.justifyContent = 'center';
+document.body.style.alignItems = 'center';
+document.body.style.height = '100vh';
+document.body.style.margin = '0';
+document.body.style.background = '#1e293b';
+
+const ctx = canvas.getContext('2d');
+
+// Draw colorful circles
+for (let i = 0; i < 50; i++) {
+    const x = Math.random() * 400;
+    const y = Math.random() * 400;
+    const r = Math.random() * 30 + 10;
+    const hue = Math.random() * 360;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = \`hsla(\${hue}, 70%, 60%, 0.7)\`;
+    ctx.fill();
+}
+
+console.log("🎨 Canvas art generated!");`,
+
+            animation: `// ✨ Animation Demo
+const canvas = document.createElement('canvas');
+canvas.width = 400;
+canvas.height = 400;
+document.body.appendChild(canvas);
+document.body.style.display = 'flex';
+document.body.style.justifyContent = 'center';
+document.body.style.alignItems = 'center';
+document.body.style.height = '100vh';
+document.body.style.margin = '0';
+document.body.style.background = '#0f172a';
+
+const ctx = canvas.getContext('2d');
+
+const particles = [];
+for (let i = 0; i < 100; i++) {
+    particles.push({
+        x: 200, y: 200,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        hue: Math.random() * 360,
+        size: Math.random() * 4 + 2
+    });
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
+    ctx.fillRect(0, 0, 400, 400);
+    
+    particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0 || p.x > 400) p.vx *= -1;
+        if (p.y < 0 || p.y > 400) p.vy *= -1;
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = \`hsl(\${p.hue}, 70%, 60%)\`;
+        ctx.fill();
+        
+        p.hue = (p.hue + 0.5) % 360;
+    });
+    
+    requestAnimationFrame(animate);
+}
+
+animate();
+console.log("✨ Animation started!");`
+        };
+
+        // ============ LINE NUMBERS ============
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n').length;
+            lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+        }
+
+        // ============ TAB SUPPORT ============
+        codeEditor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = codeEditor.selectionStart;
+                const end = codeEditor.selectionEnd;
+                codeEditor.value = codeEditor.value.substring(0, start) + '  ' + codeEditor.value.substring(end);
+                codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+                updateLineNumbers();
+            }
+        });
+
+        codeEditor.addEventListener('input', () => {
+            updateLineNumbers();
+            if (state.autoRun) {
+                clearTimeout(state.runTimeout);
+                state.runTimeout = setTimeout(runCode, 500);
+            }
+        });
+
+        codeEditor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        });
+
+        // ============ DATA STRUCTURES ============
+        class Stack {
+            constructor() { this.items = []; }
+            push(val) { this.items.push(val); updateViz(); return this; }
+            pop() { const val = this.items.pop(); updateViz(); return val; }
+            peek() { return this.items[this.items.length - 1]; }
+            isEmpty() { return this.items.length === 0; }
+            size() { return this.items.length; }
+            clear() { this.items = []; updateViz(); }
+        }
+
+        class Queue {
+            constructor() { this.items = []; }
+            enqueue(val) { this.items.push(val); updateViz(); return this; }
+            dequeue() { const val = this.items.shift(); updateViz(); return val; }
+            front() { return this.items[0]; }
+            isEmpty() { return this.items.length === 0; }
+            size() { return this.items.length; }
+            clear() { this.items = []; updateViz(); }
+        }
+
+        class TreeNode {
+            constructor(val) {
+                this.val = val;
+                this.left = null;
+                this.right = null;
+                this.x = 0;
+                this.y = 0;
+            }
+        }
+
+        class BST {
+            constructor() { this.root = null; }
+            
+            insert(val) {
+                const node = new TreeNode(val);
+                if (!this.root) {
+                    this.root = node;
+                } else {
+                    this._insertNode(this.root, node);
+                }
+                this._updatePositions();
+                updateViz();
+                return this;
+            }
+            
+            _insertNode(current, node) {
+                if (node.val < current.val) {
+                    if (!current.left) current.left = node;
+                    else this._insertNode(current.left, node);
+                } else {
+                    if (!current.right) current.right = node;
+                    else this._insertNode(current.right, node);
+                }
+            }
+            
+            _updatePositions() {
+                if (!this.root) return;
+                const width = vizSvg.clientWidth || 500;
+                this._positionNode(this.root, width / 2, 60, width / 4);
+            }
+            
+            _positionNode(node, x, y, offset) {
+                if (!node) return;
+                node.x = x;
+                node.y = y;
+                this._positionNode(node.left, x - offset, y + 70, offset / 2);
+                this._positionNode(node.right, x + offset, y + 70, offset / 2);
+            }
+            
+            search(val) {
+                return this._searchNode(this.root, val);
+            }
+            
+            _searchNode(node, val) {
+                if (!node) return null;
+                if (val === node.val) return node;
+                if (val < node.val) return this._searchNode(node.left, val);
+                return this._searchNode(node.right, val);
+            }
+            
+            inOrder() {
+                const result = [];
+                this._inOrder(this.root, result);
+                return result;
+            }
+            
+            _inOrder(node, result) {
+                if (node) {
+                    this._inOrder(node.left, result);
+                    result.push(node.val);
+                    this._inOrder(node.right, result);
+                }
+            }
+            
+            preOrder() {
+                const result = [];
+                this._preOrder(this.root, result);
+                return result;
+            }
+            
+            _preOrder(node, result) {
+                if (node) {
+                    result.push(node.val);
+                    this._preOrder(node.left, result);
+                    this._preOrder(node.right, result);
+                }
+            }
+            
+            clear() { this.root = null; updateViz(); }
+        }
+
+        class Graph {
+            constructor() {
+                this.nodes = new Map();
+                this.edges = [];
+            }
+            
+            addNode(id, x, y) {
+                this.nodes.set(id, { id, x: x || Math.random() * 400 + 50, y: y || Math.random() * 300 + 50 });
+                updateViz();
+                return this;
+            }
+            
+            addEdge(from, to) {
+                if (this.nodes.has(from) && this.nodes.has(to)) {
+                    this.edges.push({ from, to });
+                    updateViz();
+                }
+                return this;
+            }
+            
+            bfs(start) {
+                if (!this.nodes.has(start)) return [];
+                const visited = new Set();
+                const queue = [start];
+                const result = [];
+                
+                while (queue.length) {
+                    const node = queue.shift();
+                    if (visited.has(node)) continue;
+                    visited.add(node);
+                    result.push(node);
+                    
+                    this.edges.forEach(e => {
+                        if (e.from === node && !visited.has(e.to)) queue.push(e.to);
+                        if (e.to === node && !visited.has(e.from)) queue.push(e.from);
+                    });
+                }
+                return result;
+            }
+            
+            dfs(start) {
+                if (!this.nodes.has(start)) return [];
+                const visited = new Set();
+                const result = [];
+                this._dfsVisit(start, visited, result);
+                return result;
+            }
+            
+            _dfsVisit(node, visited, result) {
+                if (visited.has(node)) return;
+                visited.add(node);
+                result.push(node);
+                
+                this.edges.forEach(e => {
+                    if (e.from === node) this._dfsVisit(e.to, visited, result);
+                    if (e.to === node) this._dfsVisit(e.from, visited, result);
+                });
+            }
+            
+            clear() {
+                this.nodes.clear();
+                this.edges = [];
+                updateViz();
+            }
+        }
+
+        const DS = {
+            stack: new Stack(),
+            queue: new Queue(),
+            tree: new BST(),
+            graph: new Graph()
+        };
+
+        // ============ VISUALIZATION ============
+        function updateViz() {
+            if (state.currentViz === 'preview') return;
+            
+            const width = vizSvg.clientWidth || 500;
+            const height = vizSvg.clientHeight || 400;
+            
+            switch (state.currentViz) {
+                case 'stack': renderStack(width, height); break;
+                case 'queue': renderQueue(width, height); break;
+                case 'tree': renderTree(width, height); break;
+                case 'graph': renderGraph(width, height); break;
+            }
+        }
+
+        function renderStack(width, height) {
+            const items = DS.stack.items;
+            const boxHeight = 40;
+            const boxWidth = 120;
+            const startY = height - 100;
+            
+            let svg = '';
+            items.forEach((item, i) => {
+                const y = startY - (i * (boxHeight + 5));
+                const x = width / 2 - boxWidth / 2;
+                const hue = (i * 30) % 360;
+                svg += `
+                    <rect x="${x}" y="${y}" width="${boxWidth}" height="${boxHeight}" 
+                        rx="8" fill="hsl(${hue}, 70%, 50%)" class="node-circle slide-in"/>
+                    <text x="${width/2}" y="${y + 25}" text-anchor="middle" fill="white" 
+                        font-family="JetBrains Mono" font-size="14" font-weight="600">${item}</text>
+                `;
+            });
+            
+            // Stack label
+            svg += `<text x="${width/2}" y="30" text-anchor="middle" fill="var(--text-secondary)" 
+                font-size="14">📦 Stack (${items.length} items) - TOP ↑</text>`;
+            
+            vizSvg.innerHTML = svg;
+            dsInfo.textContent = `Stack: ${items.length} items | Top: ${items[items.length-1] || 'empty'}`;
+        }
+
+        function renderQueue(width, height) {
+            const items = DS.queue.items;
+            const boxWidth = 80;
+            const boxHeight = 50;
+            const startX = 50;
+            const y = height / 2 - boxHeight / 2;
+            
+            let svg = '';
+            items.forEach((item, i) => {
+                const x = startX + i * (boxWidth + 10);
+                const hue = (i * 40) % 360;
+                svg += `
+                    <rect x="${x}" y="${y}" width="${boxWidth}" height="${boxHeight}" 
+                        rx="8" fill="hsl(${hue}, 70%, 50%)" class="node-circle slide-in"/>
+                    <text x="${x + boxWidth/2}" y="${y + 30}" text-anchor="middle" fill="white" 
+                        font-family="JetBrains Mono" font-size="14" font-weight="600">${item}</text>
+                `;
+            });
+            
+            // Arrows
+            if (items.length > 0) {
+                svg += `
+                    <text x="${startX + 30}" y="${y - 15}" text-anchor="middle" fill="var(--success)" font-size="12">FRONT</text>
+                    <text x="${startX + (items.length-1) * (boxWidth+10) + 40}" y="${y + boxHeight + 25}" 
+                        text-anchor="middle" fill="var(--accent)" font-size="12">BACK</text>
+                `;
+            }
+            
+            svg += `<text x="${width/2}" y="30" text-anchor="middle" fill="var(--text-secondary)" 
+                font-size="14">🚶 Queue (${items.length} items) - FIFO →</text>`;
+            
+            vizSvg.innerHTML = svg;
+            dsInfo.textContent = `Queue: ${items.length} items | Front: ${items[0] || 'empty'}`;
+        }
+
+        function renderTree(width, height) {
+            let svg = '';
+            
+            function drawNode(node) {
+                if (!node) return;
+                
+                // Draw edges first
+                if (node.left) {
+                    svg += `<line x1="${node.x}" y1="${node.y}" x2="${node.left.x}" y2="${node.left.y}" 
+                        stroke="var(--accent)" stroke-width="2" class="edge-line"/>`;
+                    drawNode(node.left);
+                }
+                if (node.right) {
+                    svg += `<line x1="${node.x}" y1="${node.y}" x2="${node.right.x}" y2="${node.right.y}" 
+                        stroke="var(--accent)" stroke-width="2" class="edge-line"/>`;
+                    drawNode(node.right);
+                }
+                
+                // Draw node
+                svg += `
+                    <circle cx="${node.x}" cy="${node.y}" r="25" fill="var(--accent)" class="node-circle"/>
+                    <text x="${node.x}" y="${node.y + 5}" text-anchor="middle" fill="white" 
+                        font-family="JetBrains Mono" font-size="14" font-weight="600">${node.val}</text>
+                `;
+            }
+            
+            if (DS.tree.root) {
+                DS.tree._updatePositions();
+                drawNode(DS.tree.root);
+            }
+            
+            svg += `<text x="${width/2}" y="30" text-anchor="middle" fill="var(--text-secondary)" 
+                font-size="14">🌳 Binary Search Tree</text>`;
+            
+            vizSvg.innerHTML = svg;
+            dsInfo.textContent = `BST: ${DS.tree.root ? 'Has root' : 'Empty'}`;
+        }
+
+        function renderGraph(width, height) {
+            let svg = '';
+            
+            // Draw edges
+            DS.graph.edges.forEach(edge => {
+                const from = DS.graph.nodes.get(edge.from);
+                const to = DS.graph.nodes.get(edge.to);
+                if (from && to) {
+                    svg += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" 
+                        stroke="var(--accent)" stroke-width="2" class="edge-line"/>`;
+                }
+            });
+            
+            // Draw nodes
+            DS.graph.nodes.forEach((node, id) => {
+                svg += `
+                    <circle cx="${node.x}" cy="${node.y}" r="30" fill="var(--success)" class="node-circle"/>
+                    <text x="${node.x}" y="${node.y + 5}" text-anchor="middle" fill="white" 
+                        font-family="JetBrains Mono" font-size="16" font-weight="600">${id}</text>
+                `;
+            });
+            
+            svg += `<text x="${width/2}" y="30" text-anchor="middle" fill="var(--text-secondary)" 
+                font-size="14">🕸️ Graph (${DS.graph.nodes.size} nodes, ${DS.graph.edges.length} edges)</text>`;
+            
+            vizSvg.innerHTML = svg;
+            dsInfo.textContent = `Graph: ${DS.graph.nodes.size} nodes, ${DS.graph.edges.length} edges`;
+        }
+
+        async function animateTraversal(items, type) {
+            statusText.textContent = `Running ${type} traversal...`;
+            
+            for (const item of items) {
+                // Highlight current node
+                const nodes = vizSvg.querySelectorAll('.node-circle');
+                nodes.forEach(n => n.style.filter = '');
+                
+                const texts = vizSvg.querySelectorAll('text');
+                texts.forEach(t => {
+                    if (t.textContent == item) {
+                        const circle = t.previousElementSibling;
+                        if (circle) {
+                            circle.style.filter = 'brightness(1.5) drop-shadow(0 0 10px yellow)';
+                        }
+                    }
+                });
+                
+                await new Promise(r => setTimeout(r, state.animSpeed));
+            }
+            
+            statusText.textContent = `${type} complete: ${items.join(' → ')}`;
+        }
+
+        // ============ CODE EXECUTION ============
+        function runCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+            
+            const startTime = performance.now();
+            consoleOutput.innerHTML = '';
+            statusText.textContent = 'Running...';
+            
+            // Create sandbox iframe content
+            const sandboxCode = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                            font-family: 'Inter', sans-serif; 
+                            background: ${state.theme === 'dark' ? '#0f172a' : '#f8fafc'};
+                            color: ${state.theme === 'dark' ? '#f1f5f9' : '#0f172a'};
+                            min-height: 100vh;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <script>
+                        const logs = [];
+                        const originalLog = console.log;
+                        const originalError = console.error;
+                        const originalWarn = console.warn;
+                        
+                        console.log = (...args) => {
+                            parent.postMessage({ type: 'log', data: args.map(a => 
+                                typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
+                            ).join(' ') }, '*');
+                        };
+                        
+                        console.error = (...args) => {
+                            parent.postMessage({ type: 'error', data: args.join(' ') }, '*');
+                        };
+                        
+                        console.warn = (...args) => {
+                            parent.postMessage({ type: 'warn', data: args.join(' ') }, '*');
+                        };
+                        
+                        window.onerror = (msg, src, line, col, err) => {
+                            parent.postMessage({ type: 'error', data: msg + ' (line ' + line + ')' }, '*');
+                        };
+                        
+                        try {
+                            ${code}
+                            parent.postMessage({ type: 'done' }, '*');
+                        } catch (e) {
+                            parent.postMessage({ type: 'error', data: e.message }, '*');
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `;
+            
+            // Also run in main context for DS manipulation
+            try {
+                const dsCode = new Function('DS', 'console', code);
+                const proxyConsole = {
+                    log: (...args) => logToConsole('log', args),
+                    error: (...args) => logToConsole('error', args),
+                    warn: (...args) => logToConsole('warn', args)
+                };
+                dsCode(DS, proxyConsole);
+            } catch (e) {
+                logToConsole('error', [e.message]);
+            }
+            
+            if (state.currentViz === 'preview') {
+                previewFrame.srcdoc = sandboxCode;
+            }
+            
+            const endTime = performance.now();
+            execTime.textContent = `⏱️ ${Math.round(endTime - startTime)}ms`;
+            statusText.textContent = 'Execution complete';
+        }
+
+        function logToConsole(type, args) {
+            const colors = {
+                log: 'var(--text-primary)',
+                error: 'var(--error)',
+                warn: 'var(--warning)'
+            };
+            const icons = { log: '›', error: '✕', warn: '⚠' };
+            
+            const formatted = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+            consoleOutput.innerHTML += `
+                <div class="flex gap-2 mb-1 slide-in" style="color: ${colors[type]}">
+                    <span>${icons[type]}</span>
+                    <span class="whitespace-pre-wrap">${formatted}</span>
+                </div>
+            `;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // Listen for iframe messages
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'log') logToConsole('log', [e.data.data]);
+            if (e.data.type === 'error') logToConsole('error', [e.data.data]);
+            if (e.data.type === 'warn') logToConsole('warn', [e.data.data]);
+        });
+
+        // ============ EVENT HANDLERS ============
+        $('runBtn').onclick = runCode;
+        
+        $('stopBtn').onclick = () => {
+            previewFrame.srcdoc = '';
+            statusText.textContent = 'Stopped';
+        };
+        
+        $('resetBtn').onclick = () => {
+            codeEditor.value = '';
+            consoleOutput.innerHTML = '';
+            previewFrame.srcdoc = '';
+            DS.stack = new Stack();
+            DS.queue = new Queue();
+            DS.tree = new BST();
+            DS.graph = new Graph();
+            updateLineNumbers();
+            updateViz();
+            statusText.textContent = 'Reset complete';
+        };
+        
+        $('clearConsole').onclick = () => consoleOutput.innerHTML = '';
+        
+        $('examples').onchange = (e) => {
+            if (e.target.value && examples[e.target.value]) {
+                codeEditor.value = examples[e.target.value];
+                updateLineNumbers();
+                
+                // Switch to appropriate viz tab
+                const vizMap = {
+                    stack: 'stack',
+                    queue: 'queue',
+                    bst: 'tree',
+                    graph: 'graph',
+                    canvas: 'preview',
+                    animation: 'preview'
+                };
+                switchVizTab(vizMap[e.target.value]);
+            }
+            e.target.value = '';
+        };
+        
+        $('themeToggle').onclick = () => {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            document.body.className = `theme-${state.theme}`;
+            $('themeIcon').innerHTML = state.theme === 'dark' 
+                ? '<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>'
+                : '<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>';
+        };
+        
+        $('autoRun').onchange = (e) => state.autoRun = e.target.checked;
+        $('animSpeed').oninput = (e) => state.animSpeed = 2100 - parseInt(e.target.value);
+        
+        // Viz tabs
+        document.querySelectorAll('.viz-tab').forEach(tab => {
+            tab.onclick = () => switchVizTab(tab.dataset.viz);
+        });
+        
+        function switchVizTab(viz) {
+            state.currentViz = viz;
+            document.querySelectorAll('.viz-tab').forEach(t => {
+                t.style.background = t.dataset.viz === viz ? 'var(--accent)' : 'transparent';
+            });
+            
+            if (viz === 'preview') {
+                previewFrame.style.display = 'block';
+                dsViz.classList.add('hidden');
+            } else {
+                previewFrame.style.display = 'none';
+                dsViz.classList.remove('hidden');
+                updateViz();
+            }
+        }
+        
+        // DS Controls
+        $('dsAdd').onclick = () => {
+            const val = dsInput.value.trim() || Math.floor(Math.random() * 100);
+            switch (state.currentViz) {
+                case 'stack': DS.stack.push(val); break;
+                case 'queue': DS.queue.enqueue(val); break;
+                case 'tree': DS.tree.insert(parseInt(val) || Math.floor(Math.random() * 100)); break;
+                case 'graph': 
+                    const id = val || String.fromCharCode(65 + DS.graph.nodes.size);
+                    DS.graph.addNode(id);
+                    break;
+            }
+            dsInput.value = '';
+        };
+        
+        $('dsRemove').onclick = () => {
+            switch (state.currentViz) {
+                case 'stack': DS.stack.pop(); break;
+                case 'queue': DS.queue.dequeue(); break;
+                case 'tree': DS.tree.clear(); break;
+                case 'graph': DS.graph.clear(); break;
+            }
+        };
+        
+        $('dsTraverse').onclick = async () => {
+            switch (state.currentViz) {
+                case 'tree':
+                    const treeOrder = DS.tree.inOrder();
+                    await animateTraversal(treeOrder, 'In-order');
+                    break;
+                case 'graph':
+                    const first = DS.graph.nodes.keys().next().value;
+                    if (first) {
+                        const bfsOrder = DS.graph.bfs(first);
+                        await animateTraversal(bfsOrder, 'BFS');
+                    }
+                    break;
+            }
+        };
+        
+        $('dsRandom').onclick = () => {
+            const randomVal = Math.floor(Math.random() * 100);
+            switch (state.currentViz) {
+                case 'stack': DS.stack.push(randomVal); break;
+                case 'queue': DS.queue.enqueue(randomVal); break;
+                case 'tree': DS.tree.insert(randomVal); break;
+                case 'graph':
+                    const id = String.fromCharCode(65 + DS.graph.nodes.size);
+                    DS.graph.addNode(id);
+                    if (DS.graph.nodes.size > 1) {
+                        const nodes = Array.from(DS.graph.nodes.keys());
+                        const randomNode = nodes[Math.floor(Math.random() * (nodes.length - 1))];
+                        DS.graph.addEdge(randomNode, id);
+                    }
+                    break;
+            }
+        };
+        
+        $('dsClear').onclick = () => {
+            DS.stack.clear();
+            DS.queue.clear();
+            DS.tree.clear();
+            DS.graph.clear();
+        };
+
+        // Edge creation for graph
+        dsInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const val = dsInput.value.trim();
+                if (state.currentViz === 'graph' && val.includes('-')) {
+                    const [from, to] = val.split('-').map(s => s.trim());
+                    DS.graph.addEdge(from, to);
+                    dsInput.value = '';
+                } else {
+                    $('dsAdd').click();
+                }
+            }
+        });
+
+        // ============ INIT ============
+        updateLineNumbers();
+        codeEditor.value = `// 🚀 Welcome to Code Playground!
+// Write JavaScript and see it run instantly.
+
+// Try the examples dropdown above, or write your own!
+
+console.log("Hello, World! 👋");
+console.log("Current time:", new Date().toLocaleTimeString());
+
+// Math operations
+const result = [1, 2, 3, 4, 5].reduce((a, b) => a + b);
+console.log("Sum of 1-5:", result);
+
+// Try the DS Visualizer tabs on the right! →
+// You can manipulate data structures via code:
+// DS.stack.push(10)
+// DS.queue.enqueue("hello")
+// DS.tree.insert(50)`;
+        updateLineNumbers();
+        
+        // Window resize handler
+        window.addEventListener('resize', updateViz);
+    </script>
+</body>
+</html>
