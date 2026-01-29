@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procedural Music Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background: #0a0a0f; font-family: 'Segoe UI', system-ui, sans-serif; }
+        #visualCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        .control-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(10,10,20,0.98), rgba(10,10,20,0.9));
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+        }
+        .control-panel.collapsed { transform: translateY(calc(100% - 48px)); }
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { background: rgba(99, 102, 241, 0.3); border-color: #6366f1; }
+        .slider { -webkit-appearance: none; background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #6366f1; border-radius: 50%; cursor: pointer; }
+        .btn { transition: all 0.15s; }
+        .btn:hover { transform: scale(1.02); }
+        .btn:active { transform: scale(0.98); }
+        .glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
+        .beat-flash { animation: beatPulse 0.1s ease-out; }
+        @keyframes beatPulse { 0% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.8); } 100% { box-shadow: none; } }
+        .preset-btn.active { background: #6366f1 !important; }
+        .modal-tab.active { background: rgba(255,255,255,0.1); border-bottom: 2px solid #6366f1; }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px; }
+        .youtube-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; }
+        .youtube-container iframe, .youtube-container > div { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body class="text-white">
+    <canvas id="visualCanvas"></canvas>
+    
+    <!-- Status Overlay -->
+    <div id="statusOverlay" class="fixed top-4 left-4 flex items-center gap-3 bg-black/50 backdrop-blur px-4 py-2 rounded-full text-sm">
+        <div id="playIndicator" class="w-3 h-3 rounded-full bg-gray-500"></div>
+        <span id="statusText">Click to Start</span>
+        <span id="bpmDisplay" class="text-indigo-400 font-mono hidden">120 BPM</span>
+    </div>
+    
+    <!-- Beat Indicator -->
+    <div id="beatIndicator" class="fixed top-4 right-4 w-4 h-4 rounded-full bg-white/20 transition-all duration-75"></div>
+    
+    <!-- Music Browser Modal -->
+    <div id="musicModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-2xl max-w-2xl w-full border border-white/10 max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 border-b border-white/10">
+                <h2 class="text-xl font-bold flex items-center gap-2">🎵 Music Browser</h2>
+                <button id="closeMusicModal" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            
+            <!-- Modal Tabs -->
+            <div class="flex border-b border-white/10">
+                <button class="modal-tab active flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2" data-modal-tab="youtube">
+                    <svg class="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    YouTube
+                </button>
+                <button class="modal-tab flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2" data-modal-tab="spotify">
+                    <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    Spotify
+                </button>
+                <button class="modal-tab flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2" data-modal-tab="freemusic">
+                    <span class="text-lg">🎧</span>
+                    Free Music
+                </button>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="p-4 overflow-y-auto flex-1">
+                <!-- YouTube Tab -->
+                <div id="modal-youtube" class="modal-content">
+                    <!-- Option 1: Paste Embed Code -->
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-400 mb-2 block">📋 Paste YouTube Embed Code (Recommended)</label>
+                        <textarea id="youtubeEmbedInput" placeholder='Paste embed code here... e.g., <iframe src="https://www.youtube.com/embed/VIDEO_ID" ...></iframe>' class="w-full bg-black/30 border border-white/10 rounded-lg py-3 px-4 text-sm focus:outline-none focus:border-red-500 h-20 resize-none font-mono text-xs"></textarea>
+                        <button id="youtubeEmbedBtn" class="btn bg-red-600 hover:bg-red-500 py-2 px-4 rounded-lg text-sm font-medium mt-2 w-full">▶ Load Embed</button>
+                        <p class="text-xs text-gray-500 mt-1">Go to YouTube → Click Share → Click Embed → Copy the iframe code</p>
+                    </div>
+                    
+                    <!-- Option 2: Video ID -->
+                    <div class="mb-4 p-3 bg-black/30 rounded-lg">
+                        <label class="text-sm text-gray-400 mb-2 block">🔗 Or Enter Video ID / URL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="youtubeInput" placeholder="Video ID (e.g., dQw4w9WgXcQ) or full URL" class="flex-1 bg-black/50 border border-white/10 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-red-500">
+                            <button id="youtubePlayBtn" class="btn bg-red-600 hover:bg-red-500 py-2 px-4 rounded-lg text-sm font-medium">▶ Play</button>
+                        </div>
+                    </div>
+                    
+                    <!-- YouTube Player -->
+                    <div id="youtubePlayerContainer" class="hidden mb-4">
+                        <div class="youtube-container bg-black rounded-lg overflow-hidden">
+                            <div id="youtubePlayerWrapper"></div>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <p id="youtubeNowPlaying" class="text-sm text-gray-400">Now playing</p>
+                            <button id="youtubeClose" class="text-xs text-red-400 hover:text-red-300">✕ Close Player</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Popular Music Streams -->
+                    <div class="mb-4">
+                        <h3 class="text-sm font-medium text-gray-300 mb-3">🎵 Quick Play (Click to Play)</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="yt-quick-btn btn flex items-center gap-2 bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800 hover:to-pink-800 py-2 px-3 rounded-lg text-sm text-left" data-videoid="jfKfPfyJRdk">
+                                <span>🎵</span>
+                                <span class="truncate">Lofi Girl Radio</span>
+                            </button>
+                            <button class="yt-quick-btn btn flex items-center gap-2 bg-gradient-to-r from-blue-900/50 to-cyan-900/50 hover:from-blue-800 hover:to-cyan-800 py-2 px-3 rounded-lg text-sm text-left" data-videoid="4xDzrJKXOOY">
+                                <span>🎧</span>
+                                <span class="truncate">Synthwave Radio</span>
+                            </button>
+                            <button class="yt-quick-btn btn flex items-center gap-2 bg-gradient-to-r from-green-900/50 to-teal-900/50 hover:from-green-800 hover:to-teal-800 py-2 px-3 rounded-lg text-sm text-left" data-videoid="5qap5aO4i9A">
+                                <span>🌿</span>
+                                <span class="truncate">Sleepy Lofi</span>
+                            </button>
+                            <button class="yt-quick-btn btn flex items-center gap-2 bg-gradient-to-r from-orange-900/50 to-red-900/50 hover:from-orange-800 hover:to-red-800 py-2 px-3 rounded-lg text-sm text-left" data-videoid="36YnV9STBqc">
+                                <span>🎹</span>
+                                <span class="truncate">Jazz Radio</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search on YouTube -->
+                    <div class="mb-4 p-3 bg-black/30 rounded-lg">
+                        <label class="text-sm text-gray-400 mb-2 block">🔍 Search on YouTube</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="youtubeSearchInput" placeholder="Search for music..." class="flex-1 bg-black/50 border border-white/10 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-red-500">
+                            <button id="youtubeSearchBtn" class="btn bg-white/10 hover:bg-white/20 py-2 px-4 rounded-lg text-sm">Search</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Opens YouTube → Find video → Share → Embed → Paste code above</p>
+                    </div>
+                    
+                    <div class="p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
+                        <p class="text-xs text-yellow-300">
+                            <strong>💡 For Visualization:</strong> Enable <strong>Mic input</strong> and use system audio loopback (Stereo Mix, VB-Cable, or Loopback) to visualize YouTube audio.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Spotify Tab -->
+                <div id="modal-spotify" class="modal-content hidden">
+                    <div id="spotifyLoginSection">
+                        <p class="text-gray-400 mb-4">Connect your Spotify Premium account to play any song directly.</p>
+                        
+                        <div class="bg-black/30 rounded-lg p-4 mb-4">
+                            <h3 class="text-sm font-medium text-gray-300 mb-2">Requirements:</h3>
+                            <ul class="text-xs text-gray-500 space-y-1">
+                                <li>• Spotify Premium subscription</li>
+                                <li>• Allow this page to access Spotify</li>
+                            </ul>
+                        </div>
+                        
+                        <button id="spotifyLoginBtn" class="w-full bg-green-600 hover:bg-green-500 py-3 rounded-full font-medium flex items-center justify-center gap-2 transition">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                            Login with Spotify
+                        </button>
+                    </div>
+                    
+                    <div id="spotifyPlayerSection" class="hidden">
+                        <div class="mb-4">
+                            <div class="relative">
+                                <input type="text" id="spotifySearch" placeholder="Search for songs, artists, albums..." class="w-full bg-black/30 border border-white/10 rounded-lg py-3 px-4 pr-10 text-sm focus:outline-none focus:border-green-500">
+                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                        </div>
+                        
+                        <div id="spotifySearchResults" class="max-h-48 overflow-y-auto space-y-2 mb-4"></div>
+                        
+                        <div id="spotifyNowPlaying" class="bg-black/30 rounded-lg p-4 hidden">
+                            <div class="flex items-center gap-4">
+                                <img id="spotifyAlbumArt" class="w-16 h-16 rounded-lg" src="" alt="">
+                                <div class="flex-1 min-w-0">
+                                    <p id="spotifyTrackName" class="font-medium truncate">No track playing</p>
+                                    <p id="spotifyArtistName" class="text-sm text-gray-400 truncate">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2">
+                                <span id="spotifyCurrentTime" class="text-xs font-mono text-gray-400 w-10">0:00</span>
+                                <input type="range" id="spotifySeek" class="slider flex-1" min="0" max="100" value="0">
+                                <span id="spotifyDuration" class="text-xs font-mono text-gray-400 w-10">0:00</span>
+                            </div>
+                            <div class="mt-3 flex items-center justify-center gap-4">
+                                <button id="spotifyPrev" class="text-white/60 hover:text-white p-2">⏮</button>
+                                <button id="spotifyPlayPause" class="bg-white text-black rounded-full w-10 h-10 flex items-center justify-center hover:scale-105 transition">▶</button>
+                                <button id="spotifyNext" class="text-white/60 hover:text-white p-2">⏭</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Connected as <span id="spotifyUserName" class="text-green-400">User</span></span>
+                            <button id="spotifyLogout" class="text-red-400 hover:text-red-300">Disconnect</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                        <p class="text-xs text-blue-300">
+                            <strong>💡 Tip:</strong> To visualize Spotify audio, enable <strong>Mic input</strong> with system audio loopback.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Free Music Tab -->
+                <div id="modal-freemusic" class="modal-content hidden">
+                    <div class="mb-4">
+                        <label class="text-sm text-gray-400 mb-2 block">Play from URL (MP3, OGG, WAV)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="audioUrlInput" placeholder="https://example.com/music.mp3" class="flex-1 bg-black/30 border border-white/10 rounded-lg py-3 px-4 text-sm focus:outline-none focus:border-indigo-500">
+                            <button id="loadUrlBtn" class="btn bg-indigo-600 hover:bg-indigo-500 py-2 px-4 rounded-lg text-sm font-medium">Load</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="text-sm font-medium text-gray-300 mb-3">🎧 Sample Tracks (Free to Use)</h3>
+                        <div id="sampleTracks" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                    </div>
+                    
+                    <div class="p-3 bg-green-900/30 border border-green-500/30 rounded-lg">
+                        <p class="text-xs text-green-300">
+                            <strong>✨ Direct Audio:</strong> These tracks play directly through the visualizer with full audio reactivity!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div id="controlPanel" class="control-panel">
+        <!-- Toggle Button -->
+        <button id="togglePanel" class="absolute -top-10 left-1/2 -translate-x-1/2 bg-indigo-600/80 hover:bg-indigo-600 px-4 py-2 rounded-t-lg text-sm flex items-center gap-2">
+            <span id="toggleIcon">▼</span> Controls
+        </button>
+        
+        <!-- Tabs -->
+        <div class="flex border-b border-white/10">
+            <button class="tab-btn active flex-1 py-3 px-4 text-sm font-medium border-b-2 border-transparent" data-tab="input">🎤 Input</button>
+            <button class="tab-btn flex-1 py-3 px-4 text-sm font-medium border-b-2 border-transparent" data-tab="sound">🎹 Sound</button>
+            <button class="tab-btn flex-1 py-3 px-4 text-sm font-medium border-b-2 border-transparent" data-tab="visual">🎨 Visual</button>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="p-4 max-h-64 overflow-y-auto">
+            <!-- Input Tab -->
+            <div id="tab-input" class="tab-content grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Source</label>
+                    <div class="flex gap-2">
+                        <button id="srcProcedural" class="preset-btn active btn flex-1 bg-white/10 hover:bg-white/20 py-2 px-3 rounded text-sm">🎛️ Procedural</button>
+                        <button id="srcFile" class="preset-btn btn flex-1 bg-white/10 hover:bg-white/20 py-2 px-3 rounded text-sm">📁 File</button>
+                        <button id="srcMic" class="preset-btn btn flex-1 bg-white/10 hover:bg-white/20 py-2 px-3 rounded text-sm">🎙️ Mic</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">File Input</label>
+                    <input type="file" id="audioFile" accept="audio/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-indigo-600 file:text-white file:cursor-pointer">
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Playback Controls</label>
+                    <div class="flex gap-2 items-center">
+                        <button id="filePlayPause" class="btn bg-green-600 hover:bg-green-500 py-2 px-4 rounded text-sm disabled:opacity-50 flex items-center gap-1" disabled>
+                            <span id="playPauseIcon">▶</span>
+                            <span id="playPauseText">Play</span>
+                        </button>
+                        <button id="fileStop" class="btn bg-red-600 hover:bg-red-500 py-2 px-3 rounded text-sm disabled:opacity-50" disabled>⏹</button>
+                        <button id="fileBack" class="btn bg-white/10 hover:bg-white/20 py-2 px-3 rounded text-sm disabled:opacity-50" disabled title="Rewind 10s">⏪</button>
+                        <button id="fileForward" class="btn bg-white/10 hover:bg-white/20 py-2 px-3 rounded text-sm disabled:opacity-50" disabled title="Forward 10s">⏩</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="fileCurrentTime" class="text-xs font-mono text-gray-400 w-12">0:00</span>
+                        <input type="range" id="fileSeek" class="slider flex-1" min="0" max="100" value="0" step="0.1" disabled>
+                        <span id="fileDuration" class="text-xs font-mono text-gray-400 w-12">0:00</span>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Browse Online Music</label>
+                    <button id="browseMusicBtn" class="btn w-full bg-gradient-to-r from-red-600 via-green-600 to-purple-600 hover:from-red-500 hover:via-green-500 hover:to-purple-500 py-2 px-4 rounded text-sm flex items-center justify-center gap-2 font-medium">
+                        🎵 Browse Music
+                    </button>
+                    <p class="text-xs text-gray-500">YouTube, Spotify & Free Music</p>
+                </div>
+            </div>
+            
+            <!-- Sound Tab -->
+            <div id="tab-sound" class="tab-content hidden grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Transport</label>
+                    <div class="flex gap-2">
+                        <button id="playBtn" class="btn flex-1 bg-green-600 hover:bg-green-500 py-2 px-4 rounded font-medium">
+                            <span id="proceduralPlayIcon">▶</span> <span id="proceduralPlayText">Play</span>
+                        </button>
+                        <button id="stopBtn" class="btn flex-1 bg-red-600/80 hover:bg-red-600 py-2 px-4 rounded font-medium">⏹ Stop</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 w-12">BPM</span>
+                        <input type="range" id="bpmSlider" class="slider flex-1" min="60" max="180" value="120">
+                        <span id="bpmValue" class="text-sm font-mono w-10">120</span>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Preset</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="genre-btn btn bg-purple-600/50 hover:bg-purple-600 py-1 px-2 rounded text-xs" data-genre="ambient">Ambient</button>
+                        <button class="genre-btn btn bg-pink-600/50 hover:bg-pink-600 py-1 px-2 rounded text-xs" data-genre="techno">Techno</button>
+                        <button class="genre-btn btn bg-orange-600/50 hover:bg-orange-600 py-1 px-2 rounded text-xs" data-genre="lofi">Lo-fi</button>
+                        <button class="genre-btn btn bg-cyan-600/50 hover:bg-cyan-600 py-1 px-2 rounded text-xs" data-genre="chiptune">Chiptune</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 w-12">Seed</span>
+                        <input type="number" id="seedInput" class="bg-white/10 rounded px-2 py-1 w-20 text-sm" value="42">
+                        <button id="randomSeed" class="btn bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-xs">🎲</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Mix</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Drums</span>
+                            <input type="range" id="drumVol" class="slider flex-1" min="0" max="100" value="80">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Synth</span>
+                            <input type="range" id="synthVol" class="slider flex-1" min="0" max="100" value="60">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Bass</span>
+                            <input type="range" id="bassVol" class="slider flex-1" min="0" max="100" value="70">
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">FX</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Filter</span>
+                            <input type="range" id="filterCutoff" class="slider flex-1" min="100" max="8000" value="2000">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Delay</span>
+                            <input type="range" id="delayMix" class="slider flex-1" min="0" max="100" value="30">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Distort</span>
+                            <input type="range" id="distortion" class="slider flex-1" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visual Tab -->
+            <div id="tab-visual" class="tab-content hidden grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Mode</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs active" data-mode="oscilloscope">〰️ Scope</button>
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs" data-mode="spectrum">📊 Spectrum</button>
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs" data-mode="radial">🔘 Radial</button>
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs" data-mode="particles">✨ Particles</button>
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs" data-mode="spectrogram">🌊 Waterfall</button>
+                        <button class="mode-btn btn bg-indigo-600/50 hover:bg-indigo-600 py-1 px-2 rounded text-xs" data-mode="combined">🎭 Combined</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Color Theme</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="theme-btn btn bg-gradient-to-r from-pink-500 to-cyan-500 py-1 px-2 rounded text-xs" data-theme="neon">Neon</button>
+                        <button class="theme-btn btn bg-gradient-to-r from-gray-400 to-white py-1 px-2 rounded text-xs text-gray-800" data-theme="mono">Mono</button>
+                        <button class="theme-btn btn bg-gradient-to-r from-orange-500 to-red-500 py-1 px-2 rounded text-xs" data-theme="warm">Warm</button>
+                        <button class="theme-btn btn bg-gradient-to-r from-blue-500 to-purple-500 py-1 px-2 rounded text-xs" data-theme="cool">Cool</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Motion</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Trails</span>
+                            <input type="range" id="trailAmount" class="slider flex-1" min="0" max="100" value="50">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Glow</span>
+                            <input type="range" id="glowAmount" class="slider flex-1" min="0" max="100" value="60">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-12">Particles</span>
+                            <input type="range" id="particleCount" class="slider flex-1" min="50" max="500" value="200">
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Reactivity</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="bassScale" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Bass drives scale</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="beatFlash" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Beat drives flash</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="highSparkle" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Highs drive sparkle</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-1">🔊 Bass Drop</label>
+                    <div class="space-y-2">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400">Your Name</span>
+                            <input type="text" id="displayName" placeholder="Enter your name..." class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-500" maxlength="30">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400">Logo</span>
+                            <input type="file" id="logoInput" accept="image/*" class="text-xs text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-indigo-600 file:text-white file:text-xs file:cursor-pointer">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-14">Logo Size</span>
+                            <input type="range" id="logoSize" class="slider flex-1" min="30" max="150" value="60">
+                        </div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="showLogo" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Show Logo</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="showName" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Show Name</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="bassDropEffect" class="w-4 h-4 rounded" checked>
+                            <span class="text-xs">Bass Drop Effect</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============ SEEDED RANDOM ============
+    class SeededRandom {
+        constructor(seed = 42) { this.seed = seed; }
+        next() {
+            this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+            return this.seed / 0x7fffffff;
+        }
+        range(min, max) { return min + this.next() * (max - min); }
+        int(min, max) { return Math.floor(this.range(min, max + 1)); }
+        choice(arr) { return arr[this.int(0, arr.length - 1)]; }
+    }
+
+    // ============ AUDIO ENGINE ============
+    class AudioEngine {
+        constructor() {
+            this.ctx = null;
+            this.masterGain = null;
+            this.analyser = null;
+            this.compressor = null;
+            this.filter = null;
+            this.delayNode = null;
+            this.delayGain = null;
+            this.distortionNode = null;
+            this.source = 'procedural';
+            this.isPlaying = false;
+            this.fileSource = null;
+            this.micStream = null;
+            this.audioElement = null;
+            this.mediaSource = null;
+            
+            this.isFilePlaying = false;
+            this.isFilePaused = false;
+            this.filePausedAt = 0;
+            this.fileStartTime = 0;
+            this.fileDuration = 0;
+        }
+
+        async init() {
+            if (this.ctx) return;
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = 0.7;
+            
+            this.analyser = this.ctx.createAnalyser();
+            this.analyser.fftSize = 2048;
+            this.analyser.smoothingTimeConstant = 0.8;
+            
+            this.compressor = this.ctx.createDynamicsCompressor();
+            this.compressor.threshold.value = -24;
+            this.compressor.knee.value = 30;
+            this.compressor.ratio.value = 12;
+            this.compressor.attack.value = 0.003;
+            this.compressor.release.value = 0.25;
+            
+            this.filter = this.ctx.createBiquadFilter();
+            this.filter.type = 'lowpass';
+            this.filter.frequency.value = 2000;
+            this.filter.Q.value = 1;
+            
+            this.delayNode = this.ctx.createDelay(1);
+            this.delayNode.delayTime.value = 0.3;
+            this.delayGain = this.ctx.createGain();
+            this.delayGain.gain.value = 0.3;
+            this.delayFeedback = this.ctx.createGain();
+            this.delayFeedback.gain.value = 0.4;
+            
+            this.distortionNode = this.ctx.createWaveShaper();
+            this.distortionNode.curve = this.makeDistortionCurve(0);
+            
+            this.filter.connect(this.distortionNode);
+            this.distortionNode.connect(this.compressor);
+            this.compressor.connect(this.delayNode);
+            this.delayNode.connect(this.delayGain);
+            this.delayGain.connect(this.compressor);
+            this.delayNode.connect(this.delayFeedback);
+            this.delayFeedback.connect(this.delayNode);
+            this.compressor.connect(this.analyser);
+            this.analyser.connect(this.masterGain);
+            this.masterGain.connect(this.ctx.destination);
+        }
+
+        makeDistortionCurve(amount) {
+            const samples = 44100;
+            const curve = new Float32Array(samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < samples; i++) {
+                const x = (i * 2) / samples - 1;
+                curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+            }
+            return curve;
+        }
+
+        setDistortion(amount) {
+            this.distortionNode.curve = this.makeDistortionCurve(amount * 100);
+        }
+
+        setFilterCutoff(freq) {
+            this.filter.frequency.setTargetAtTime(freq, this.ctx.currentTime, 0.01);
+        }
+
+        setDelayMix(mix) {
+            this.delayGain.gain.setTargetAtTime(mix, this.ctx.currentTime, 0.01);
+        }
+
+        getAnalyserData() {
+            const bufferLength = this.analyser.frequencyBinCount;
+            const timeData = new Uint8Array(bufferLength);
+            const freqData = new Uint8Array(bufferLength);
+            this.analyser.getByteTimeDomainData(timeData);
+            this.analyser.getByteFrequencyData(freqData);
+            return { timeData, freqData, bufferLength };
+        }
+
+        async loadFile(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+            return audioBuffer;
+        }
+
+        async loadUrl(url) {
+            this.stopAudioElement();
+            
+            this.audioElement = new Audio();
+            this.audioElement.crossOrigin = 'anonymous';
+            this.audioElement.src = url;
+            
+            return new Promise((resolve, reject) => {
+                this.audioElement.addEventListener('canplaythrough', () => {
+                    if (!this.mediaSource) {
+                        this.mediaSource = this.ctx.createMediaElementSource(this.audioElement);
+                        this.mediaSource.connect(this.filter);
+                    }
+                    resolve(this.audioElement);
+                }, { once: true });
+                
+                this.audioElement.addEventListener('error', (e) => {
+                    reject(new Error('Failed to load audio: ' + (e.message || 'Unknown error')));
+                }, { once: true });
+                
+                this.audioElement.load();
+            });
+        }
+
+        playAudioElement() {
+            if (this.audioElement) {
+                this.audioElement.play();
+                this.isFilePlaying = true;
+                this.isFilePaused = false;
+            }
+        }
+
+        pauseAudioElement() {
+            if (this.audioElement) {
+                this.audioElement.pause();
+                this.isFilePlaying = false;
+                this.isFilePaused = true;
+            }
+        }
+
+        stopAudioElement() {
+            if (this.audioElement) {
+                this.audioElement.pause();
+                this.audioElement.currentTime = 0;
+                this.isFilePlaying = false;
+                this.isFilePaused = false;
+            }
+        }
+
+        seekAudioElement(time) {
+            if (this.audioElement) {
+                this.audioElement.currentTime = time;
+            }
+        }
+
+        getAudioElementTime() {
+            return this.audioElement ? this.audioElement.currentTime : 0;
+        }
+
+        getAudioElementDuration() {
+            return this.audioElement ? this.audioElement.duration : 0;
+        }
+
+        playBuffer(buffer, startTime = 0) {
+            this.stopFileSource();
+            this.fileSource = this.ctx.createBufferSource();
+            this.fileSource.buffer = buffer;
+            this.fileSource.connect(this.filter);
+            this.fileStartTime = this.ctx.currentTime - startTime;
+            this.fileSource.start(0, startTime);
+            this.fileDuration = buffer.duration;
+            this.isFilePlaying = true;
+            this.isFilePaused = false;
+            
+            this.fileSource.onended = () => {
+                if (this.isFilePlaying) {
+                    const currentTime = this.getCurrentFileTime();
+                    if (currentTime >= this.fileDuration - 0.1) {
+                        this.isFilePlaying = false;
+                        this.isFilePaused = false;
+                        this.filePausedAt = 0;
+                    }
+                }
+            };
+        }
+
+        pauseFile() {
+            if (this.isFilePlaying && this.fileSource) {
+                this.filePausedAt = this.getCurrentFileTime();
+                this.stopFileSource();
+                this.isFilePlaying = false;
+                this.isFilePaused = true;
+            }
+        }
+
+        resumeFile(buffer) {
+            if (this.isFilePaused && this.filePausedAt !== undefined) {
+                this.playBuffer(buffer, this.filePausedAt);
+            }
+        }
+
+        getCurrentFileTime() {
+            if (this.isFilePlaying && this.fileStartTime !== undefined) {
+                const time = this.ctx.currentTime - this.fileStartTime;
+                return Math.min(time, this.fileDuration);
+            }
+            return this.filePausedAt || 0;
+        }
+
+        seekFile(buffer, time) {
+            const wasPlaying = this.isFilePlaying;
+            this.stopFileSource();
+            this.filePausedAt = time;
+            
+            if (wasPlaying) {
+                this.playBuffer(buffer, time);
+            } else {
+                this.isFilePaused = true;
+            }
+        }
+
+        stopFileSource() {
+            if (this.fileSource) {
+                try { 
+                    this.fileSource.onended = null;
+                    this.fileSource.stop(); 
+                } catch(e) {}
+                this.fileSource.disconnect();
+                this.fileSource = null;
+            }
+            this.isFilePlaying = false;
+        }
+
+        fullStop() {
+            this.stopFileSource();
+            this.stopAudioElement();
+            this.isFilePaused = false;
+            this.filePausedAt = 0;
+        }
+
+        async enableMic() {
+            try {
+                this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const micSource = this.ctx.createMediaStreamSource(this.micStream);
+                micSource.connect(this.analyser);
+                return true;
+            } catch(e) {
+                console.error('Mic error:', e);
+                return false;
+            }
+        }
+
+        disableMic() {
+            if (this.micStream) {
+                this.micStream.getTracks().forEach(t => t.stop());
+                this.micStream = null;
+            }
+        }
+    }
+
+    // ============ PROCEDURAL SYNTH ============
+    class ProceduralSynth {
+        constructor(engine) {
+            this.engine = engine;
+            this.bpm = 120;
+            this.isPlaying = false;
+            this.stepIndex = 0;
+            this.nextStepTime = 0;
+            this.schedulerInterval = null;
+            this.rng = new SeededRandom(42);
+            this.volumes = { drums: 0.8, synth: 0.6, bass: 0.7 };
+            this.genre = 'techno';
+            this.pattern = this.generatePattern();
+        }
+
+        setSeed(seed) {
+            this.rng = new SeededRandom(seed);
+            this.pattern = this.generatePattern();
+        }
+
+        setGenre(genre) {
+            this.genre = genre;
+            this.pattern = this.generatePattern();
+        }
+
+        generatePattern() {
+            const p = { kick: [], snare: [], hat: [], bass: [], synth: [] };
+            
+            for (let i = 0; i < 16; i++) {
+                switch(this.genre) {
+                    case 'techno':
+                        p.kick[i] = i % 4 === 0 ? 0.9 : (this.rng.next() > 0.8 ? 0.5 : 0);
+                        p.snare[i] = i % 8 === 4 ? 0.8 : 0;
+                        p.hat[i] = i % 2 === 0 ? 0.6 : 0.3;
+                        p.bass[i] = i % 4 === 0 ? this.rng.choice([36, 38, 41, 43]) : 0;
+                        p.synth[i] = this.rng.next() > 0.7 ? this.rng.choice([60, 63, 65, 67, 70]) : 0;
+                        break;
+                    case 'ambient':
+                        p.kick[i] = i === 0 ? 0.4 : 0;
+                        p.snare[i] = 0;
+                        p.hat[i] = this.rng.next() > 0.8 ? 0.2 : 0;
+                        p.bass[i] = i % 8 === 0 ? this.rng.choice([36, 41, 43]) : 0;
+                        p.synth[i] = this.rng.next() > 0.5 ? this.rng.choice([60, 64, 67, 71, 72]) : 0;
+                        break;
+                    case 'lofi':
+                        p.kick[i] = (i === 0 || i === 10) ? 0.7 : 0;
+                        p.snare[i] = (i === 4 || i === 12) ? 0.6 : 0;
+                        p.hat[i] = this.rng.next() > 0.5 ? 0.3 : 0;
+                        p.bass[i] = i % 4 === 0 ? this.rng.choice([36, 38, 40, 43]) : 0;
+                        p.synth[i] = this.rng.next() > 0.6 ? this.rng.choice([60, 62, 65, 67]) : 0;
+                        break;
+                    case 'chiptune':
+                        p.kick[i] = i % 4 === 0 ? 0.8 : 0;
+                        p.snare[i] = i % 4 === 2 ? 0.7 : 0;
+                        p.hat[i] = 0.4;
+                        p.bass[i] = i % 2 === 0 ? this.rng.choice([36, 38, 41, 43]) : 0;
+                        p.synth[i] = this.rng.next() > 0.4 ? this.rng.choice([72, 74, 76, 79, 81]) : 0;
+                        break;
+                }
+            }
+            return p;
+        }
+
+        midiToFreq(midi) {
+            return 440 * Math.pow(2, (midi - 69) / 12);
+        }
+
+        playKick(time, velocity) {
+            const ctx = this.engine.ctx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, time);
+            osc.frequency.exponentialRampToValueAtTime(50, time + 0.06);
+            gain.gain.setValueAtTime(velocity * this.volumes.drums, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+            osc.connect(gain);
+            gain.connect(this.engine.filter);
+            osc.start(time);
+            osc.stop(time + 0.3);
+        }
+
+        playSnare(time, velocity) {
+            const ctx = this.engine.ctx;
+            const bufferSize = ctx.sampleRate * 0.2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseFilter = ctx.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 1000;
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(velocity * this.volumes.drums * 0.5, time);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(this.engine.filter);
+            noise.start(time);
+            noise.stop(time + 0.2);
+            
+            const osc = ctx.createOscillator();
+            const oscGain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, time);
+            osc.frequency.exponentialRampToValueAtTime(100, time + 0.05);
+            oscGain.gain.setValueAtTime(velocity * this.volumes.drums * 0.3, time);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+            osc.connect(oscGain);
+            oscGain.connect(this.engine.filter);
+            osc.start(time);
+            osc.stop(time + 0.1);
+        }
+
+        playHat(time, velocity) {
+            const ctx = this.engine.ctx;
+            const bufferSize = ctx.sampleRate * 0.05;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(velocity * this.volumes.drums * 0.3, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.engine.filter);
+            noise.start(time);
+            noise.stop(time + 0.05);
+        }
+
+        playBass(time, note, duration = 0.2) {
+            const ctx = this.engine.ctx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = this.genre === 'chiptune' ? 'square' : 'sawtooth';
+            osc.frequency.value = this.midiToFreq(note);
+            const bassFilter = ctx.createBiquadFilter();
+            bassFilter.type = 'lowpass';
+            bassFilter.frequency.value = 400;
+            gain.gain.setValueAtTime(this.volumes.bass * 0.4, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+            osc.connect(bassFilter);
+            bassFilter.connect(gain);
+            gain.connect(this.engine.filter);
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+
+        playSynth(time, note, duration = 0.15) {
+            const ctx = this.engine.ctx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = this.genre === 'chiptune' ? 'square' : this.genre === 'ambient' ? 'sine' : 'sawtooth';
+            osc.frequency.value = this.midiToFreq(note);
+            
+            if (this.genre !== 'chiptune') {
+                const modOsc = ctx.createOscillator();
+                const modGain = ctx.createGain();
+                modOsc.frequency.value = osc.frequency.value * 2;
+                modGain.gain.value = 50;
+                modOsc.connect(modGain);
+                modGain.connect(osc.frequency);
+                modOsc.start(time);
+                modOsc.stop(time + duration);
+            }
+            
+            const attack = this.genre === 'ambient' ? 0.1 : 0.01;
+            const release = this.genre === 'ambient' ? 0.5 : 0.1;
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(this.volumes.synth * 0.2, time + attack);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + duration + release);
+            osc.connect(gain);
+            gain.connect(this.engine.filter);
+            osc.start(time);
+            osc.stop(time + duration + release);
+        }
+
+        scheduleStep(stepTime) {
+            const step = this.stepIndex % 16;
+            if (this.pattern.kick[step]) this.playKick(stepTime, this.pattern.kick[step]);
+            if (this.pattern.snare[step]) this.playSnare(stepTime, this.pattern.snare[step]);
+            if (this.pattern.hat[step]) this.playHat(stepTime, this.pattern.hat[step]);
+            if (this.pattern.bass[step]) this.playBass(stepTime, this.pattern.bass[step], 60/this.bpm/2);
+            if (this.pattern.synth[step]) this.playSynth(stepTime, this.pattern.synth[step], 60/this.bpm/4);
+            this.stepIndex++;
+            if (this.stepIndex % 64 === 0) this.pattern = this.generatePattern();
+        }
+
+        scheduler() {
+            const scheduleAhead = 0.1;
+            const stepDuration = 60 / this.bpm / 4;
+            while (this.nextStepTime < this.engine.ctx.currentTime + scheduleAhead) {
+                this.scheduleStep(this.nextStepTime);
+                this.nextStepTime += stepDuration;
+            }
+        }
+
+        start() {
+            if (this.isPlaying) return;
+            this.isPlaying = true;
+            this.stepIndex = 0;
+            this.nextStepTime = this.engine.ctx.currentTime;
+            this.schedulerInterval = setInterval(() => this.scheduler(), 25);
+        }
+
+        stop() {
+            this.isPlaying = false;
+            if (this.schedulerInterval) {
+                clearInterval(this.schedulerInterval);
+                this.schedulerInterval = null;
+            }
+        }
+
+        toggle() {
+            if (this.isPlaying) this.stop();
+            else this.start();
+            return this.isPlaying;
+        }
+    }
+
+    // ============ BEAT DETECTOR ============
+    class BeatDetector {
+        constructor() {
+            this.prevSpectrum = null;
+            this.fluxHistory = [];
+            this.historySize = 43;
+            this.threshold = 1.5;
+            this.cooldown = 0;
+            this.cooldownTime = 10;
+            this.beatStrength = 0;
+            this.isBeat = false;
+            this.beatTimes = [];
+            this.estimatedBPM = 0;
+        }
+
+        detect(freqData) {
+            this.isBeat = false;
+            this.beatStrength *= 0.9;
+            if (this.cooldown > 0) this.cooldown--;
+            
+            const bassEnd = 20;
+            let flux = 0;
+            if (this.prevSpectrum) {
+                for (let i = 0; i < bassEnd; i++) {
+                    const diff = freqData[i] - this.prevSpectrum[i];
+                    if (diff > 0) flux += diff;
+                }
+            }
+            
+            this.prevSpectrum = new Uint8Array(freqData);
+            this.fluxHistory.push(flux);
+            if (this.fluxHistory.length > this.historySize) this.fluxHistory.shift();
+            
+            const mean = this.fluxHistory.reduce((a, b) => a + b, 0) / this.fluxHistory.length;
+            const variance = this.fluxHistory.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / this.fluxHistory.length;
+            const std = Math.sqrt(variance);
+            const adaptiveThreshold = mean + this.threshold * std;
+            
+            if (flux > adaptiveThreshold && this.cooldown === 0 && flux > 50) {
+                this.isBeat = true;
+                this.beatStrength = Math.min(1, flux / 1000);
+                this.cooldown = this.cooldownTime;
+                
+                const now = performance.now();
+                this.beatTimes.push(now);
+                if (this.beatTimes.length > 12) this.beatTimes.shift();
+                
+                if (this.beatTimes.length >= 4) {
+                    const intervals = [];
+                    for (let i = 1; i < this.beatTimes.length; i++) {
+                        intervals.push(this.beatTimes[i] - this.beatTimes[i-1]);
+                    }
+                    const avgInterval = intervals.reduce((a,b) => a+b, 0) / intervals.length;
+                    this.estimatedBPM = Math.round(60000 / avgInterval);
+                    if (this.estimatedBPM < 60) this.estimatedBPM *= 2;
+                    if (this.estimatedBPM > 180) this.estimatedBPM /= 2;
+                }
+            }
+            
+            return { isBeat: this.isBeat, strength: this.beatStrength, bpm: this.estimatedBPM };
+        }
+    }
+
+    // ============ VISUALIZER ============
+    class Visualizer {
+        constructor(canvas, engine, beatDetector) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.engine = engine;
+            this.beatDetector = beatDetector;
+            this.mode = 'oscilloscope';
+            this.theme = 'neon';
+            this.trails = 0.5;
+            this.glow = 0.6;
+            this.particleCount = 200;
+            this.particles = [];
+            this.spectrogramData = [];
+            this.bassScale = true;
+            this.beatFlash = true;
+            this.highSparkle = true;
+            
+            // Bass Drop customization
+            this.displayName = '';
+            this.logo = null;
+            this.logoSize = 60;
+            this.showLogo = true;
+            this.showName = true;
+            this.bassDropEffect = true;
+            this.bassDropScale = 1;
+            this.nameGlow = 0;
+            
+            this.resize();
+            this.initParticles();
+        }
+        
+        setLogo(imageData) {
+            if (imageData) {
+                this.logo = new Image();
+                this.logo.src = imageData;
+            } else {
+                this.logo = null;
+            }
+        }
+
+        resize() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.centerX = this.canvas.width / 2;
+            this.centerY = this.canvas.height / 2;
+            this.radialState = null;
+        }
+
+        initParticles() {
+            this.particles = [];
+            for (let i = 0; i < this.particleCount; i++) {
+                this.particles.push({
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: Math.random() * 3 + 1,
+                    hue: Math.random() * 60
+                });
+            }
+        }
+
+        getColors() {
+            const themes = {
+                neon: { primary: '#ff00ff', secondary: '#00ffff', bg: 'rgba(10,10,30,', accent: '#ffff00' },
+                mono: { primary: '#ffffff', secondary: '#888888', bg: 'rgba(0,0,0,', accent: '#ffffff' },
+                warm: { primary: '#ff6600', secondary: '#ff0066', bg: 'rgba(30,10,10,', accent: '#ffcc00' },
+                cool: { primary: '#0066ff', secondary: '#6600ff', bg: 'rgba(10,10,30,', accent: '#00ffcc' }
+            };
+            return themes[this.theme];
+        }
+
+        getMetrics(freqData, timeData) {
+            let sum = 0;
+            for (let i = 0; i < timeData.length; i++) {
+                const v = (timeData[i] - 128) / 128;
+                sum += v * v;
+            }
+            const rms = Math.sqrt(sum / timeData.length);
+            
+            const bassEnd = 10, midEnd = 100;
+            let bass = 0, mids = 0, highs = 0;
+            for (let i = 0; i < freqData.length; i++) {
+                if (i < bassEnd) bass += freqData[i];
+                else if (i < midEnd) mids += freqData[i];
+                else highs += freqData[i];
+            }
+            bass /= bassEnd * 255;
+            mids /= (midEnd - bassEnd) * 255;
+            highs /= (freqData.length - midEnd) * 255;
+            
+            return { rms, bass, mids, highs };
+        }
+
+        draw() {
+            if (!this.engine.ctx) return;
+            
+            const { timeData, freqData, bufferLength } = this.engine.getAnalyserData();
+            const beat = this.beatDetector.detect(freqData);
+            const metrics = this.getMetrics(freqData, timeData);
+            const colors = this.getColors();
+            
+            const alpha = 1 - this.trails * 0.95;
+            this.ctx.fillStyle = colors.bg + alpha + ')';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            if (beat.isBeat && this.beatFlash) {
+                this.ctx.fillStyle = `rgba(255,255,255,${beat.strength * 0.3})`;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            if (this.glow > 0) this.ctx.shadowBlur = this.glow * 30;
+            
+            const scale = this.bassScale ? 1 + metrics.bass * 0.3 : 1;
+            
+            switch(this.mode) {
+                case 'oscilloscope': this.drawOscilloscope(timeData, colors, scale); break;
+                case 'spectrum': this.drawSpectrum(freqData, colors, scale, beat); break;
+                case 'radial': this.drawRadial(freqData, colors, scale, beat); break;
+                case 'particles': this.drawParticles(freqData, colors, metrics, beat); break;
+                case 'spectrogram': this.drawSpectrogram(freqData, colors); break;
+                case 'combined': this.drawCombined(timeData, freqData, colors, scale, beat, metrics); break;
+            }
+            
+            if (this.highSparkle && metrics.highs > 0.1) this.drawSparkles(metrics.highs, colors);
+            
+            // Bass Drop effects
+            if (this.bassDropEffect) {
+                // Update bass drop scale
+                if (beat.isBeat) {
+                    this.bassDropScale = 1 + beat.strength * 0.5;
+                    this.nameGlow = 1;
+                }
+                this.bassDropScale += (1 - this.bassDropScale) * 0.1;
+                this.nameGlow *= 0.95;
+            }
+            
+            // Draw display name at top
+            if (this.showName && this.displayName) {
+                this.drawDisplayName(colors, metrics, beat);
+            }
+            
+            // Draw logo in center (for non-radial modes)
+            if (this.showLogo && this.logo && this.mode !== 'radial' && this.mode !== 'combined') {
+                this.drawCenterLogo(metrics, beat);
+            }
+            
+            this.ctx.shadowBlur = 0;
+        }
+        
+        drawDisplayName(colors, metrics, beat) {
+            const { ctx, canvas } = this;
+            const fontSize = Math.min(60, canvas.width / 15) * (this.bassDropEffect ? this.bassDropScale : 1);
+            
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = `bold ${fontSize}px 'Segoe UI', system-ui, sans-serif`;
+            
+            // Glow effect
+            const glowIntensity = this.bassDropEffect ? (30 + this.nameGlow * 50) : 20;
+            ctx.shadowColor = colors.primary;
+            ctx.shadowBlur = glowIntensity;
+            
+            // Gradient text
+            const gradient = ctx.createLinearGradient(
+                canvas.width / 2 - 150, 0,
+                canvas.width / 2 + 150, 0
+            );
+            gradient.addColorStop(0, colors.primary);
+            gradient.addColorStop(0.5, colors.accent || '#ffffff');
+            gradient.addColorStop(1, colors.secondary);
+            
+            ctx.fillStyle = gradient;
+            
+            // Draw text with bass reaction
+            const yOffset = 60 + (this.bassDropEffect ? Math.sin(performance.now() / 200) * metrics.bass * 10 : 0);
+            ctx.fillText(this.displayName, canvas.width / 2, yOffset);
+            
+            // Secondary glow layer
+            ctx.shadowColor = colors.secondary;
+            ctx.shadowBlur = glowIntensity * 0.5;
+            ctx.globalAlpha = 0.5;
+            ctx.fillText(this.displayName, canvas.width / 2, yOffset);
+            
+            ctx.restore();
+        }
+        
+        drawCenterLogo(metrics, beat) {
+            if (!this.logo || !this.logo.complete) return;
+            
+            const { ctx, canvas } = this;
+            const size = this.logoSize * (this.bassDropEffect ? this.bassDropScale : 1);
+            const x = canvas.width / 2 - size / 2;
+            const y = canvas.height / 2 - size / 2;
+            
+            ctx.save();
+            
+            // Glow effect
+            ctx.shadowColor = this.getColors().primary;
+            ctx.shadowBlur = this.bassDropEffect ? (20 + metrics.bass * 40) : 15;
+            
+            // Rotation on beat
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            if (this.bassDropEffect && beat.isBeat) {
+                ctx.rotate(beat.strength * 0.1);
+            }
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            
+            // Draw circular clipped logo
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, size / 2, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            
+            ctx.drawImage(this.logo, x, y, size, size);
+            
+            // Border ring
+            ctx.restore();
+            ctx.save();
+            ctx.strokeStyle = this.getColors().primary;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = this.getColors().primary;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, size / 2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        drawOscilloscope(timeData, colors, scale) {
+            const { ctx, canvas } = this;
+            const sliceWidth = canvas.width / timeData.length;
+            
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = colors.primary;
+            ctx.shadowColor = colors.primary;
+            
+            ctx.beginPath();
+            for (let i = 0; i < timeData.length; i++) {
+                const v = timeData[i] / 128.0;
+                const y = (v * canvas.height / 2) * scale;
+                const x = i * sliceWidth;
+                if (i === 0) ctx.moveTo(x, this.centerY + (y - canvas.height/2));
+                else ctx.lineTo(x, this.centerY + (y - canvas.height/2));
+            }
+            ctx.stroke();
+            
+            ctx.strokeStyle = colors.secondary;
+            ctx.shadowColor = colors.secondary;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            for (let i = 0; i < timeData.length; i++) {
+                const v = timeData[i] / 128.0;
+                const y = (v * canvas.height / 2) * scale;
+                const x = i * sliceWidth;
+                if (i === 0) ctx.moveTo(x, this.centerY + (y - canvas.height/2) + 10);
+                else ctx.lineTo(x, this.centerY + (y - canvas.height/2) + 10);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        drawSpectrum(freqData, colors, scale, beat) {
+            const { ctx, canvas } = this;
+            const barCount = 64;
+            const barWidth = canvas.width / barCount;
+            const maxHeight = canvas.height * 0.7;
+            
+            for (let i = 0; i < barCount; i++) {
+                const freqIndex = Math.floor(Math.pow(i / barCount, 2) * freqData.length * 0.5);
+                const value = freqData[freqIndex] / 255;
+                const height = value * maxHeight * scale;
+                
+                const hue = (i / barCount) * 60 + (this.theme === 'neon' ? 280 : this.theme === 'warm' ? 0 : this.theme === 'cool' ? 200 : 0);
+                const saturation = this.theme === 'mono' ? 0 : 80;
+                const lightness = 50 + value * 30;
+                
+                ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                ctx.shadowColor = ctx.fillStyle;
+                
+                const x = i * barWidth;
+                const y = canvas.height - height;
+                
+                ctx.fillRect(x + 2, y, barWidth - 4, height);
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(x + 2, canvas.height, barWidth - 4, height * 0.3);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        drawRadial(freqData, colors, scale, beat) {
+            const { ctx, canvas } = this;
+            const time = performance.now() / 1000;
+            const minDim = Math.min(canvas.width, canvas.height);
+            
+            if (!this.radialState) {
+                this.radialState = { rotation: 0, pulsePhase: 0, orbitParticles: [], energyHistory: [] };
+                for (let i = 0; i < 60; i++) {
+                    this.radialState.orbitParticles.push({
+                        angle: Math.random() * Math.PI * 2,
+                        baseRadius: minDim * (0.2 + Math.random() * 0.25),
+                        radius: minDim * (0.2 + Math.random() * 0.25),
+                        speed: 0.2 + Math.random() * 0.5,
+                        size: 1 + Math.random() * 3,
+                        hue: Math.random() * 60,
+                        trail: []
+                    });
+                }
+            }
+            
+            const state = this.radialState;
+            let avgEnergy = 0;
+            for (let i = 0; i < 30; i++) avgEnergy += freqData[i];
+            avgEnergy /= 30 * 255;
+            state.energyHistory.push(avgEnergy);
+            if (state.energyHistory.length > 10) state.energyHistory.shift();
+            const smoothEnergy = state.energyHistory.reduce((a, b) => a + b, 0) / state.energyHistory.length;
+            
+            state.rotation += 0.003 + smoothEnergy * 0.02;
+            if (beat.isBeat) state.rotation += beat.strength * 0.15;
+            state.pulsePhase += 0.05 + smoothEnergy * 0.1;
+            
+            ctx.save();
+            ctx.translate(this.centerX, this.centerY);
+            
+            const bassPulse = 1 + smoothEnergy * 0.15 * scale;
+            const coreRadius = minDim * 0.06 * bassPulse;
+            const innerRadius = minDim * 0.12 * bassPulse;
+            const midRadius = minDim * 0.22 * bassPulse;
+            const outerRadius = minDim * 0.35 * bassPulse;
+            
+            ctx.globalAlpha = 0.1 + smoothEnergy * 0.2;
+            for (let r = 0; r < 5; r++) {
+                const ringRadius = innerRadius + (r / 5) * (outerRadius - innerRadius);
+                const pulse = Math.sin(state.pulsePhase + r * 0.5) * 5;
+                ctx.strokeStyle = this.theme === 'mono' ? 'rgba(255,255,255,0.3)' : colors.secondary;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(0, 0, ringRadius + pulse, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            
+            const bars = 128;
+            ctx.save();
+            ctx.rotate(state.rotation);
+            for (let i = 0; i < bars; i++) {
+                const freqIndex = Math.floor(Math.pow(i / bars, 1.5) * freqData.length * 0.4);
+                const value = freqData[freqIndex] / 255;
+                const angle = (i / bars) * Math.PI * 2;
+                const hueOffset = this.theme === 'neon' ? 280 : this.theme === 'warm' ? 0 : this.theme === 'cool' ? 200 : 0;
+                const hue = (i / bars) * 120 + hueOffset + time * 20;
+                const saturation = this.theme === 'mono' ? 0 : 85;
+                const lightness = 45 + value * 35;
+                
+                ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${0.4 + value * 0.6})`;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.shadowBlur = this.glow * 15 * value;
+                ctx.lineWidth = 2 + value * 2;
+                
+                const barLength = value * (outerRadius - midRadius) * 1.2 * scale;
+                const x1 = Math.cos(angle) * midRadius;
+                const y1 = Math.sin(angle) * midRadius;
+                const x2 = Math.cos(angle) * (midRadius + barLength);
+                const y2 = Math.sin(angle) * (midRadius + barLength);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            ctx.restore();
+            
+            for (const p of state.orbitParticles) {
+                const speedMod = 1 + smoothEnergy * 2;
+                p.angle += p.speed * 0.02 * speedMod;
+                const wobble = Math.sin(time * 2 + p.hue) * 10 * smoothEnergy;
+                const currentRadius = p.radius + wobble;
+                if (beat.isBeat) p.radius += beat.strength * 20;
+                p.radius += (p.baseRadius - p.radius) * 0.02;
+                
+                const px = Math.cos(p.angle) * currentRadius;
+                const py = Math.sin(p.angle) * currentRadius;
+                
+                const hue = p.hue + (this.theme === 'neon' ? 280 : this.theme === 'warm' ? 20 : 200);
+                ctx.fillStyle = this.theme === 'mono' ? `rgba(255,255,255,${0.7 + smoothEnergy * 0.3})` : `hsla(${hue + time * 30}, 85%, 65%, ${0.7 + smoothEnergy * 0.3})`;
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = this.glow * 20;
+                ctx.beginPath();
+                ctx.arc(px, py, p.size * (1 + smoothEnergy), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw logo in center OR default core gradient
+            if (this.showLogo && this.logo && this.logo.complete) {
+                const logoDisplaySize = this.logoSize * (this.bassDropEffect ? this.bassDropScale : 1);
+                
+                ctx.save();
+                
+                // Rotate logo slightly with music
+                if (this.bassDropEffect) {
+                    ctx.rotate(Math.sin(time * 0.5) * 0.1 * smoothEnergy);
+                }
+                
+                // Clip to circle
+                ctx.beginPath();
+                ctx.arc(0, 0, logoDisplaySize / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw logo
+                ctx.drawImage(
+                    this.logo, 
+                    -logoDisplaySize / 2, 
+                    -logoDisplaySize / 2, 
+                    logoDisplaySize, 
+                    logoDisplaySize
+                );
+                
+                ctx.restore();
+                
+                // Glowing ring around logo
+                ctx.strokeStyle = colors.primary;
+                ctx.lineWidth = 2 + beat.strength * 3;
+                ctx.shadowColor = colors.primary;
+                ctx.shadowBlur = this.glow * 30 * (1 + beat.strength);
+                ctx.beginPath();
+                ctx.arc(0, 0, logoDisplaySize / 2 + 3, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Outer pulsing ring
+                ctx.strokeStyle = colors.secondary;
+                ctx.lineWidth = 1;
+                ctx.shadowColor = colors.secondary;
+                ctx.globalAlpha = 0.5 + smoothEnergy * 0.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, logoDisplaySize / 2 + 8 + smoothEnergy * 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            } else {
+                // Default core gradient when no logo
+                const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+                coreGradient.addColorStop(0, '#ffffff');
+                coreGradient.addColorStop(0.3, colors.primary);
+                coreGradient.addColorStop(0.7, colors.secondary);
+                coreGradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = coreGradient;
+                ctx.shadowColor = colors.primary;
+                ctx.shadowBlur = this.glow * 40 * (1 + beat.strength);
+                ctx.beginPath();
+                ctx.arc(0, 0, coreRadius * (1 + beat.strength * 0.4), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        drawParticles(freqData, colors, metrics, beat) {
+            const { ctx, canvas } = this;
+            
+            for (const p of this.particles) {
+                const force = metrics.bass * 5;
+                p.vx += (Math.random() - 0.5) * force;
+                p.vy += (Math.random() - 0.5) * force;
+                
+                if (beat.isBeat) {
+                    const dx = p.x - this.centerX;
+                    const dy = p.y - this.centerY;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    p.vx += (dx / dist) * beat.strength * 10;
+                    p.vy += (dy / dist) * beat.strength * 10;
+                }
+                
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+                
+                const size = p.size * (1 + metrics.bass);
+                const hue = p.hue + metrics.mids * 60;
+                ctx.fillStyle = this.theme === 'mono' ? `rgba(255,255,255,${0.5 + metrics.rms})` : `hsla(${hue + (this.theme === 'neon' ? 280 : this.theme === 'warm' ? 0 : 200)}, 80%, 60%, ${0.5 + metrics.rms})`;
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.strokeStyle = colors.secondary + '40';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < this.particles.length; i++) {
+                for (let j = i + 1; j < this.particles.length; j++) {
+                    const dx = this.particles[i].x - this.particles[j].x;
+                    const dy = this.particles[i].y - this.particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 80) {
+                        ctx.globalAlpha = (1 - dist/80) * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                        ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        drawSpectrogram(freqData, colors) {
+            const { ctx, canvas } = this;
+            const column = [];
+            for (let i = 0; i < freqData.length; i++) column.push(freqData[i]);
+            this.spectrogramData.push(column);
+            if (this.spectrogramData.length > canvas.width) this.spectrogramData.shift();
+            
+            const rowHeight = canvas.height / freqData.length * 4;
+            for (let x = 0; x < this.spectrogramData.length; x++) {
+                for (let y = 0; y < this.spectrogramData[x].length / 4; y++) {
+                    const value = this.spectrogramData[x][y] / 255;
+                    if (value < 0.05) continue;
+                    const hue = this.theme === 'mono' ? 0 : this.theme === 'warm' ? value * 60 : this.theme === 'cool' ? 200 + value * 60 : 240 - value * 180;
+                    const sat = this.theme === 'mono' ? 0 : 80;
+                    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${value * 70}%, ${value})`;
+                    ctx.fillRect(x, canvas.height - y * rowHeight, 1, rowHeight);
+                }
+            }
+        }
+
+        drawCombined(timeData, freqData, colors, scale, beat, metrics) {
+            this.ctx.globalAlpha = 0.3;
+            this.drawRadial(freqData, colors, scale * 0.6, beat);
+            this.ctx.globalAlpha = 1;
+            
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.6;
+            const barCount = 32;
+            const barWidth = this.canvas.width / barCount;
+            for (let i = 0; i < barCount; i++) {
+                const freqIndex = Math.floor(Math.pow(i / barCount, 2) * freqData.length * 0.3);
+                const value = freqData[freqIndex] / 255;
+                const height = value * this.canvas.height * 0.2;
+                const hue = i / barCount * 60 + 280;
+                this.ctx.fillStyle = `hsla(${hue}, 80%, 50%, 0.5)`;
+                this.ctx.fillRect(i * barWidth, this.canvas.height - height, barWidth - 2, height);
+            }
+            this.ctx.restore();
+            
+            this.drawOscilloscope(timeData, colors, scale * 0.7);
+        }
+
+        drawSparkles(intensity, colors) {
+            const count = Math.floor(intensity * 20);
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * this.canvas.width;
+                const y = Math.random() * this.canvas.height;
+                const size = Math.random() * 3;
+                this.ctx.fillStyle = colors.accent;
+                this.ctx.shadowColor = colors.accent;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+    }
+
+    // ============ SPOTIFY INTEGRATION ============
+    class SpotifyPlayer {
+        constructor(engine, onStateChange) {
+            this.engine = engine;
+            this.onStateChange = onStateChange;
+            this.accessToken = null;
+            this.player = null;
+            this.deviceId = null;
+            this.isConnected = false;
+            this.clientId = localStorage.getItem('spotify_client_id') || '';
+            this.redirectUri = window.location.origin + window.location.pathname;
+            this.checkCallback();
+        }
+
+        checkCallback() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const token = params.get('access_token');
+            if (token) {
+                this.accessToken = token;
+                localStorage.setItem('spotify_token', token);
+                window.location.hash = '';
+                this.initPlayer();
+            } else {
+                const savedToken = localStorage.getItem('spotify_token');
+                if (savedToken) {
+                    this.accessToken = savedToken;
+                    this.initPlayer();
+                }
+            }
+        }
+
+        login() {
+            if (!this.clientId) {
+                const clientId = prompt('To use Spotify:\n1. Go to developer.spotify.com/dashboard\n2. Create an app\n3. Add redirect URI: ' + this.redirectUri + '\n4. Paste Client ID:');
+                if (clientId) {
+                    this.clientId = clientId.trim();
+                    localStorage.setItem('spotify_client_id', this.clientId);
+                } else return;
+            }
+            const scopes = 'streaming%20user-read-email%20user-read-private%20user-read-playback-state%20user-modify-playback-state';
+            window.location.href = `https://accounts.spotify.com/authorize?client_id=${this.clientId}&response_type=token&redirect_uri=${encodeURIComponent(this.redirectUri)}&scope=${scopes}`;
+        }
+
+        async initPlayer() {
+            if (!this.accessToken) return;
+            if (!window.Spotify) await this.loadSpotifySDK();
+            window.onSpotifyWebPlaybackSDKReady = () => this.createPlayer();
+            if (window.Spotify) this.createPlayer();
+        }
+
+        loadSpotifySDK() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://sdk.scdn.co/spotify-player.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        }
+
+        createPlayer() {
+            this.player = new Spotify.Player({ name: 'Music Visualizer', getOAuthToken: cb => cb(this.accessToken), volume: 0.5 });
+            this.player.addListener('ready', ({ device_id }) => {
+                this.deviceId = device_id;
+                this.isConnected = true;
+                this.transferPlayback();
+                this.onStateChange({ type: 'connected', deviceId: device_id });
+                this.getUserInfo();
+            });
+            this.player.addListener('not_ready', () => { this.isConnected = false; this.onStateChange({ type: 'disconnected' }); });
+            this.player.addListener('player_state_changed', state => {
+                if (state) this.onStateChange({ type: 'track', track: state.track_window.current_track, position: state.position, duration: state.duration, paused: state.paused });
+            });
+            this.player.addListener('authentication_error', () => this.logout());
+            this.player.connect();
+        }
+
+        async transferPlayback() {
+            await fetch('https://api.spotify.com/v1/me/player', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + this.accessToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_ids: [this.deviceId], play: false })
+            });
+        }
+
+        async getUserInfo() {
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': 'Bearer ' + this.accessToken } });
+                const user = await res.json();
+                this.onStateChange({ type: 'user', user });
+            } catch (e) {}
+        }
+
+        async search(query) {
+            if (!query || !this.accessToken) return [];
+            try {
+                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`, { headers: { 'Authorization': 'Bearer ' + this.accessToken } });
+                const data = await res.json();
+                return data.tracks?.items || [];
+            } catch (e) { return []; }
+        }
+
+        async play(uri) {
+            if (!this.deviceId) return;
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${this.deviceId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + this.accessToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uris: [uri] })
+            });
+        }
+
+        togglePlay() { if (this.player) this.player.togglePlay(); }
+        nextTrack() { if (this.player) this.player.nextTrack(); }
+        previousTrack() { if (this.player) this.player.previousTrack(); }
+        seek(position) { if (this.player) this.player.seek(position); }
+
+        logout() {
+            if (this.player) this.player.disconnect();
+            this.accessToken = null;
+            this.isConnected = false;
+            localStorage.removeItem('spotify_token');
+            this.onStateChange({ type: 'disconnected' });
+        }
+    }
+
+    // ============ SAMPLE TRACKS ============
+    const SAMPLE_TRACKS = [
+        { name: "Chill Beats - Sample 1", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+        { name: "Electronic Vibes", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+        { name: "Ambient Dreams", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+        { name: "Dance Track", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+        { name: "Melodic House", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+        { name: "Synth Wave", artist: "Free Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+    ];
+
+    // ============ MAIN APP ============
+    class App {
+        constructor() {
+            this.engine = new AudioEngine();
+            this.synth = null;
+            this.beatDetector = new BeatDetector();
+            this.visualizer = null;
+            this.audioBuffer = null;
+            this.isInitialized = false;
+            this.currentSource = 'procedural';
+            this.useAudioElement = false;
+            this.spotify = null;
+            
+            this.canvas = document.getElementById('visualCanvas');
+            this.setupUI();
+            this.setupMusicModal();
+            this.animate();
+            this.startTimeUpdate();
+        }
+
+        async init() {
+            if (this.isInitialized) return;
+            await this.engine.init();
+            this.synth = new ProceduralSynth(this.engine);
+            this.visualizer = new Visualizer(this.canvas, this.engine, this.beatDetector);
+            this.isInitialized = true;
+            this.updateStatus('Ready', false);
+        }
+
+        setupUI() {
+            document.body.addEventListener('click', async () => { if (!this.isInitialized) await this.init(); }, { once: true });
+            
+            const panel = document.getElementById('controlPanel');
+            const toggleBtn = document.getElementById('togglePanel');
+            const toggleIcon = document.getElementById('toggleIcon');
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                panel.classList.toggle('collapsed');
+                toggleIcon.textContent = panel.classList.contains('collapsed') ? '▲' : '▼';
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    btn.classList.add('active');
+                    document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+                });
+            });
+            
+            document.getElementById('srcProcedural').addEventListener('click', () => this.setSource('procedural'));
+            document.getElementById('srcFile').addEventListener('click', () => this.setSource('file'));
+            document.getElementById('srcMic').addEventListener('click', () => this.setSource('mic'));
+            
+            document.getElementById('audioFile').addEventListener('change', async (e) => {
+                if (!this.isInitialized) await this.init();
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        this.useAudioElement = false;
+                        this.audioBuffer = await this.engine.loadFile(file);
+                        this.enableFileControls();
+                        document.getElementById('fileDuration').textContent = this.formatTime(this.audioBuffer.duration);
+                        document.getElementById('fileSeek').max = this.audioBuffer.duration;
+                        this.updateStatus('File loaded: ' + file.name, false);
+                        this.setSource('file');
+                    } catch (err) {
+                        this.updateStatus('Error loading file', false);
+                    }
+                }
+            });
+            
+            document.getElementById('filePlayPause').addEventListener('click', () => this.toggleFilePlayback());
+            document.getElementById('fileStop').addEventListener('click', () => this.stopFilePlayback());
+            document.getElementById('fileBack').addEventListener('click', () => this.seekRelative(-10));
+            document.getElementById('fileForward').addEventListener('click', () => this.seekRelative(10));
+            document.getElementById('fileSeek').addEventListener('input', (e) => this.seekToTime(parseFloat(e.target.value)));
+            
+            document.getElementById('playBtn').addEventListener('click', async () => {
+                if (!this.isInitialized) await this.init();
+                if (this.currentSource === 'procedural' && this.synth) {
+                    const isPlaying = this.synth.toggle();
+                    this.updateProceduralPlayButton(isPlaying);
+                    this.updateStatus(isPlaying ? 'Playing' : 'Paused', isPlaying);
+                }
+            });
+            
+            document.getElementById('stopBtn').addEventListener('click', () => {
+                if (this.synth) {
+                    this.synth.stop();
+                    this.updateProceduralPlayButton(false);
+                    this.updateStatus('Stopped', false);
+                }
+            });
+            
+            const bpmSlider = document.getElementById('bpmSlider');
+            const bpmValue = document.getElementById('bpmValue');
+            const bpmDisplay = document.getElementById('bpmDisplay');
+            bpmSlider.addEventListener('input', () => {
+                const bpm = parseInt(bpmSlider.value);
+                bpmValue.textContent = bpm;
+                bpmDisplay.textContent = bpm + ' BPM';
+                if (this.synth) this.synth.bpm = bpm;
+            });
+            
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.addEventListener('click', () => { if (this.synth) this.synth.setGenre(btn.dataset.genre); });
+            });
+            
+            document.getElementById('seedInput').addEventListener('change', (e) => { if (this.synth) this.synth.setSeed(parseInt(e.target.value)); });
+            document.getElementById('randomSeed').addEventListener('click', () => {
+                const seed = Math.floor(Math.random() * 10000);
+                document.getElementById('seedInput').value = seed;
+                if (this.synth) this.synth.setSeed(seed);
+            });
+            
+            document.getElementById('drumVol').addEventListener('input', (e) => { if (this.synth) this.synth.volumes.drums = e.target.value / 100; });
+            document.getElementById('synthVol').addEventListener('input', (e) => { if (this.synth) this.synth.volumes.synth = e.target.value / 100; });
+            document.getElementById('bassVol').addEventListener('input', (e) => { if (this.synth) this.synth.volumes.bass = e.target.value / 100; });
+            
+            document.getElementById('filterCutoff').addEventListener('input', (e) => { if (this.engine.ctx) this.engine.setFilterCutoff(parseFloat(e.target.value)); });
+            document.getElementById('delayMix').addEventListener('input', (e) => { if (this.engine.ctx) this.engine.setDelayMix(e.target.value / 100); });
+            document.getElementById('distortion').addEventListener('input', (e) => { if (this.engine.ctx) this.engine.setDistortion(e.target.value / 100); });
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (this.visualizer) this.visualizer.mode = btn.dataset.mode;
+                });
+            });
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', () => { if (this.visualizer) this.visualizer.theme = btn.dataset.theme; });
+            });
+            
+            document.getElementById('trailAmount').addEventListener('input', (e) => { if (this.visualizer) this.visualizer.trails = e.target.value / 100; });
+            document.getElementById('glowAmount').addEventListener('input', (e) => { if (this.visualizer) this.visualizer.glow = e.target.value / 100; });
+            document.getElementById('particleCount').addEventListener('input', (e) => {
+                if (this.visualizer) {
+                    this.visualizer.particleCount = parseInt(e.target.value);
+                    this.visualizer.initParticles();
+                }
+            });
+            
+            document.getElementById('bassScale').addEventListener('change', (e) => { if (this.visualizer) this.visualizer.bassScale = e.target.checked; });
+            document.getElementById('beatFlash').addEventListener('change', (e) => { if (this.visualizer) this.visualizer.beatFlash = e.target.checked; });
+            document.getElementById('highSparkle').addEventListener('change', (e) => { if (this.visualizer) this.visualizer.highSparkle = e.target.checked; });
+            
+            // Bass Drop controls
+            document.getElementById('displayName').addEventListener('input', (e) => {
+                if (this.visualizer) this.visualizer.displayName = e.target.value;
+            });
+            
+            document.getElementById('logoInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && this.visualizer) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.visualizer.setLogo(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            document.getElementById('logoSize').addEventListener('input', (e) => {
+                if (this.visualizer) this.visualizer.logoSize = parseInt(e.target.value);
+            });
+            
+            document.getElementById('showLogo').addEventListener('change', (e) => {
+                if (this.visualizer) this.visualizer.showLogo = e.target.checked;
+            });
+            
+            document.getElementById('showName').addEventListener('change', (e) => {
+                if (this.visualizer) this.visualizer.showName = e.target.checked;
+            });
+            
+            document.getElementById('bassDropEffect').addEventListener('change', (e) => {
+                if (this.visualizer) this.visualizer.bassDropEffect = e.target.checked;
+            });
+            
+            window.addEventListener('resize', () => { if (this.visualizer) this.visualizer.resize(); });
+        }
+
+        setupMusicModal() {
+            // Open modal
+            document.getElementById('browseMusicBtn').addEventListener('click', () => {
+                document.getElementById('musicModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeMusicModal').addEventListener('click', () => {
+                document.getElementById('musicModal').classList.add('hidden');
+            });
+            
+            document.getElementById('musicModal').addEventListener('click', (e) => {
+                if (e.target.id === 'musicModal') document.getElementById('musicModal').classList.add('hidden');
+            });
+            
+            // Modal tabs
+            document.querySelectorAll('.modal-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.modal-content').forEach(c => c.classList.add('hidden'));
+                    btn.classList.add('active');
+                    document.getElementById('modal-' + btn.dataset.modalTab).classList.remove('hidden');
+                });
+            });
+            
+            // YouTube
+            this.setupYouTube();
+            
+            // Spotify
+            this.setupSpotify();
+            
+            // Free Music
+            this.setupFreeMusic();
+        }
+
+        setupYouTube() {
+            const youtubeInput = document.getElementById('youtubeInput');
+            const playBtn = document.getElementById('youtubePlayBtn');
+            const embedInput = document.getElementById('youtubeEmbedInput');
+            const embedBtn = document.getElementById('youtubeEmbedBtn');
+            const searchInput = document.getElementById('youtubeSearchInput');
+            const searchBtn = document.getElementById('youtubeSearchBtn');
+            
+            // Load from embed code
+            embedBtn.addEventListener('click', () => {
+                const embedCode = embedInput.value.trim();
+                if (!embedCode) {
+                    alert('Please paste a YouTube embed code');
+                    return;
+                }
+                this.loadYouTubeEmbed(embedCode);
+            });
+            
+            // Play from Video ID or URL
+            const playFromInput = () => {
+                const input = youtubeInput.value.trim();
+                if (!input) {
+                    alert('Please enter a video ID or URL');
+                    return;
+                }
+                
+                const videoId = this.extractYouTubeId(input);
+                if (videoId) {
+                    this.playYouTubeById(videoId);
+                } else {
+                    alert('Invalid video ID or URL');
+                }
+            };
+            
+            playBtn.addEventListener('click', playFromInput);
+            youtubeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') playFromInput(); });
+            
+            // Search on YouTube (opens in new tab)
+            const openYouTubeSearch = () => {
+                const query = searchInput.value.trim();
+                if (!query) return;
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+            };
+            
+            searchBtn.addEventListener('click', openYouTubeSearch);
+            searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') openYouTubeSearch(); });
+            
+            // Quick play buttons
+            document.querySelectorAll('.yt-quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const videoId = btn.dataset.videoid;
+                    const title = btn.querySelector('span:last-child').textContent;
+                    this.playYouTubeById(videoId, title);
+                });
+            });
+            
+            // Close YouTube player
+            document.getElementById('youtubeClose').addEventListener('click', () => {
+                document.getElementById('youtubePlayerContainer').classList.add('hidden');
+                document.getElementById('youtubePlayerWrapper').innerHTML = '';
+                this.updateStatus('Ready', false);
+            });
+        }
+
+        loadYouTubeEmbed(embedCode) {
+            const container = document.getElementById('youtubePlayerContainer');
+            const wrapper = document.getElementById('youtubePlayerWrapper');
+            const nowPlaying = document.getElementById('youtubeNowPlaying');
+            
+            // Extract src from embed code to get video info
+            const srcMatch = embedCode.match(/src=["']([^"']+)["']/);
+            const titleMatch = embedCode.match(/title=["']([^"']+)["']/);
+            
+            // Clean up the embed code and add autoplay
+            let cleanEmbed = embedCode;
+            if (srcMatch && srcMatch[1]) {
+                let src = srcMatch[1];
+                // Add autoplay if not present
+                if (!src.includes('autoplay')) {
+                    src += (src.includes('?') ? '&' : '?') + 'autoplay=1';
+                }
+                cleanEmbed = embedCode.replace(srcMatch[1], src);
+            }
+            
+            // Add necessary attributes for autoplay
+            cleanEmbed = cleanEmbed.replace('<iframe', '<iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"');
+            
+            // Make it responsive
+            cleanEmbed = cleanEmbed.replace(/width=["']\d+["']/g, 'width="100%"');
+            cleanEmbed = cleanEmbed.replace(/height=["']\d+["']/g, 'height="100%"');
+            cleanEmbed = cleanEmbed.replace('<iframe', '<iframe style="position:absolute;top:0;left:0;width:100%;height:100%;"');
+            
+            wrapper.innerHTML = cleanEmbed;
+            container.classList.remove('hidden');
+            
+            const title = titleMatch ? titleMatch[1] : 'YouTube Video';
+            nowPlaying.textContent = 'Now playing: ' + title;
+            this.updateStatus('YouTube: ' + title, true);
+        }
+
+        extractYouTubeId(input) {
+            // Check if it's already just a video ID (11 characters)
+            if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+                return input;
+            }
+            
+            // Try to extract from various URL formats
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=)([^&\n?#]+)/,
+                /(?:youtu\.be\/)([^&\n?#]+)/,
+                /(?:youtube\.com\/embed\/)([^&\n?#]+)/,
+                /(?:youtube\.com\/live\/)([^&\n?#]+)/,
+                /(?:youtube\.com\/v\/)([^&\n?#]+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = input.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        playYouTubeById(videoId, title = 'YouTube Video') {
+            const container = document.getElementById('youtubePlayerContainer');
+            const wrapper = document.getElementById('youtubePlayerWrapper');
+            const nowPlaying = document.getElementById('youtubeNowPlaying');
+            
+            // Create iframe with proper attributes
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+            iframe.title = title;
+            iframe.frameBorder = '0';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.allowFullscreen = true;
+            
+            wrapper.innerHTML = '';
+            wrapper.appendChild(iframe);
+            container.classList.remove('hidden');
+            
+            nowPlaying.textContent = 'Now playing: ' + title;
+            this.updateStatus('YouTube: ' + title, true);
+        }
+
+        setupSpotify() {
+            this.spotify = new SpotifyPlayer(this.engine, (state) => this.handleSpotifyState(state));
+            
+            document.getElementById('spotifyLoginBtn').addEventListener('click', () => this.spotify.login());
+            document.getElementById('spotifyLogout').addEventListener('click', () => this.spotify.logout());
+            
+            let searchTimeout;
+            document.getElementById('spotifySearch').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    const results = await this.spotify.search(e.target.value);
+                    this.renderSpotifyResults(results);
+                }, 300);
+            });
+            
+            document.getElementById('spotifyPlayPause').addEventListener('click', () => this.spotify.togglePlay());
+            document.getElementById('spotifyPrev').addEventListener('click', () => this.spotify.previousTrack());
+            document.getElementById('spotifyNext').addEventListener('click', () => this.spotify.nextTrack());
+            document.getElementById('spotifySeek').addEventListener('input', (e) => this.spotify.seek(parseFloat(e.target.value)));
+            
+            if (this.spotify.accessToken) {
+                document.getElementById('spotifyLoginSection').classList.add('hidden');
+                document.getElementById('spotifyPlayerSection').classList.remove('hidden');
+            }
+        }
+
+        handleSpotifyState(state) {
+            switch (state.type) {
+                case 'connected':
+                    document.getElementById('spotifyLoginSection').classList.add('hidden');
+                    document.getElementById('spotifyPlayerSection').classList.remove('hidden');
+                    break;
+                case 'disconnected':
+                    document.getElementById('spotifyLoginSection').classList.remove('hidden');
+                    document.getElementById('spotifyPlayerSection').classList.add('hidden');
+                    break;
+                case 'user':
+                    document.getElementById('spotifyUserName').textContent = state.user.display_name;
+                    break;
+                case 'track':
+                    document.getElementById('spotifyNowPlaying').classList.remove('hidden');
+                    document.getElementById('spotifyTrackName').textContent = state.track.name;
+                    document.getElementById('spotifyArtistName').textContent = state.track.artists.map(a => a.name).join(', ');
+                    document.getElementById('spotifyAlbumArt').src = state.track.album.images[0]?.url || '';
+                    document.getElementById('spotifyDuration').textContent = this.formatTime(state.duration / 1000);
+                    document.getElementById('spotifyCurrentTime').textContent = this.formatTime(state.position / 1000);
+                    document.getElementById('spotifySeek').max = state.duration;
+                    document.getElementById('spotifySeek').value = state.position;
+                    document.getElementById('spotifyPlayPause').textContent = state.paused ? '▶' : '⏸';
+                    if (!state.paused) this.updateStatus('Spotify: ' + state.track.name, true);
+                    break;
+            }
+        }
+
+        renderSpotifyResults(tracks) {
+            const container = document.getElementById('spotifySearchResults');
+            container.innerHTML = tracks.map(track => `
+                <button class="spotify-track-btn w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 text-left transition" data-uri="${track.uri}">
+                    <img src="${track.album.images[2]?.url || ''}" class="w-10 h-10 rounded" alt="">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">${track.name}</p>
+                        <p class="text-xs text-gray-400 truncate">${track.artists.map(a => a.name).join(', ')}</p>
+                    </div>
+                    <span class="text-xs text-gray-500">${this.formatTime(track.duration_ms / 1000)}</span>
+                </button>
+            `).join('');
+            
+            container.querySelectorAll('.spotify-track-btn').forEach(btn => {
+                btn.addEventListener('click', () => this.spotify.play(btn.dataset.uri));
+            });
+        }
+
+        setupFreeMusic() {
+            document.getElementById('loadUrlBtn').addEventListener('click', async () => {
+                const url = document.getElementById('audioUrlInput').value.trim();
+                if (url) await this.loadFromUrl(url);
+            });
+            
+            document.getElementById('audioUrlInput').addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter') {
+                    const url = document.getElementById('audioUrlInput').value.trim();
+                    if (url) await this.loadFromUrl(url);
+                }
+            });
+            
+            this.renderSampleTracks();
+        }
+
+        renderSampleTracks() {
+            const container = document.getElementById('sampleTracks');
+            container.innerHTML = SAMPLE_TRACKS.map((track, i) => `
+                <button class="sample-track-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 text-left transition border border-white/5" data-url="${track.url}">
+                    <div class="w-10 h-10 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg">🎵</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">${track.name}</p>
+                        <p class="text-xs text-gray-400 truncate">${track.artist}</p>
+                    </div>
+                    <span class="text-xs text-indigo-400">▶ Play</span>
+                </button>
+            `).join('');
+            
+            container.querySelectorAll('.sample-track-btn').forEach(btn => {
+                btn.addEventListener('click', async () => await this.loadFromUrl(btn.dataset.url));
+            });
+        }
+
+        async loadFromUrl(url) {
+            if (!this.isInitialized) await this.init();
+            try {
+                this.updateStatus('Loading audio...', false);
+                this.useAudioElement = true;
+                this.engine.fullStop();
+                await this.engine.loadUrl(url);
+                const duration = this.engine.getAudioElementDuration();
+                document.getElementById('fileDuration').textContent = this.formatTime(duration || 0);
+                document.getElementById('fileSeek').max = duration || 100;
+                this.enableFileControls();
+                this.setSource('file');
+                this.engine.playAudioElement();
+                this.updateFilePlayButton(true);
+                this.updateStatus('Playing', true);
+                document.getElementById('musicModal').classList.add('hidden');
+            } catch (err) {
+                this.updateStatus('Error: Could not load audio', false);
+            }
+        }
+
+        toggleFilePlayback() {
+            if (this.useAudioElement) {
+                if (this.engine.isFilePlaying) {
+                    this.engine.pauseAudioElement();
+                    this.updateFilePlayButton(false);
+                    this.updateStatus('Paused', false);
+                } else {
+                    this.engine.playAudioElement();
+                    this.updateFilePlayButton(true);
+                    this.updateStatus('Playing', true);
+                }
+            } else if (this.audioBuffer) {
+                if (this.engine.isFilePlaying) {
+                    this.engine.pauseFile();
+                    this.updateFilePlayButton(false);
+                    this.updateStatus('Paused', false);
+                } else if (this.engine.isFilePaused) {
+                    this.engine.resumeFile(this.audioBuffer);
+                    this.updateFilePlayButton(true);
+                    this.updateStatus('Playing', true);
+                } else {
+                    this.engine.playBuffer(this.audioBuffer);
+                    this.updateFilePlayButton(true);
+                    this.updateStatus('Playing', true);
+                }
+            }
+        }
+
+        stopFilePlayback() {
+            if (this.useAudioElement) this.engine.stopAudioElement();
+            else this.engine.fullStop();
+            this.updateFilePlayButton(false);
+            document.getElementById('fileSeek').value = 0;
+            document.getElementById('fileCurrentTime').textContent = '0:00';
+            this.updateStatus('Stopped', false);
+        }
+
+        seekRelative(seconds) {
+            if (this.useAudioElement) {
+                const current = this.engine.getAudioElementTime();
+                const duration = this.engine.getAudioElementDuration();
+                this.engine.seekAudioElement(Math.max(0, Math.min(duration, current + seconds)));
+            } else if (this.audioBuffer) {
+                const current = this.engine.getCurrentFileTime();
+                this.engine.seekFile(this.audioBuffer, Math.max(0, Math.min(this.audioBuffer.duration, current + seconds)));
+            }
+        }
+
+        seekToTime(time) {
+            if (this.useAudioElement) this.engine.seekAudioElement(time);
+            else if (this.audioBuffer) this.engine.seekFile(this.audioBuffer, time);
+        }
+
+        updateFilePlayButton(isPlaying) {
+            const icon = document.getElementById('playPauseIcon');
+            const text = document.getElementById('playPauseText');
+            const btn = document.getElementById('filePlayPause');
+            if (isPlaying) {
+                icon.textContent = '⏸';
+                text.textContent = 'Pause';
+                btn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                btn.classList.add('bg-yellow-600', 'hover:bg-yellow-500');
+            } else {
+                icon.textContent = '▶';
+                text.textContent = 'Play';
+                btn.classList.remove('bg-yellow-600', 'hover:bg-yellow-500');
+                btn.classList.add('bg-green-600', 'hover:bg-green-500');
+            }
+        }
+
+        updateProceduralPlayButton(isPlaying) {
+            document.getElementById('proceduralPlayIcon').textContent = isPlaying ? '⏸' : '▶';
+            document.getElementById('proceduralPlayText').textContent = isPlaying ? 'Pause' : 'Play';
+        }
+
+        async setSource(source) {
+            if (!this.isInitialized) await this.init();
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            const srcBtn = document.getElementById('src' + source.charAt(0).toUpperCase() + source.slice(1));
+            if (srcBtn) srcBtn.classList.add('active');
+            
+            if (source !== this.currentSource) {
+                if (this.synth) this.synth.stop();
+                this.updateProceduralPlayButton(false);
+                if (this.currentSource === 'file') {
+                    this.engine.fullStop();
+                    this.updateFilePlayButton(false);
+                }
+                this.engine.disableMic();
+            }
+            
+            this.currentSource = source;
+            
+            if (source === 'mic') {
+                const success = await this.engine.enableMic();
+                this.updateStatus(success ? 'Microphone active' : 'Microphone denied', success);
+                document.getElementById('bpmDisplay').classList.remove('hidden');
+            } else if (source === 'procedural') {
+                this.updateStatus('Procedural synth ready', false);
+                document.getElementById('bpmDisplay').classList.add('hidden');
+            } else {
+                this.updateStatus('File mode ready', false);
+                document.getElementById('bpmDisplay').classList.remove('hidden');
+            }
+        }
+
+        updateStatus(text, isPlaying) {
+            document.getElementById('statusText').textContent = text;
+            const indicator = document.getElementById('playIndicator');
+            indicator.className = 'w-3 h-3 rounded-full ' + (isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500');
+            if (this.currentSource !== 'procedural') document.getElementById('bpmDisplay').classList.remove('hidden');
+        }
+
+        enableFileControls() {
+            document.getElementById('filePlayPause').disabled = false;
+            document.getElementById('fileStop').disabled = false;
+            document.getElementById('fileBack').disabled = false;
+            document.getElementById('fileForward').disabled = false;
+            document.getElementById('fileSeek').disabled = false;
+        }
+
+        formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        startTimeUpdate() {
+            setInterval(() => {
+                if (this.currentSource === 'file') {
+                    let currentTime, duration;
+                    if (this.useAudioElement && this.engine.audioElement) {
+                        currentTime = this.engine.getAudioElementTime();
+                        duration = this.engine.getAudioElementDuration();
+                        if (this.engine.audioElement.ended) {
+                            this.updateFilePlayButton(false);
+                            this.updateStatus('Finished', false);
+                        }
+                    } else if (this.audioBuffer) {
+                        currentTime = this.engine.getCurrentFileTime();
+                        duration = this.audioBuffer.duration;
+                        if (!this.engine.isFilePlaying && !this.engine.isFilePaused && currentTime >= duration - 0.1) {
+                            this.updateFilePlayButton(false);
+                        }
+                    } else return;
+                    
+                    document.getElementById('fileCurrentTime').textContent = this.formatTime(currentTime);
+                    document.getElementById('fileDuration').textContent = this.formatTime(duration);
+                    const seekSlider = document.getElementById('fileSeek');
+                    if (document.activeElement !== seekSlider) {
+                        seekSlider.max = duration || 100;
+                        seekSlider.value = currentTime || 0;
+                    }
+                }
+            }, 100);
+        }
+
+        animate() {
+            if (this.visualizer) {
+                this.visualizer.draw();
+                const beatIndicator = document.getElementById('beatIndicator');
+                if (this.beatDetector.isBeat) {
+                    beatIndicator.style.background = 'white';
+                    beatIndicator.style.transform = 'scale(1.5)';
+                } else {
+                    beatIndicator.style.background = 'rgba(255,255,255,0.2)';
+                    beatIndicator.style.transform = 'scale(1)';
+                }
+                if (this.currentSource !== 'procedural' && this.beatDetector.estimatedBPM > 0) {
+                    document.getElementById('bpmDisplay').textContent = this.beatDetector.estimatedBPM + ' BPM';
+                }
+            }
+            requestAnimationFrame(() => this.animate());
+        }
+    }
+
+    const app = new App();
+    </script>
+</body>
+</html>
