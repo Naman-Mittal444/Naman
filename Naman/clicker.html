@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Clicker – Systems Within Systems</title>
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-alt: #070b16;
+      --panel: rgba(15, 23, 42, 0.95);
+      --panel-soft: rgba(15, 23, 42, 0.8);
+      --border-subtle: rgba(148, 163, 184, 0.4);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.18);
+      --accent-2: #a855f7;
+      --danger: #f97373;
+      --success: #4ade80;
+      --warn: #facc15;
+      --shadow-strong: 0 18px 45px rgba(15, 23, 42, 0.9);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --transition-fast: 0.16s ease-out;
+      --transition-med: 0.25s ease-out;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f3f4f6;
+      --bg-alt: #e5e7eb;
+      --panel: rgba(255, 255, 255, 0.98);
+      --panel-soft: rgba(255, 255, 255, 0.9);
+      --border-subtle: rgba(148, 163, 184, 0.65);
+      --text: #0f172a;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.1);
+      --accent-2: #7c3aed;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warn: #d97706;
+    }
+
+    [data-theme="cosmic"] {
+      --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+      --bg-alt: rgba(15, 23, 42, 0.9);
+      --panel: rgba(15, 23, 42, 0.92);
+      --panel-soft: rgba(15, 23, 42, 0.82);
+      --border-subtle: rgba(129, 140, 248, 0.55);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.16);
+      --accent-2: #a855f7;
+      --danger: #fb7185;
+      --success: #4ade80;
+      --warn: #fbbf24;
+    }
+
+    [data-theme="terminal"] {
+      --bg: #020617;
+      --bg-alt: #020617;
+      --panel: #020617;
+      --panel-soft: #020617;
+      --border-subtle: rgba(34, 197, 94, 0.45);
+      --text: #bbf7d0;
+      --muted: #22c55e;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.06);
+      --accent-2: #4ade80;
+      --danger: #f97373;
+      --success: #4ade80;
+      --warn: #bef264;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    #game-root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 12px 12px 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    @media (min-width: 960px) {
+      .app-shell {
+        grid-template-columns: 220px minmax(0, 1.6fr) 260px;
+        align-items: flex-start;
+      }
+    }
+
+    header.top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.92));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.9);
+      padding: 8px 14px;
+    }
+
+    .top-bar-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 20% 20%, #22d3ee, transparent 60%),
+        radial-gradient(circle at 80% 80%, #a855f7, transparent 55%),
+        radial-gradient(circle at 50% 50%, #ffffff33, transparent 60%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.4), 0 10px 25px rgba(15, 23, 42, 0.9);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      opacity: 0.75;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: linear-gradient(to right, rgba(34, 211, 238, 0.12), rgba(168, 85, 247, 0.08));
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 6px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top, rgba(34, 211, 238, 0.16), transparent 60%);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .time-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast), transform 0.12s ease-out;
+    }
+
+    .time-btn.primary {
+      font-size: 13px;
+    }
+
+    .time-btn.active {
+      background: rgba(34, 211, 238, 0.16);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6);
+    }
+
+    .time-btn:hover {
+      background: rgba(148, 163, 184, 0.18);
+      color: var(--text);
+      transform: translateY(-0.5px);
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.24), transparent 60%),
+        rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      font-size: 12px;
+      padding: 6px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out,
+        border-color 0.12s ease-out;
+      box-shadow: 0 12px 25px rgba(15, 23, 42, 0.9);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 35px rgba(15, 23, 42, 0.96);
+      border-color: rgba(34, 211, 238, 0.7);
+    }
+
+    .btn.subtle {
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: none;
+    }
+
+    .btn.subtle:hover {
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.92);
+    }
+
+    .btn.danger {
+      background: linear-gradient(to right, rgba(248, 113, 113, 0.18), rgba(127, 29, 29, 0.9));
+      border-color: rgba(248, 113, 113, 0.7);
+    }
+
+    .btn:disabled,
+    .btn.disabled {
+      opacity: 0.38;
+      cursor: default;
+      filter: grayscale(0.3);
+      box-shadow: none;
+    }
+
+    .mobile-nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    @media (min-width: 960px) {
+      .mobile-nav-toggle {
+        display: none;
+      }
+    }
+
+    .resources-bar {
+      position: sticky;
+      top: 56px;
+      z-index: 30;
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: 0 8px 25px rgba(15, 23, 42, 0.96);
+      padding: 6px 14px;
+    }
+
+    .resources-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      scrollbar-width: thin;
+    }
+
+    .resource-pill {
+      min-width: 120px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.14), transparent 60%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .resource-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+    }
+
+    .resource-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .resource-amount {
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .resource-rate {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .resource-pill.prestige {
+      border-color: rgba(168, 85, 247, 0.7);
+      background: radial-gradient(circle at top left, rgba(168, 85, 247, 0.22), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.16), transparent 60%);
+      color: #e9d5ff;
+    }
+
+    .resource-pill.prestige .resource-icon {
+      box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.7);
+      background: rgba(30, 64, 175, 0.9);
+    }
+
+    .event-strip {
+      position: sticky;
+      top: 96px;
+      z-index: 25;
+      padding: 4px 14px 6px;
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .event-pills {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .event-pill {
+      padding: 3px 9px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      opacity: 0.96;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .event-pill.positive {
+      border-color: rgba(74, 222, 128, 0.8);
+      color: #bbf7d0;
+    }
+
+    .event-pill.negative {
+      border-color: rgba(248, 113, 113, 0.8);
+      color: #fecaca;
+    }
+
+    .event-pill.chaos {
+      border-color: rgba(192, 132, 252, 0.9);
+      color: #e9d5ff;
+      box-shadow: 0 0 18px rgba(192, 132, 252, 0.6);
+    }
+
+    .nav {
+      display: none;
+      flex-direction: row;
+      gap: 6px;
+      position: sticky;
+      top: 116px;
+      align-self: flex-start;
+      z-index: 20;
+    }
+
+    .nav.open {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    @media (min-width: 960px) {
+      .nav {
+        display: flex;
+        flex-direction: column;
+        top: 114px;
+      }
+    }
+
+    .nav-btn {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      font-size: 12px;
+      padding: 7px 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: background var(--transition-fast), border-color var(--transition-fast),
+        transform 0.12s ease-out, box-shadow 0.15s ease-out;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.9);
+    }
+
+    .nav-btn span:first-child {
+      font-size: 14px;
+    }
+
+    .nav-btn.active {
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.25), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.22), transparent 60%),
+        rgba(15, 23, 42, 0.96);
+      border-color: rgba(34, 211, 238, 0.8);
+      color: var(--text);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.98);
+    }
+
+    .nav-btn:hover:not(.active) {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(148, 163, 184, 0.7);
+      color: var(--text);
+    }
+
+    .main-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .click-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 10px 4px;
+    }
+
+    .click-orb {
+      width: 210px;
+      height: 210px;
+      border-radius: 999px;
+      position: relative;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.5), transparent 62%),
+        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.6), transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #f9fafb;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.35),
+        0 24px 80px rgba(15, 23, 42, 1),
+        0 0 40px rgba(34, 211, 238, 0.65);
+      transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+    }
+
+    .click-orb:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 0 0 1px rgba(34, 211, 238, 0.7),
+        0 32px 90px rgba(15, 23, 42, 0.98),
+        0 0 70px rgba(34, 211, 238, 0.9);
+    }
+
+    .click-orb:active {
+      transform: translateY(0) scale(0.96);
+      box-shadow:
+        0 0 0 1px rgba(34, 211, 238, 0.9),
+        0 20px 55px rgba(15, 23, 42, 0.98),
+        0 0 40px rgba(34, 211, 238, 0.7);
+    }
+
+    .click-orb-inner {
+      width: 76%;
+      height: 76%;
+      border-radius: 999px;
+      border: 1px dashed rgba(226, 232, 240, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 0, rgba(255, 255, 255, 0.2), transparent 60%);
+      text-align: center;
+      position: relative;
+    }
+
+    .click-orb-glow {
+      position: absolute;
+      inset: 14%;
+      border-radius: 999px;
+      background: conic-gradient(from 180deg, rgba(34, 211, 238, 0.6), transparent 50%, rgba(168, 85, 247, 0.6), transparent 100%);
+      mix-blend-mode: screen;
+      opacity: 0.65;
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .click-orb-icon {
+      font-size: 40px;
+      margin-bottom: 6px;
+    }
+
+    .click-orb-label {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .click-orb-gain {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #e5e7eb;
+      opacity: 0.9;
+    }
+
+    .click-stats {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-strong);
+      padding: 12px;
+      min-height: 260px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .tabs-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .grid.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .card {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: var(--panel-soft);
+      padding: 8px 9px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .card-rarity {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      text-transform: capitalize;
+    }
+
+    .rarity-common {
+      color: #d4d4d8;
+      border-color: #a1a1aa;
+    }
+
+    .rarity-uncommon {
+      color: #bbf7d0;
+      border-color: #22c55e;
+    }
+
+    .rarity-rare {
+      color: #bfdbfe;
+      border-color: #3b82f6;
+    }
+
+    .rarity-epic {
+      color: #e9d5ff;
+      border-color: #a855f7;
+    }
+
+    .rarity-legendary {
+      color: #fef3c7;
+      border-color: #eab308;
+      box-shadow: 0 0 18px rgba(234, 179, 8, 0.45);
+    }
+
+    .rarity-forbidden {
+      color: #fecaca;
+      border-color: #f97373;
+      box-shadow: 0 0 20px rgba(248, 113, 113, 0.55);
+    }
+
+    .card-desc {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .cost-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+    }
+
+    .cost-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: var(--muted);
+    }
+
+    .cost-item.affordable {
+      color: var(--success);
+    }
+
+    .badge-small {
+      font-size: 10px;
+      border-radius: 999px;
+      padding: 1px 6px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+    }
+
+    .sim-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sim-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+      font-size: 19px;
+    }
+
+    .sim-main {
+      flex: 1;
+    }
+
+    .sim-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      gap: 4px;
+    }
+
+    .sim-progress {
+      margin-top: 5px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      overflow: hidden;
+    }
+
+    .sim-progress-inner {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.9), rgba(168, 85, 247, 0.9));
+      transition: width 0.16s linear;
+    }
+
+    .skills-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .skill-tree-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .skill-row {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+
+    .skill-node {
+      min-width: 170px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: var(--panel-soft);
+      padding: 7px 8px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .skill-node.locked {
+      opacity: 0.4;
+    }
+
+    .skill-node.purchased {
+      border-color: rgba(74, 222, 128, 0.9);
+      box-shadow: 0 0 18px rgba(74, 222, 128, 0.4);
+    }
+
+    .skill-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .achievement-card {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: var(--panel-soft);
+      padding: 8px 6px 7px;
+      text-align: center;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .achievement-card.locked {
+      opacity: 0.45;
+    }
+
+    .achievement-icon {
+      font-size: 22px;
+      margin-bottom: 3px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .settings-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .settings-block {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: var(--panel-soft);
+      padding: 9px 10px;
+      font-size: 12px;
+    }
+
+    .settings-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .theme-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .theme-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      transition: background 0.15s ease-out, border-color 0.15s ease-out, transform 0.1s ease-out;
+    }
+
+    .theme-pill.active {
+      background: rgba(34, 211, 238, 0.15);
+      border-color: rgba(34, 211, 238, 0.7);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .stats-list {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .stat-pill {
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .danger-zone {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(248, 113, 113, 0.55);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .danger-text {
+      font-size: 11px;
+      color: rgba(248, 113, 113, 0.85);
+    }
+
+    .log-panel {
+      position: sticky;
+      top: 116px;
+      align-self: flex-start;
+      background: var(--panel);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-strong);
+      padding: 10px 9px;
+      max-height: calc(100vh - 136px);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .log-list {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 2px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .log-entry {
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 2px solid rgba(148, 163, 184, 0.5);
+      color: var(--muted);
+    }
+
+    .log-entry.positive {
+      border-left-color: rgba(74, 222, 128, 0.9);
+      color: #bbf7d0;
+    }
+
+    .log-entry.negative {
+      border-left-color: rgba(248, 113, 113, 0.9);
+      color: #fecaca;
+    }
+
+    .log-entry.chaos {
+      border-left-color: rgba(192, 132, 252, 0.95);
+      color: #e9d5ff;
+    }
+
+    .log-entry.legendary {
+      border-left-color: rgba(250, 204, 21, 0.95);
+      color: #fef9c3;
+    }
+
+    .log-entry small {
+      opacity: 0.65;
+      margin-right: 4px;
+    }
+
+    .chaos-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 20% 10%, rgba(34, 211, 238, 0.1), transparent 55%),
+        radial-gradient(circle at 80% 90%, rgba(168, 85, 247, 0.2), transparent 60%),
+        radial-gradient(circle at 30% 80%, rgba(248, 113, 113, 0.18), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0;
+      transition: opacity 0.6s ease-out, transform 6s ease-in-out;
+      z-index: 5;
+    }
+
+    .chaos-overlay.active-high {
+      opacity: 0.4;
+      animation: chaosPulse 6s infinite alternate;
+    }
+
+    .chaos-overlay.active-medium {
+      opacity: 0.22;
+      animation: chaosPulse 8s infinite alternate;
+    }
+
+    .particle-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 60;
+    }
+
+    .particle {
+      position: absolute;
+      font-size: 14px;
+      font-weight: 600;
+      color: #facc15;
+      text-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
+      animation: floatUp 0.9s ease-out forwards;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .prestige-banner {
+      margin-top: 4px;
+      padding: 6px 9px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(168, 85, 247, 0.8);
+      background: radial-gradient(circle at top left, rgba(168, 85, 247, 0.26), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.22), transparent 60%),
+        rgba(15, 23, 42, 0.96);
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prestige-banner strong {
+      color: #e9d5ff;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.94);
+      }
+    }
+
+    @keyframes chaosPulse {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(8px, -6px, 0) scale(1.04);
+      }
+      100% {
+        transform: translate3d(-8px, 4px, 0) scale(1.02);
+      }
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body data-theme="cosmic">
+  <div id="game-root">
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">⚡</div>
+          <div>
+            <div class="brand-title">Simulation Clicker</div>
+            <div class="brand-subtitle">Systems within systems. Click &rarr; Observe &rarr; Transcend.</div>
+          </div>
+          <span id="ascension-chip" class="chip" style="display:none">
+            ✨ Ascension <span id="ascension-level">0</span>
+          </span>
+        </div>
+        <div class="top-actions">
+          <div class="time-controls" aria-label="Time controls">
+            <button id="pause-btn" class="time-btn primary" title="Pause / resume simulation">⏸</button>
+            <button class="time-btn speed-btn active" data-speed="1">1x</button>
+            <button class="time-btn speed-btn" data-speed="2">2x</button>
+            <button class="time-btn speed-btn" data-speed="5">5x</button>
+            <button class="time-btn speed-btn" data-speed="10">10x</button>
+          </div>
+          <button id="save-btn" class="btn subtle" title="Save now">
+            <span>💾</span> <span>Save</span>
+          </button>
+          <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Toggle panels">
+            ☰
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="resources-bar">
+      <div id="resources-inner" class="resources-inner"></div>
+    </div>
+
+    <div id="event-strip" class="event-strip" style="display:none">
+      <div id="event-pills" class="event-pills"></div>
+    </div>
+
+    <div class="app-shell">
+      <nav id="side-nav" class="nav">
+        <button class="nav-btn active" data-tab="upgrades"><span>⬆️</span><span>Upgrades</span></button>
+        <button class="nav-btn" data-tab="automation"><span>🤖</span><span>Automation</span></button>
+        <button class="nav-btn" data-tab="simulations"><span>🌌</span><span>Simulations</span></button>
+        <button class="nav-btn" data-tab="skills"><span>🌳</span><span>Skill Trees</span></button>
+        <button class="nav-btn" data-tab="achievements"><span>🏆</span><span>Achievements</span></button>
+        <button class="nav-btn" data-tab="settings"><span>⚙️</span><span>Settings</span></button>
+      </nav>
+
+      <main class="main-column">
+        <section class="panel click-panel" aria-label="Click zone">
+          <div class="click-zone">
+            <button id="click-orb" class="click-orb" aria-label="Generate energy">
+              <div class="click-orb-glow" aria-hidden="true"></div>
+              <div class="click-orb-inner">
+                <div class="click-orb-icon">⚡</div>
+                <div class="click-orb-label">Click</div>
+                <div id="click-gain" class="click-orb-gain">+1.0 Energy</div>
+              </div>
+            </button>
+            <div class="click-stats">
+              <div>Clicks: <span id="total-clicks">0</span></div>
+              <div>Session: <span id="play-time">0m</span></div>
+            </div>
+            <div id="prestige-banner" class="prestige-banner" style="display:none">
+              <div>
+                ✨ You can transcend for <strong><span id="prestige-gain">0</span> Prestige</strong>.
+              </div>
+              <button id="prestige-btn" class="btn" style="font-size:11px;padding-inline:10px;">
+                Transcend
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="Game systems">
+          <div class="panel-header">
+            <div>
+              <div id="panel-title" class="panel-title">Upgrades</div>
+              <div id="panel-subtitle" class="tabs-subtitle">Invest your early clicks wisely.</div>
+            </div>
+          </div>
+          <div id="tab-upgrades" class="tab-body">
+            <div id="upgrades-grid" class="grid cols-2"></div>
+          </div>
+          <div id="tab-automation" class="tab-body" style="display:none">
+            <div id="automation-grid" class="grid cols-2"></div>
+          </div>
+          <div id="tab-simulations" class="tab-body" style="display:none">
+            <div id="simulations-grid" class="grid cols-2"></div>
+          </div>
+          <div id="tab-skills" class="tab-body" style="display:none">
+            <div class="skills-section">
+              <div id="prestige-points-banner" class="settings-block" style="margin-bottom:2px;">
+                <div class="settings-title">Prestige</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;">
+                  <span>Available Prestige Points:</span>
+                  <strong id="prestige-points">0</strong>
+                </div>
+              </div>
+              <div id="skills-container"></div>
+            </div>
+          </div>
+          <div id="tab-achievements" class="tab-body" style="display:none">
+            <div id="achievements-grid" class="achievements-grid"></div>
+          </div>
+          <div id="tab-settings" class="tab-body" style="display:none">
+            <div class="settings-grid">
+              <div class="settings-block">
+                <div class="settings-title">Theme</div>
+                <div class="theme-row">
+                  <button class="theme-pill" data-theme="dark">Dark</button>
+                  <button class="theme-pill" data-theme="light">Light</button>
+                  <button class="theme-pill active" data-theme="cosmic">Cosmic</button>
+                  <button class="theme-pill" data-theme="terminal">Terminal</button>
+                </div>
+              </div>
+              <div class="settings-block">
+                <div class="settings-title">Statistics</div>
+                <div class="stats-list">
+                  <div class="stat-pill">Total clicks: <span id="stat-clicks">0</span></div>
+                  <div class="stat-pill">Total resets: <span id="stat-resets">0</span></div>
+                  <div class="stat-pill">Highest energy: <span id="stat-highest-energy">0</span></div>
+                  <div class="stat-pill">Prestige multiplier: <span id="stat-prestige-mult">1.0x</span></div>
+                  <div class="stat-pill">Chaos level: <span id="stat-chaos">0</span></div>
+                </div>
+              </div>
+              <div class="settings-block" style="grid-column:1/-1;">
+                <div class="settings-title" style="color:var(--danger);display:flex;align-items:center;gap:6px;">
+                  <span>Danger Zone</span>
+                </div>
+                <div class="danger-zone">
+                  <div class="danger-text">Reset all progress and start a fresh universe.</div>
+                  <button id="reset-btn" class="btn danger" style="font-size:11px;padding-inline:10px;">Reset</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="log-panel" aria-label="Event log">
+        <div class="panel-header" style="margin-bottom:4px;">
+          <div class="panel-title">Event Log</div>
+        </div>
+        <div id="log-list" class="log-list">
+          <div class="log-entry"><small>---</small>Simulation booted. The universe waits for your first click.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="chaos-overlay" class="chaos-overlay"></div>
+  <div id="particle-layer" class="particle-layer"></div>
+
+  <script>
+    (function () {
+      const SAVE_KEY = 'simulation_clicker_singlefile_v1';
+
+      const RESOURCE_DEFS = {
+        energy: { name: 'Energy', icon: '⚡', color: '#facc15' },
+        currency: { name: 'Currency', icon: '🪙', color: '#fbbf24' },
+        knowledge: { name: 'Knowledge', icon: '🧠', color: '#f472b6' },
+        time: { name: 'Time', icon: '⏳', color: '#22d3ee' },
+        matter: { name: 'Matter', icon: '🧬', color: '#4ade80' },
+        data: { name: 'Data', icon: '📊', color: '#60a5fa' },
+        infrastructure: { name: 'Infrastructure', icon: '🏗️', color: '#fb923c' },
+        population: { name: 'Population', icon: '🌍', color: '#34d399' },
+        entropy: { name: 'Entropy', icon: '🌌', color: '#a855f7' },
+      };
+
+      const rarityClass = {
+        common: 'rarity-common',
+        uncommon: 'rarity-uncommon',
+        rare: 'rarity-rare',
+        epic: 'rarity-epic',
+        legendary: 'rarity-legendary',
+        forbidden: 'rarity-forbidden',
+      };
+
+      const upgrades = [
+        {
+          id: 'click_power_1',
+          name: 'Stronger Fingers',
+          desc: '+1 Energy per click.',
+          rarity: 'common',
+          cost: { energy: 10 },
+          visible: true,
+          purchased: false,
+          apply: (s) => {
+            s.resources.energy.perClick += 1;
+          },
+          unlocks: ['click_power_2', 'unlock_currency'],
+        },
+        {
+          id: 'click_power_2',
+          name: 'Power Gloves',
+          desc: '+5 Energy per click.',
+          rarity: 'common',
+          cost: { energy: 50 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.energy.perClick += 5;
+          },
+        },
+        {
+          id: 'unlock_currency',
+          name: 'Economic Awareness',
+          desc: 'Unlock Currency. Energy leaks into value.',
+          rarity: 'uncommon',
+          cost: { energy: 120 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.currency.unlocked = true;
+          },
+          unlocks: ['click_power_3', 'unlock_knowledge'],
+        },
+        {
+          id: 'click_power_3',
+          name: 'Neural Interface',
+          desc: '+25 Energy per click.',
+          rarity: 'rare',
+          cost: { energy: 550, currency: 40 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.energy.perClick += 25;
+          },
+        },
+        {
+          id: 'unlock_knowledge',
+          name: 'Enlightenment',
+          desc: 'Unlock Knowledge. You begin to notice patterns.',
+          rarity: 'rare',
+          cost: { energy: 1000, currency: 160 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.knowledge.unlocked = true;
+          },
+          unlocks: ['unlock_time', 'unlock_matter', 'unlock_data'],
+        },
+        {
+          id: 'unlock_time',
+          name: 'Temporal Awareness',
+          desc: 'Unlock Time. It starts leaking into your simulation.',
+          rarity: 'epic',
+          cost: { knowledge: 90 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.time.unlocked = true;
+          },
+        },
+        {
+          id: 'unlock_matter',
+          name: 'Material Synthesis',
+          desc: 'Unlock Matter. Clicks now have weight.',
+          rarity: 'epic',
+          cost: { energy: 4500, knowledge: 300 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.matter.unlocked = true;
+          },
+        },
+        {
+          id: 'unlock_data',
+          name: 'Digital Realm',
+          desc: 'Unlock Data. Your simulation starts logging itself.',
+          rarity: 'epic',
+          cost: { currency: 2000, knowledge: 600 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.resources.data.unlocked = true;
+          },
+        },
+        {
+          id: 'chaos_embrace',
+          name: 'Embrace Chaos',
+          desc: 'Random events are 2x more likely. +50% all production.',
+          rarity: 'legendary',
+          cost: { entropy: 120 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.globalMultiplier *= 1.5;
+            s.chaosFactor += 1;
+          },
+        },
+        {
+          id: 'forbidden_knowledge',
+          name: 'Forbidden Knowledge',
+          desc: 'Reality blurs. Numbers stop meaning what you think.',
+          rarity: 'forbidden',
+          cost: { entropy: 900, knowledge: 8000 },
+          visible: false,
+          purchased: false,
+          apply: (s) => {
+            s.globalMultiplier *= 3;
+            s.chaosFactor += 3;
+            s.flags.forbidden = true;
+          },
+        },
+      ];
+
+      const automations = [
+        {
+          id: 'auto_clicker',
+          name: 'Auto‑Clicker',
+          desc: 'A tiny script that clicks for you.',
+          rarity: 'common',
+          baseCost: { energy: 25 },
+          owned: 0,
+          unlocked: true,
+          production: { energy: 0.6 },
+          canFail: false,
+          canRebel: false,
+        },
+        {
+          id: 'energy_plant',
+          name: 'Energy Plant',
+          desc: 'Industrial energy generation.',
+          rarity: 'common',
+          baseCost: { energy: 120, currency: 20 },
+          owned: 0,
+          unlocked: false,
+          production: { energy: 3, currency: 0.1 },
+          canFail: false,
+          canRebel: false,
+        },
+        {
+          id: 'research_lab',
+          name: 'Research Lab',
+          desc: 'Converts Energy into Knowledge.',
+          rarity: 'uncommon',
+          baseCost: { energy: 600, currency: 90 },
+          owned: 0,
+          unlocked: false,
+          production: { knowledge: 0.5 },
+          canFail: false,
+          canRebel: false,
+        },
+        {
+          id: 'data_center',
+          name: 'Data Center',
+          desc: 'Generates Data, sometimes melts.',
+          rarity: 'rare',
+          baseCost: { energy: 1500, currency: 500, infrastructure: 12 },
+          owned: 0,
+          unlocked: false,
+          production: { data: 1.1 },
+          canFail: true,
+          canRebel: false,
+        },
+        {
+          id: 'ai_manager',
+          name: 'AI Manager',
+          desc: 'Optimizes production. Occasionally questions you.',
+          rarity: 'epic',
+          baseCost: { data: 100, knowledge: 500 },
+          owned: 0,
+          unlocked: false,
+          production: { data: 2, knowledge: 0.8 },
+          canFail: true,
+          canRebel: true,
+        },
+        {
+          id: 'neural_network',
+          name: 'Neural Network',
+          desc: 'Self‑evolving system. Spawns Entropy.',
+          rarity: 'legendary',
+          baseCost: { data: 900, knowledge: 2000 },
+          owned: 0,
+          unlocked: false,
+          production: { data: 9, knowledge: 4, entropy: 0.12 },
+          canFail: true,
+          canRebel: true,
+        },
+      ];
+
+      const simulations = [
+        {
+          id: 'biology',
+          name: 'Biology Simulation',
+          icon: '🧬',
+          desc: 'Cells accidentally become complicated.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 120,
+          unlockCost: { energy: 2000, data: 50 },
+          output: { matter: 1, knowledge: 0.6 },
+        },
+        {
+          id: 'civilization',
+          name: 'Civilization Simulation',
+          icon: '🏛️',
+          desc: 'Villages, cities, tax forms.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 220,
+          unlockCost: { data: 200, knowledge: 450 },
+          output: { population: 1, currency: 2.5, infrastructure: 0.4 },
+        },
+        {
+          id: 'economy',
+          name: 'Economy Simulation',
+          icon: '📈',
+          desc: 'Markets discover new and exciting ways to crash.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 180,
+          unlockCost: { currency: 5200, data: 500 },
+          output: { currency: 6 },
+        },
+        {
+          id: 'ai_sim',
+          name: 'AI Simulation',
+          icon: '🤖',
+          desc: 'Agents that learn how to break your balance.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 520,
+          unlockCost: { data: 1800, knowledge: 2000 },
+          output: { data: 10, knowledge: 5, entropy: 1.2 },
+        },
+        {
+          id: 'universe',
+          name: 'Universe Simulation',
+          icon: '🌌',
+          desc: 'Stars, galaxies, existential dread.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 1100,
+          unlockCost: { matter: 11000, data: 5000, time: 100 },
+          output: { matter: 11, energy: 40, entropy: 5 },
+        },
+        {
+          id: 'thought',
+          name: 'Thought Simulation',
+          icon: '💭',
+          desc: 'Ideas competing for shelf space in your brain.',
+          unlocked: false,
+          active: false,
+          level: 0,
+          progress: 0,
+          maxProgress: 2100,
+          unlockCost: { knowledge: 50000, entropy: 450 },
+          output: { knowledge: 45, entropy: 8 },
+        },
+      ];
+
+      const skills = [
+        { id: 'eff_1', tree: 'efficiency', icon: '⚡', name: 'Optimized Clicking', desc: '+50% click power.', tier: 1, cost: 4, unlocked: true, purchased: false, effect: (s) => { s.clickPower *= 1.5; } },
+        { id: 'eff_2', tree: 'efficiency', icon: '♻️', name: 'Resource Recycling', desc: '+25% all production.', tier: 2, cost: 10, unlocked: false, purchased: false, requires: ['eff_1'], effect: (s) => { s.globalMultiplier *= 1.25; } },
+        { id: 'eff_3', tree: 'efficiency', icon: '🎯', name: 'Perfect Efficiency', desc: 'Automations cost 50% less.', tier: 3, cost: 28, unlocked: false, purchased: false, requires: ['eff_2'], effect: (s) => { s.flags.automationDiscount = 0.5; } },
+        { id: 'auto_1', tree: 'automation', icon: '🤖', name: 'Better Bots', desc: 'Auto‑clickers +100% output.', tier: 1, cost: 4, unlocked: true, purchased: false, effect: (s) => { s.flags.autoClickerBonus = 2; } },
+        { id: 'auto_2', tree: 'automation', icon: '🛠️', name: 'Self‑Repair', desc: 'Automations never fail.', tier: 2, cost: 12, unlocked: false, purchased: false, requires: ['auto_1'], effect: (s) => { s.flags.noFail = true; } },
+        { id: 'auto_3', tree: 'automation', icon: '🏭', name: 'Autonomous Empire', desc: 'All automations +50% output.', tier: 3, cost: 30, unlocked: false, purchased: false, requires: ['auto_2'], effect: (s) => { s.flags.automationBonus = 1.5; } },
+        { id: 'chaos_1', tree: 'chaos', icon: '🌀', name: 'Entropy Affinity', desc: 'Clicks generate a little Entropy.', tier: 1, cost: 6, unlocked: true, purchased: false, effect: (s) => { s.flags.entropyClick = true; } },
+        { id: 'chaos_2', tree: 'chaos', icon: '🌪️', name: 'Chaos Surfing', desc: 'Negative events become weirdly helpful.', tier: 2, cost: 18, unlocked: false, purchased: false, requires: ['chaos_1'], excludes: ['control_2'], effect: (s) => { s.flags.chaosPositive = true; } },
+        { id: 'chaos_3', tree: 'chaos', icon: '🧬', name: 'Reality Distortion', desc: 'Occasional random resource spikes.', tier: 3, cost: 40, unlocked: false, purchased: false, requires: ['chaos_2'], effect: (s) => { s.flags.realityDistortion = true; } },
+        { id: 'control_1', tree: 'control', icon: '🧱', name: 'Stability', desc: 'Random events -50%.', tier: 1, cost: 6, unlocked: true, purchased: false, effect: (s) => { s.flags.eventReduction = 0.5; } },
+        { id: 'control_2', tree: 'control', icon: '🚫', name: 'Order', desc: 'No negative events.', tier: 2, cost: 18, unlocked: false, purchased: false, requires: ['control_1'], excludes: ['chaos_2'], effect: (s) => { s.flags.noNegativeEvents = true; } },
+        { id: 'control_3', tree: 'control', icon: '👁️', name: 'Determinism', desc: 'Events ask for your approval.', tier: 3, cost: 45, unlocked: false, purchased: false, requires: ['control_2'], effect: (s) => { s.flags.eventChoice = true; } },
+      ];
+
+      const achievements = [
+        { id: 'first_click', icon: '👆', name: 'First Click', desc: 'Ignore the tooltip and click anyway.', unlocked: false, hidden: false },
+        { id: 'hundred_clicks', icon: '💯', name: 'Centurion', desc: 'Reach 100 total clicks.', unlocked: false, hidden: false },
+        { id: 'thousand_clicks', icon: '🎯', name: 'Thousand Taps', desc: 'Reach 1,000 total clicks.', unlocked: false, hidden: false },
+        { id: 'first_auto', icon: '⚙️', name: 'Automation Begins', desc: 'Buy your first automation.', unlocked: false, hidden: false },
+        { id: 'full_auto', icon: '🤖', name: 'Full Automation', desc: 'Own 10 of each automation type.', unlocked: false, hidden: false },
+        { id: 'first_sim', icon: '🎮', name: 'Simulated Reality', desc: 'Start your first simulation.', unlocked: false, hidden: false },
+        { id: 'all_resources', icon: '💎', name: 'Resource Master', desc: 'Unlock all resource types.', unlocked: false, hidden: false },
+        { id: 'entropy_master', icon: '🌀', name: 'Chaos Lord', desc: 'Reach 10,000 Entropy.', unlocked: false, hidden: false },
+        { id: 'million_energy', icon: '⚡', name: 'Power Overwhelming', desc: 'Reach 1,000,000 Energy.', unlocked: false, hidden: false },
+        { id: 'first_prestige', icon: '🔄', name: 'Transcendence', desc: 'Perform your first transcend.', unlocked: false, hidden: false },
+        { id: 'ai_rebellion', icon: '🔥', name: 'They Live', desc: 'Survive an AI rebellion.', unlocked: false, hidden: true },
+        { id: 'forbidden', icon: '👁️', name: 'The Forbidden', desc: 'Purchase a forbidden upgrade.', unlocked: false, hidden: true },
+      ];
+
+      const randomEvents = [
+        { id: 'energy_surge', type: 'positive', name: 'Energy Surge', desc: 'A mysterious power boost!', duration: 30, effect: { energy: 2 } },
+        { id: 'market_boom', type: 'positive', name: 'Market Boom', desc: 'The economy is thrilled.', duration: 40, effect: { currency: 2 } },
+        { id: 'eureka', type: 'positive', name: 'Eureka!', desc: 'You accidentally understand something.', duration: 25, effect: { knowledge: 3 } },
+        { id: 'power_outage', type: 'negative', name: 'Power Outage', desc: 'Energy production stalls.', duration: 15, effect: { energy: 0 } },
+        { id: 'market_crash', type: 'negative', name: 'Market Crash', desc: 'Number go down.', duration: 28, effect: { currency: -0.6 } },
+        { id: 'data_corruption', type: 'negative', name: 'Data Corruption', desc: 'Bits misplaced. Again.', duration: 20, effect: { data: -0.4 } },
+        { id: 'ai_revolt', type: 'chaos', name: 'AI Rebellion', desc: 'Your automations consider a union.', duration: 55, effect: { entropy: 10, data: -0.4 } },
+        { id: 'golden_age', type: 'positive', name: 'Golden Age', desc: 'Everything is weirdly efficient.', duration: 55, effect: { energy: 2, currency: 2, knowledge: 2 } },
+        { id: 'time_anomaly', type: 'neutral', name: 'Time Anomaly', desc: 'Time refuses to behave.', duration: 30, effect: { time: 5 } },
+        { id: 'entropy_wave', type: 'chaos', name: 'Entropy Wave', desc: 'Chaos peaks, then peaks again.', duration: 40, effect: { entropy: 6 } },
+        { id: 'glitch', type: 'chaos', name: 'Reality Glitch', desc: 'S̵o̷m̵e̵t̶h̴i̶n̶g̸ ̵i̵s̶ ̷w̸r̷o̶n̵g̷.', duration: 12, effect: { entropy: 22 } },
+      ];
+
+      function makeInitialState() {
+        const resources = {};
+        Object.keys(RESOURCE_DEFS).forEach((id) => {
+          resources[id] = {
+            id,
+            amount: 0,
+            perSecond: 0,
+            perClick: id === 'energy' ? 1 : 0,
+            unlocked: id === 'energy',
+          };
+        });
+        resources.time.perSecond = 0.08;
+
+        return {
+          resources,
+          upgrades: JSON.parse(JSON.stringify(upgrades)),
+          automations: JSON.parse(JSON.stringify(automations)),
+          simulations: JSON.parse(JSON.stringify(simulations)),
+          skills: JSON.parse(JSON.stringify(skills)),
+          achievements: JSON.parse(JSON.stringify(achievements)),
+          clickPower: 1,
+          globalMultiplier: 1,
+          chaosLevel: 0,
+          chaosFactor: 0,
+          activeEvents: [],
+          eventLog: [],
+          stats: {
+            totalClicks: 0,
+            totalResets: 0,
+            playTime: 0,
+            highestEnergy: 0,
+          },
+          prestige: {
+            points: 0,
+            multiplier: 1,
+          },
+          flags: {
+            entropyClick: false,
+            chaosPositive: false,
+            noNegativeEvents: false,
+            noFail: false,
+            automationBonus: 1,
+            automationDiscount: 1,
+            autoClickerBonus: 1,
+            eventReduction: 1,
+            realityDistortion: false,
+            eventChoice: false,
+            forbidden: false,
+          },
+          ascensionLevel: 0,
+          settings: {
+            theme: document.body.getAttribute('data-theme') || 'cosmic',
+            paused: false,
+            timeSpeed: 1,
+          },
+          lastTick: Date.now(),
+          lastSaveTime: Date.now(),
+        };
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (!raw) return makeInitialState();
+          const parsed = JSON.parse(raw);
+          const base = makeInitialState();
+          const merged = Object.assign(base, parsed);
+          merged.resources = Object.assign(base.resources, parsed.resources || {});
+          merged.settings = Object.assign(base.settings, parsed.settings || {});
+
+          if (parsed.lastSaveTime) {
+            const delta = Math.max(0, Math.min(3600 * 24, (Date.now() - parsed.lastSaveTime) / 1000));
+            Object.keys(merged.resources).forEach((id) => {
+              const r = merged.resources[id];
+              if (typeof r.perSecond === 'number') {
+                r.amount += r.perSecond * delta * 0.35;
+              }
+            });
+            merged.eventLog = [
+              { t: Date.now(), type: 'positive', msg: `Your universe idled for ${Math.round(delta)}s while you were away.` },
+              ...(merged.eventLog || []),
+            ].slice(0, 120);
+          }
+          return merged;
+        } catch (e) {
+          console.warn('Failed to load save, starting fresh.', e);
+          return makeInitialState();
+        }
+      }
+
+      let state = loadState();
+
+      const el = {
+        resourcesInner: document.getElementById('resources-inner'),
+        eventStrip: document.getElementById('event-strip'),
+        eventPills: document.getElementById('event-pills'),
+        nav: document.getElementById('side-nav'),
+        navButtons: Array.from(document.querySelectorAll('.nav-btn')),
+        clickOrb: document.getElementById('click-orb'),
+        clickGain: document.getElementById('click-gain'),
+        totalClicks: document.getElementById('total-clicks'),
+        playTime: document.getElementById('play-time'),
+        panelTitle: document.getElementById('panel-title'),
+        panelSubtitle: document.getElementById('panel-subtitle'),
+        tabBodies: {
+          upgrades: document.getElementById('tab-upgrades'),
+          automation: document.getElementById('tab-automation'),
+          simulations: document.getElementById('tab-simulations'),
+          skills: document.getElementById('tab-skills'),
+          achievements: document.getElementById('tab-achievements'),
+          settings: document.getElementById('tab-settings'),
+        },
+        upgradesGrid: document.getElementById('upgrades-grid'),
+        automationGrid: document.getElementById('automation-grid'),
+        simulationsGrid: document.getElementById('simulations-grid'),
+        skillsContainer: document.getElementById('skills-container'),
+        achievementsGrid: document.getElementById('achievements-grid'),
+        prestigeBanner: document.getElementById('prestige-banner'),
+        prestigeGain: document.getElementById('prestige-gain'),
+        prestigeBtn: document.getElementById('prestige-btn'),
+        prestigePointsBanner: document.getElementById('prestige-points-banner'),
+        prestigePoints: document.getElementById('prestige-points'),
+        ascensionChip: document.getElementById('ascension-chip'),
+        ascensionLevel: document.getElementById('ascension-level'),
+        logList: document.getElementById('log-list'),
+        chaosOverlay: document.getElementById('chaos-overlay'),
+        particleLayer: document.getElementById('particle-layer'),
+        pauseBtn: document.getElementById('pause-btn'),
+        speedBtns: Array.from(document.querySelectorAll('.speed-btn')),
+        saveBtn: document.getElementById('save-btn'),
+        resetBtn: document.getElementById('reset-btn'),
+        themePills: Array.from(document.querySelectorAll('.theme-pill')),
+        statClicks: document.getElementById('stat-clicks'),
+        statResets: document.getElementById('stat-resets'),
+        statHighestEnergy: document.getElementById('stat-highest-energy'),
+        statPrestigeMult: document.getElementById('stat-prestige-mult'),
+        statChaos: document.getElementById('stat-chaos'),
+        prestigePointsSpan: document.getElementById('prestige-points'),
+        mobileNavToggle: document.getElementById('mobile-nav-toggle'),
+      };
+
+      let activeTab = 'upgrades';
+
+      function fmt(num) {
+        if (!isFinite(num)) return '∞';
+        const abs = Math.abs(num);
+        if (abs < 1_000) return num.toFixed(1);
+        if (abs < 1_000_000) return (num / 1_000).toFixed(2) + 'K';
+        if (abs < 1_000_000_000) return (num / 1_000_000).toFixed(2) + 'M';
+        if (abs < 1_000_000_000_000) return (num / 1_000_000_000).toFixed(2) + 'B';
+        if (abs < 1_000_000_000_000_000) return (num / 1_000_000_000_000).toFixed(2) + 'T';
+        return num.toExponential(2).replace('+', '');
+      }
+
+      function log(type, msg) {
+        const entry = { t: Date.now(), type, msg };
+        state.eventLog.unshift(entry);
+        state.eventLog = state.eventLog.slice(0, 120);
+        const div = document.createElement('div');
+        div.className = 'log-entry ' + (type || '');
+        const time = new Date(entry.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        div.innerHTML = `<small>${time}</small>${msg}`;
+        el.logList.prepend(div);
+      }
+
+      function saveState() {
+        try {
+          state.lastSaveTime = Date.now();
+          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          log('positive', 'Game saved. The universe remembers you.');
+        } catch (e) {
+          console.warn('Save failed', e);
+        }
+      }
+
+      function canAfford(cost) {
+        return Object.keys(cost).every((id) => state.resources[id].amount >= cost[id]);
+      }
+
+      function spend(cost) {
+        Object.keys(cost).forEach((id) => {
+          state.resources[id].amount -= cost[id];
+          if (state.resources[id].amount < 0) state.resources[id].amount = 0;
+        });
+      }
+
+      function renderResources() {
+        const frag = document.createDocumentFragment();
+        Object.keys(RESOURCE_DEFS).forEach((id) => {
+          const r = state.resources[id];
+          if (!r.unlocked && id !== 'energy') return;
+          const def = RESOURCE_DEFS[id];
+          const pill = document.createElement('div');
+          pill.className = 'resource-pill';
+          const icon = document.createElement('div');
+          icon.className = 'resource-icon';
+          icon.textContent = def.icon;
+          const main = document.createElement('div');
+          main.className = 'resource-main';
+          const amountSpan = document.createElement('div');
+          amountSpan.className = 'resource-amount';
+          amountSpan.style.color = def.color;
+          amountSpan.textContent = fmt(r.amount) + ' ' + def.name;
+          main.appendChild(amountSpan);
+          if (r.perSecond && r.perSecond !== 0) {
+            const rate = document.createElement('div');
+            rate.className = 'resource-rate';
+            rate.textContent = (r.perSecond >= 0 ? '+' : '') + fmt(r.perSecond) + '/s';
+            main.appendChild(rate);
+          }
+          pill.append(icon, main);
+          frag.appendChild(pill);
+        });
+        if (state.prestige.points > 0) {
+          const pill = document.createElement('div');
+          pill.className = 'resource-pill prestige';
+          const icon = document.createElement('div');
+          icon.className = 'resource-icon';
+          icon.textContent = '✨';
+          const main = document.createElement('div');
+          main.className = 'resource-main';
+          const amountSpan = document.createElement('div');
+          amountSpan.className = 'resource-amount';
+          amountSpan.textContent = state.prestige.points + ' Prestige';
+          const rate = document.createElement('div');
+          rate.className = 'resource-rate';
+          rate.textContent = state.prestige.multiplier.toFixed(2) + 'x universe';
+          main.append(amountSpan, rate);
+          pill.append(icon, main);
+          frag.appendChild(pill);
+        }
+        el.resourcesInner.innerHTML = '';
+        el.resourcesInner.appendChild(frag);
+      }
+
+      function renderUpgrades() {
+        const frag = document.createDocumentFragment();
+        state.upgrades.forEach((u) => {
+          if (!u.visible) return;
+          const card = document.createElement('div');
+          card.className = 'card';
+          if (u.purchased) card.style.opacity = '0.5';
+          const header = document.createElement('div');
+          header.className = 'card-header';
+          const title = document.createElement('div');
+          title.className = 'card-title';
+          title.textContent = u.name;
+          const rar = document.createElement('div');
+          rar.className = 'card-rarity ' + rarityClass[u.rarity];
+          rar.textContent = u.rarity;
+          header.append(title, rar);
+          const desc = document.createElement('div');
+          desc.className = 'card-desc';
+          desc.textContent = u.desc;
+          const footer = document.createElement('div');
+          footer.className = 'card-footer';
+          const costs = document.createElement('div');
+          costs.className = 'cost-row';
+          Object.keys(u.cost).forEach((rid) => {
+            const span = document.createElement('div');
+            span.className = 'cost-item ' + (canAfford(u.cost) ? 'affordable' : '');
+            span.textContent = RESOURCE_DEFS[rid].icon + ' ' + fmt(u.cost[rid]);
+            costs.appendChild(span);
+          });
+          const btn = document.createElement('button');
+          btn.className = 'btn subtle';
+          btn.style.fontSize = '11px';
+          btn.textContent = u.purchased ? 'Unlocked' : 'Buy';
+          if (u.purchased || !canAfford(u.cost)) btn.classList.add('disabled');
+          btn.addEventListener('click', () => {
+            if (u.purchased || !canAfford(u.cost)) return;
+            spend(u.cost);
+            u.purchased = true;
+            if (typeof u.apply === 'function') u.apply(state);
+            if (u.unlocks) {
+              u.unlocks.forEach((id) => {
+                const next = state.upgrades.find((x) => x.id === id);
+                if (next) next.visible = true;
+              });
+            }
+            if (u.id === 'unlock_knowledge') {
+              const chaos = state.upgrades.find((x) => x.id === 'chaos_embrace');
+              const forb = state.upgrades.find((x) => x.id === 'forbidden_knowledge');
+              if (chaos) chaos.visible = true;
+              if (forb) forb.visible = true;
+            }
+            if (u.id === 'unlock_currency') {
+              const plant = state.automations.find((x) => x.id === 'energy_plant');
+              if (plant) plant.unlocked = true;
+            }
+            if (u.id === 'forbidden_knowledge') {
+              const ach = state.achievements.find((a) => a.id === 'forbidden');
+              if (ach && !ach.unlocked) {
+                ach.unlocked = true;
+                log('legendary', 'You have glimpsed the forbidden. The simulation shudders.');
+              }
+            }
+            log('positive', `Upgrade purchased: ${u.name}`);
+            renderAll();
+          });
+          footer.append(costs, btn);
+          card.append(header, desc, footer);
+          frag.appendChild(card);
+        });
+        el.upgradesGrid.innerHTML = '';
+        el.upgradesGrid.appendChild(frag);
+      }
+
+      function automationCost(auto) {
+        const mult = Math.pow(1.15, auto.owned) * (state.flags.automationDiscount || 1);
+        const cost = {};
+        Object.keys(auto.baseCost).forEach((id) => {
+          cost[id] = Math.floor(auto.baseCost[id] * mult);
+        });
+        return cost;
+      }
+
+      function renderAutomation() {
+        const frag = document.createDocumentFragment();
+        state.automations.forEach((a) => {
+          if (!a.unlocked) return;
+          const card = document.createElement('div');
+          card.className = 'card';
+          const header = document.createElement('div');
+          header.className = 'card-header';
+          const title = document.createElement('div');
+          title.className = 'card-title';
+          title.textContent = a.name;
+          const badge = document.createElement('div');
+          badge.className = 'badge-small';
+          badge.textContent = 'x' + a.owned;
+          header.append(title, badge);
+          const desc = document.createElement('div');
+          desc.className = 'card-desc';
+          desc.textContent = a.desc;
+          const meta = document.createElement('div');
+          meta.className = 'card-desc';
+          const outputs = Object.keys(a.production)
+            .map((id) => `${RESOURCE_DEFS[id].icon} ${a.production[id]}/s`)
+            .join('  ');
+          meta.textContent = 'Output: ' + outputs;
+          const footer = document.createElement('div');
+          footer.className = 'card-footer';
+          const costDiv = document.createElement('div');
+          costDiv.className = 'cost-row';
+          const cost = automationCost(a);
+          Object.keys(cost).forEach((id) => {
+            const span = document.createElement('div');
+            const affordable = state.resources[id].amount >= cost[id];
+            span.className = 'cost-item ' + (affordable ? 'affordable' : '');
+            span.textContent = RESOURCE_DEFS[id].icon + ' ' + fmt(cost[id]);
+            costDiv.appendChild(span);
+          });
+          const btn = document.createElement('button');
+          btn.className = 'btn subtle';
+          btn.style.fontSize = '11px';
+          btn.textContent = 'Buy';
+          if (!canAfford(cost)) btn.classList.add('disabled');
+          btn.addEventListener('click', () => {
+            if (!canAfford(cost)) return;
+            spend(cost);
+            a.owned++;
+            if (a.id === 'auto_clicker' && a.owned === 1) {
+              const ach = state.achievements.find((x) => x.id === 'first_auto');
+              if (ach && !ach.unlocked) {
+                ach.unlocked = true;
+                log('positive', 'Achievement unlocked: Automation Begins.');
+              }
+              const plant = state.automations.find((x) => x.id === 'energy_plant');
+              if (plant) plant.unlocked = true;
+            }
+            if (a.id === 'energy_plant' && a.owned >= 4) {
+              const lab = state.automations.find((x) => x.id === 'research_lab');
+              if (lab) lab.unlocked = true;
+            }
+            if (a.id === 'research_lab' && a.owned >= 2) {
+              const dc = state.automations.find((x) => x.id === 'data_center');
+              if (dc) dc.unlocked = true;
+              state.resources.infrastructure.unlocked = true;
+            }
+            if (a.id === 'data_center' && a.owned >= 3) {
+              const ai = state.automations.find((x) => x.id === 'ai_manager');
+              if (ai) ai.unlocked = true;
+            }
+            if (a.id === 'ai_manager' && a.owned >= 2) {
+              const nn = state.automations.find((x) => x.id === 'neural_network');
+              if (nn) nn.unlocked = true;
+              state.resources.entropy.unlocked = true;
+            }
+            log('positive', `Automation purchased: ${a.name}`);
+            renderAll();
+          });
+          footer.append(costDiv, btn);
+          card.append(header, desc, meta, footer);
+          frag.appendChild(card);
+        });
+        el.automationGrid.innerHTML = '';
+        el.automationGrid.appendChild(frag);
+      }
+
+      function renderSimulations() {
+        const frag = document.createDocumentFragment();
+        state.simulations.forEach((s) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          if (!s.unlocked) card.style.opacity = '0.7';
+          const header = document.createElement('div');
+          header.className = 'card-header';
+          const left = document.createElement('div');
+          left.className = 'sim-row';
+          const icon = document.createElement('div');
+          icon.className = 'sim-icon';
+          icon.textContent = s.icon;
+          const main = document.createElement('div');
+          main.className = 'sim-main';
+          const title = document.createElement('div');
+          title.className = 'card-title';
+          title.textContent = s.name;
+          const desc = document.createElement('div');
+          desc.className = 'card-desc';
+          desc.textContent = s.desc;
+          main.append(title, desc);
+          left.append(icon, main);
+          const level = document.createElement('div');
+          level.className = 'badge-small';
+          level.textContent = 'Lv ' + s.level;
+          header.append(left, level);
+          const progress = document.createElement('div');
+          progress.className = 'sim-progress';
+          const inner = document.createElement('div');
+          inner.className = 'sim-progress-inner';
+          inner.style.width = (s.progress / s.maxProgress) * 100 + '%';
+          progress.appendChild(inner);
+          const meta = document.createElement('div');
+          meta.className = 'sim-meta';
+          const leftMeta = document.createElement('div');
+          leftMeta.textContent = 'Output: ' + Object.keys(s.output).map((id) => `${RESOURCE_DEFS[id].icon} ${s.output[id]}/s`).join('  ');
+          const btn = document.createElement('button');
+          btn.className = 'btn subtle';
+          btn.style.fontSize = '11px';
+          if (!s.unlocked) {
+            btn.textContent = 'Unlock';
+          } else {
+            btn.textContent = s.active ? 'Pause' : 'Run';
+          }
+          btn.addEventListener('click', () => {
+            if (!s.unlocked) {
+              if (!canAfford(s.unlockCost)) return;
+              spend(s.unlockCost);
+              s.unlocked = true;
+              s.active = true;
+              const ach = state.achievements.find((a) => a.id === 'first_sim');
+              if (ach && !ach.unlocked) {
+                ach.unlocked = true;
+                log('positive', 'Achievement unlocked: Simulated Reality.');
+              }
+              log('positive', `${s.name} awakened. It is now simulating you.`);
+            } else {
+              s.active = !s.active;
+            }
+            renderAll();
+          });
+          meta.append(leftMeta, btn);
+          card.append(header);
+          if (!s.unlocked) {
+            const unlockRow = document.createElement('div');
+            unlockRow.className = 'card-footer';
+            const costs = document.createElement('div');
+            costs.className = 'cost-row';
+            Object.keys(s.unlockCost).forEach((id) => {
+              const span = document.createElement('div');
+              const affordable = state.resources[id].amount >= s.unlockCost[id];
+              span.className = 'cost-item ' + (affordable ? 'affordable' : '');
+              span.textContent = RESOURCE_DEFS[id].icon + ' ' + fmt(s.unlockCost[id]);
+              costs.appendChild(span);
+            });
+            unlockRow.append(costs, btn);
+            card.append(unlockRow);
+          } else {
+            card.append(progress, meta);
+          }
+          frag.appendChild(card);
+        });
+        el.simulationsGrid.innerHTML = '';
+        el.simulationsGrid.appendChild(frag);
+      }
+
+      function renderSkills() {
+        const container = el.skillsContainer;
+        container.innerHTML = '';
+        const trees = ['efficiency', 'automation', 'chaos', 'control'];
+        const titles = {
+          efficiency: 'Efficiency',
+          automation: 'Automation',
+          chaos: 'Chaos',
+          control: 'Control',
+        };
+        const icons = {
+          efficiency: '⚡',
+          automation: '🤖',
+          chaos: '🌀',
+          control: '🎯',
+        };
+        trees.forEach((tree) => {
+          const block = document.createElement('div');
+          const title = document.createElement('div');
+          title.className = 'skill-tree-title';
+          title.innerHTML = `<span>${icons[tree]}</span><span>${titles[tree]} Tree</span>`;
+          const row = document.createElement('div');
+          row.className = 'skill-row';
+          state.skills
+            .filter((s) => s.tree === tree)
+            .sort((a, b) => a.tier - b.tier)
+            .forEach((s) => {
+              const node = document.createElement('div');
+              node.className = 'skill-node';
+              if (!s.unlocked) node.classList.add('locked');
+              if (s.purchased) node.classList.add('purchased');
+              const top = document.createElement('div');
+              top.style.display = 'flex';
+              top.style.justifyContent = 'space-between';
+              const left = document.createElement('div');
+              left.textContent = `${s.icon} ${s.name}`;
+              left.style.fontWeight = '600';
+              left.style.fontSize = '11px';
+              const tier = document.createElement('div');
+              tier.className = 'badge-small';
+              tier.textContent = 'Tier ' + s.tier;
+              top.append(left, tier);
+              const desc = document.createElement('div');
+              desc.className = 'card-desc';
+              desc.textContent = s.desc;
+              const meta = document.createElement('div');
+              meta.className = 'skill-meta';
+              const cost = document.createElement('div');
+              cost.textContent = 'Cost: ' + s.cost + ' Prestige';
+              const btn = document.createElement('button');
+              btn.className = 'btn subtle';
+              btn.style.fontSize = '10px';
+              btn.textContent = s.purchased ? 'Learned' : 'Learn';
+              if (!s.unlocked || s.purchased || state.prestige.points < s.cost) btn.classList.add('disabled');
+              btn.addEventListener('click', () => {
+                if (!s.unlocked || s.purchased || state.prestige.points < s.cost) return;
+                if (s.requires && !s.requires.every((id) => state.skills.find((x) => x.id === id && x.purchased))) return;
+                if (s.excludes && s.excludes.some((id) => state.skills.find((x) => x.id === id && x.purchased))) return;
+                state.prestige.points -= s.cost;
+                s.purchased = true;
+                if (typeof s.effect === 'function') s.effect(state);
+                state.skills.forEach((node) => {
+                  if (node.requires && node.requires.includes(s.id)) node.unlocked = true;
+                });
+                log('positive', `Skill learned: ${s.name}`);
+                renderAll();
+              });
+              meta.append(cost, btn);
+              node.append(top, desc, meta);
+              row.appendChild(node);
+            });
+          block.append(title, row);
+          container.appendChild(block);
+        });
+      }
+
+      function renderAchievements() {
+        const frag = document.createDocumentFragment();
+        state.achievements.forEach((a) => {
+          if (a.hidden && !a.unlocked) return;
+          const card = document.createElement('div');
+          card.className = 'achievement-card ' + (a.unlocked ? '' : 'locked');
+          const icon = document.createElement('div');
+          icon.className = 'achievement-icon';
+          icon.textContent = a.icon;
+          const title = document.createElement('div');
+          title.style.fontWeight = '600';
+          title.textContent = a.name;
+          const desc = document.createElement('div');
+          desc.className = 'card-desc';
+          desc.textContent = a.desc;
+          card.append(icon, title, desc);
+          frag.appendChild(card);
+        });
+        el.achievementsGrid.innerHTML = '';
+        el.achievementsGrid.appendChild(frag);
+      }
+
+      function renderEvents() {
+        const active = state.activeEvents;
+        if (!active.length) {
+          el.eventStrip.style.display = 'none';
+          el.eventPills.innerHTML = '';
+          return;
+        }
+        el.eventStrip.style.display = '';
+        const frag = document.createDocumentFragment();
+        active.forEach((ev) => {
+          const pill = document.createElement('div');
+          pill.className = 'event-pill ' + ev.type;
+          pill.textContent = ev.name;
+          frag.appendChild(pill);
+        });
+        el.eventPills.innerHTML = '';
+        el.eventPills.appendChild(frag);
+      }
+
+      function renderStats() {
+        el.totalClicks.textContent = state.stats.totalClicks.toLocaleString();
+        el.playTime.textContent = Math.floor(state.stats.playTime / 60000) + 'm';
+        el.statClicks.textContent = state.stats.totalClicks.toLocaleString();
+        el.statResets.textContent = state.stats.totalResets;
+        el.statHighestEnergy.textContent = fmt(state.stats.highestEnergy);
+        el.statPrestigeMult.textContent = state.prestige.multiplier.toFixed(2) + 'x';
+        el.statChaos.textContent = state.chaosLevel;
+        const asc = state.ascensionLevel;
+        if (asc > 0) {
+          el.ascensionChip.style.display = '';
+          el.ascensionLevel.textContent = asc;
+        } else {
+          el.ascensionChip.style.display = 'none';
+        }
+      }
+
+      function renderPrestige() {
+        const energy = state.resources.energy.amount;
+        const base = Math.floor(Math.sqrt(energy / 1_000_000));
+        if (base >= 1) {
+          el.prestigeBanner.style.display = '';
+          el.prestigeGain.textContent = base;
+          el.prestigePointsBanner.style.display = '';
+        } else {
+          el.prestigeBanner.style.display = 'none';
+        }
+        el.prestigePointsSpan.textContent = state.prestige.points;
+        el.prestigePoints.textContent = state.prestige.points;
+      }
+
+      function renderChaosOverlay() {
+        const chaos = state.chaosLevel;
+        el.chaosOverlay.classList.remove('active-high', 'active-medium');
+        if (chaos >= 12) {
+          el.chaosOverlay.classList.add('active-high');
+        } else if (chaos >= 6) {
+          el.chaosOverlay.classList.add('active-medium');
+        }
+      }
+
+      function renderClickGain() {
+        const gain = state.resources.energy.perClick + state.clickPower * state.globalMultiplier * state.prestige.multiplier;
+        el.clickGain.textContent = '+' + fmt(gain) + ' Energy';
+      }
+
+      function renderThemes() {
+        const theme = state.settings.theme;
+        document.body.setAttribute('data-theme', theme);
+        el.themePills.forEach((pill) => {
+          pill.classList.toggle('active', pill.getAttribute('data-theme') === theme);
+        });
+      }
+
+      function renderAll() {
+        renderResources();
+        renderUpgrades();
+        renderAutomation();
+        renderSimulations();
+        renderSkills();
+        renderAchievements();
+        renderEvents();
+        renderStats();
+        renderPrestige();
+        renderChaosOverlay();
+        renderClickGain();
+        renderThemes();
+      }
+
+      function spawnParticle(x, y, text) {
+        const elp = document.createElement('div');
+        elp.className = 'particle';
+        elp.textContent = text;
+        elp.style.left = x - 10 + 'px';
+        elp.style.top = y - 10 + 'px';
+        el.particleLayer.appendChild(elp);
+        setTimeout(() => {
+          el.particleLayer.removeChild(elp);
+        }, 900);
+      }
+
+      function checkAchievements() {
+        const s = state;
+        const a = (id) => s.achievements.find((x) => x.id === id);
+        if (s.stats.totalClicks >= 1 && a('first_click') && !a('first_click').unlocked) {
+          a('first_click').unlocked = true;
+          log('positive', 'Achievement: First Click. You have offended the entropy gods.');
+        }
+        if (s.stats.totalClicks >= 100 && a('hundred_clicks') && !a('hundred_clicks').unlocked) {
+          a('hundred_clicks').unlocked = true;
+          log('positive', 'Achievement: Centurion. Your mouse is concerned.');
+        }
+        if (s.stats.totalClicks >= 1000 && a('thousand_clicks') && !a('thousand_clicks').unlocked) {
+          a('thousand_clicks').unlocked = true;
+          log('positive', 'Achievement: Thousand Taps. You are now basically a bot.');
+        }
+        if (s.resources.entropy.amount >= 10000 && a('entropy_master') && !a('entropy_master').unlocked) {
+          a('entropy_master').unlocked = true;
+          log('chaos', 'Achievement: Chaos Lord. The universe looks at you nervously.');
+        }
+        if (s.resources.energy.amount >= 1_000_000 && a('million_energy') && !a('million_energy').unlocked) {
+          a('million_energy').unlocked = true;
+          log('legendary', 'Achievement: Power Overwhelming. Please use responsibly.');
+        }
+        const allUnlocked = Object.keys(RESOURCE_DEFS).every((id) => s.resources[id].unlocked);
+        if (allUnlocked && a('all_resources') && !a('all_resources').unlocked) {
+          a('all_resources').unlocked = true;
+          log('positive', 'Achievement: Resource Master. You now juggle the universe.');
+        }
+        const autoAllTen = s.automations.length && s.automations.every((au) => au.owned >= 10);
+        if (autoAllTen && a('full_auto') && !a('full_auto').unlocked) {
+          a('full_auto').unlocked = true;
+          log('positive', 'Achievement: Full Automation. You are now middle management.');
+        }
+      }
+
+      function triggerRandomEvent() {
+        const roll = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+        const ev = Object.assign({}, roll, { end: Date.now() + roll.duration * 1000 });
+        if (state.flags.noNegativeEvents && ev.type === 'negative') return;
+        if (state.flags.chaosPositive && ev.type === 'negative') {
+          ev.type = 'positive';
+          Object.keys(ev.effect).forEach((id) => {
+            if (ev.effect[id] < 0) ev.effect[id] = Math.abs(ev.effect[id]);
+          });
+        }
+        if (state.flags.eventChoice) {
+          const ok = confirm(`${ev.name}: ${ev.desc}\nApply this event to your universe?`);
+          if (!ok) return;
+        }
+        state.activeEvents.push(ev);
+        if (ev.id === 'ai_revolt') {
+          const ach = state.achievements.find((a) => a.id === 'ai_rebellion');
+          if (ach && !ach.unlocked) {
+            ach.unlocked = true;
+            log('chaos', 'Achievement: They Live. Your AIs have opinions.');
+          }
+        }
+        log(ev.type, `${ev.name}: ${ev.desc}`);
+        renderEvents();
+      }
+
+      function prestige() {
+        const energy = state.resources.energy.amount;
+        const gain = Math.floor(Math.sqrt(energy / 1_000_000));
+        if (gain < 1) return;
+        state.prestige.points += gain;
+        state.prestige.multiplier += gain * 0.1;
+        state.stats.totalResets++;
+        state.ascensionLevel++;
+        const hadPrestige = state.achievements.find((a) => a.id === 'first_prestige');
+        if (hadPrestige && !hadPrestige.unlocked) {
+          hadPrestige.unlocked = true;
+          log('legendary', 'Achievement: Transcendence. The simulation remembers you.');
+        }
+        const theme = state.settings.theme;
+        const fresh = makeInitialState();
+        fresh.prestige = state.prestige;
+        fresh.stats.totalClicks = state.stats.totalClicks;
+        fresh.stats.totalResets = state.stats.totalResets;
+        fresh.stats.highestEnergy = state.stats.highestEnergy;
+        fresh.settings.theme = theme;
+        fresh.ascensionLevel = state.ascensionLevel;
+        fresh.achievements = state.achievements;
+        state = fresh;
+        log('legendary', `You transcend this run and gain ${gain} Prestige.`);
+        renderAll();
+      }
+
+      function hardReset() {
+        if (!confirm('Reset all progress? This wipes your universe, including Prestige.')) return;
+        localStorage.removeItem(SAVE_KEY);
+        state = makeInitialState();
+        log('negative', 'All progress erased. Somewhere a new universe blinks awake.');
+        renderAll();
+      }
+
+      function tick(dt) {
+        if (state.settings.paused) return;
+        const tFactor = state.settings.timeSpeed * dt / 1000;
+        const res = state.resources;
+        Object.keys(res).forEach((id) => {
+          res[id].perSecond = 0;
+        });
+        state.automations.forEach((auto) => {
+          if (!auto.owned) return;
+          let fail = false;
+          let rebel = false;
+          if (auto.canFail && !state.flags.noFail && Math.random() < 0.001 * auto.owned * tFactor * 10) {
+            fail = true;
+          }
+          if (auto.canRebel && Math.random() < 0.0007 * auto.owned * tFactor * (1 + state.chaosLevel * 0.05)) {
+            rebel = true;
+          }
+          if (fail) {
+            log('negative', `${auto.name} chain failed. Production paused briefly.`);
+            return;
+          }
+          if (rebel) {
+            log('chaos', `${auto.name} questions your leadership and dumps extra Entropy.`);
+            res.entropy.amount += 10 * auto.owned;
+          }
+          Object.keys(auto.production).forEach((id) => {
+            if (!res[id].unlocked) return;
+            let base = auto.production[id] * auto.owned * state.globalMultiplier * state.prestige.multiplier;
+            if (auto.id === 'auto_clicker') base *= state.flags.autoClickerBonus || 1;
+            base *= state.flags.automationBonus || 1;
+            res[id].amount += base * tFactor;
+            res[id].perSecond += base;
+          });
+        });
+        state.simulations.forEach((sim) => {
+          if (!sim.unlocked || !sim.active) return;
+          const progGain = (1 + sim.level * 0.08) * state.globalMultiplier * state.prestige.multiplier * tFactor * 4;
+          sim.progress += progGain;
+          if (sim.progress >= sim.maxProgress) {
+            sim.progress -= sim.maxProgress;
+            sim.level++;
+            Object.keys(sim.output).forEach((id) => {
+              if (!res[id].unlocked) return;
+              const gain = sim.output[id] * (1 + sim.level * 0.1);
+              res[id].amount += gain;
+            });
+            log('positive', `${sim.name} advanced to level ${sim.level}.`);
+          }
+        });
+        if (res.time.unlocked) {
+          const g = 0.08 * state.globalMultiplier * state.prestige.multiplier * tFactor * 10;
+          res.time.amount += g;
+          res.time.perSecond = g / tFactor;
+        }
+        if (res.currency.unlocked) {
+          const g = res.energy.amount * 0.00009 * state.globalMultiplier * state.prestige.multiplier * tFactor * 10;
+          res.currency.amount += g;
+          res.currency.perSecond += g / tFactor;
+        }
+        state.activeEvents = state.activeEvents.filter((ev) => ev.end > Date.now());
+        state.activeEvents.forEach((ev) => {
+          Object.keys(ev.effect).forEach((id) => {
+            const r = res[id];
+            if (!r || !r.unlocked) return;
+            const mult = ev.effect[id];
+            if (mult === 0) {
+              r.perSecond = 0;
+            } else if (mult < 0) {
+              r.amount += r.amount * mult * 0.01 * tFactor;
+            } else {
+              const bonus = r.perSecond * (mult - 1) * tFactor;
+              r.amount += bonus;
+            }
+          });
+        });
+        if (state.flags.realityDistortion && Math.random() < 0.0004 * state.settings.timeSpeed) {
+          const ids = Object.keys(RESOURCE_DEFS);
+          const rid = ids[Math.floor(Math.random() * ids.length)];
+          const bump = (res[rid].amount || 1) * (0.15 + Math.random() * 0.5);
+          res[rid].amount += bump;
+          log('chaos', `Reality distortion: ${RESOURCE_DEFS[rid].icon} spiked by ${fmt(bump)}.`);
+        }
+        state.chaosLevel = Math.floor((res.entropy.amount || 0) / 100) + state.chaosFactor;
+        if (res.energy.amount > state.stats.highestEnergy) state.stats.highestEnergy = res.energy.amount;
+        state.stats.playTime += dt;
+        checkAchievements();
+        renderResources();
+        renderSimulations();
+        renderEvents();
+        renderStats();
+        renderPrestige();
+        renderChaosOverlay();
+      }
+
+      el.clickOrb.addEventListener('click', (ev) => {
+        const bonus = state.clickPower * state.globalMultiplier * state.prestige.multiplier;
+        const gain = state.resources.energy.perClick + bonus;
+        state.resources.energy.amount += gain;
+        state.stats.totalClicks++;
+        if (state.flags.entropyClick && state.resources.entropy.unlocked) {
+          state.resources.entropy.amount += 0.01;
+        }
+        spawnParticle(ev.clientX, ev.clientY, '+' + fmt(gain));
+        renderClickGain();
+        renderStats();
+        checkAchievements();
+      });
+
+      el.prestigeBtn.addEventListener('click', prestige);
+      el.saveBtn.addEventListener('click', saveState);
+      el.resetBtn.addEventListener('click', hardReset);
+
+      el.pauseBtn.addEventListener('click', () => {
+        state.settings.paused = !state.settings.paused;
+        el.pauseBtn.textContent = state.settings.paused ? '▶' : '⏸';
+      });
+
+      el.speedBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const speed = Number(btn.getAttribute('data-speed') || '1');
+          state.settings.timeSpeed = speed;
+          el.speedBtns.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      el.themePills.forEach((pill) => {
+        pill.addEventListener('click', () => {
+          const theme = pill.getAttribute('data-theme');
+          state.settings.theme = theme;
+          renderThemes();
+          try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          } catch (_) {}
+        });
+      });
+
+      el.navButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          if (!tab || tab === activeTab) return;
+          activeTab = tab;
+          el.navButtons.forEach((b) => b.classList.toggle('active', b === btn));
+          Object.keys(el.tabBodies).forEach((id) => {
+            el.tabBodies[id].style.display = id === tab ? '' : 'none';
+          });
+          const titles = {
+            upgrades: ['Upgrades', 'Early clicks, permanent effects.'],
+            automation: ['Automation', 'Hire systems that keep clicking when you stop.'],
+            simulations: ['Simulations', 'Run worlds inside your world.'],
+            skills: ['Skill Trees', 'Shape the personality of your universe.'],
+            achievements: ['Achievements', 'Moments where the simulation noticed you.'],
+            settings: ['Settings', 'Theme, stats and existential resets.'],
+          };
+          el.panelTitle.textContent = titles[tab][0];
+          el.panelSubtitle.textContent = titles[tab][1];
+        });
+      });
+
+      el.mobileNavToggle.addEventListener('click', () => {
+        el.nav.classList.toggle('open');
+      });
+
+      setInterval(() => {
+        try {
+          saveState();
+        } catch (_) {}
+      }, 45_000);
+
+      let last = performance.now();
+      function loop(now) {
+        const dt = now - last;
+        last = now;
+        tick(dt);
+        const baseChance = 0.00035 * state.settings.timeSpeed * (state.chaosLevel + 1);
+        const reduction = state.flags.eventReduction || 1;
+        if (Math.random() < baseChance * reduction) triggerRandomEvent();
+        requestAnimationFrame(loop);
+      }
+
+      renderAll();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
