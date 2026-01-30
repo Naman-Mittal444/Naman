@@ -445,6 +445,7 @@
             position: relative;
             overflow: hidden;
         }
+        
 
         .tool-card::before {
             content: '';
@@ -478,6 +479,12 @@
 
         .tool-card[data-category="puzzle"]:hover {
             box-shadow: 0 20px 40px rgba(168, 85, 247, 0.15);
+        }
+        .tool-card[data-category="Anime"]:hover {
+            box-shadow: 0 20px 40px rgba(230, 4, 255, 0.15);
+        }
+        .tool-card[data-category="AI"]:hover {
+            box-shadow: 0 20px 40px rgba(4, 0, 255, 0.15);
         }
 
         .tool-card[data-category="creative"]:hover {
@@ -568,11 +575,16 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ef4444;
         }
-
+        
         .tool-card[data-category="puzzle"] .category-tag {
             background: rgba(168, 85, 247, 0.1);
             border: 1px solid rgba(168, 85, 247, 0.3);
             color: #a855f7;
+        }
+          .tool-card[data-category="AI"] .category-tag {
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #00aeff;
         }
 
         .tool-card[data-category="creative"] .category-tag {
@@ -827,6 +839,114 @@
     font-size: 2.6rem;
     margin-bottom: 3px;
 }
+/* Base card */
+.keyyframess .tool-card {
+  --cardAccent: #00a9ff;
+  position: relative;
+  border-radius: 20px;
+  padding: 1.5rem; /* reduced from 2rem */
+  background-color: #222;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275),
+              box-shadow 0.4s ease, background 0.3s ease;
+  transform-style: preserve-3d;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Glow shadow behind card */
+.keyyframess .tool-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: -8px; /* slightly smaller margin to match smaller card */
+  border-radius: 20px;
+  z-index: -1;
+  background-color: #000a;
+  filter: drop-shadow(0 0 20px var(--cardAccent));
+  transition: filter 0.3s ease, background 0.3s ease;
+}
+
+/* Rainbow border */
+.keyyframess .tool-card::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 23px;
+  padding: 2px;
+  background: conic-gradient(
+    red, orange, yellow, green, cyan, blue, violet, red
+  );
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+  animation: rotateBorder 3s linear infinite, blinkBorder 1.5s infinite;
+  filter: blur(6px);
+}
+
+/* Hover effects */
+.keyyframess .tool-card:hover {
+  transform: scale(1.08) translateY(-6px); /* slightly smaller lift */
+  box-shadow: 0 15px 30px rgba(0,0,0,0.35);
+  background-color: #111;
+}
+.keyyframess .tool-card:hover::before { opacity: 1; }
+.keyyframess .tool-card:hover::after {
+  filter: drop-shadow(0 0 40px var(--cardAccent));
+  background-color: #000c;
+}
+
+/* Keep content above borders */
+.keyyframess .tool-card > * { position: relative; z-index: 1; }
+
+/* Inner figure */
+.keyyframess .tool-card figure {
+  position: relative;
+  background-color: #333;
+  border-radius: 15px;
+  padding: 1.2rem; /* reduced from 2rem */
+  z-index: 1;
+  transition: background 0.3s ease;
+}
+
+/* Heading inside figure */
+.keyyframess .tool-card figure h2 {
+  font-size: 1.5rem; /* smaller */
+  color: white;
+  margin-bottom: 10px; /* reduced spacing */
+}
+
+/* Description */
+.keyyframess .tool-card figure figcaption {
+  font-size: 0.9rem; /* smaller text */
+  color: #aaa;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* fewer lines */
+  -webkit-box-orient: vertical;
+}
+
+/* Buttons */
+.keyyframess .tool-card figure a {
+  margin-top: 15px; /* less spacing */
+  padding: 5px 12px; /* smaller button */
+  border-radius: 5px;
+}
+
+/* Border rotation animation */
+@keyframes rotateBorder {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Blinking effect */
+@keyframes blinkBorder {
+  0%,50%,100% { opacity: 1; }
+  25%,75% { opacity: 0.7; }
+}
+
+
+
     </style>
 </head>
 <body>
@@ -976,8 +1096,10 @@
         <div class="tools-container">
             <div class="section-header">
                 <h2 class="section-title">My AI-Powered Tools</h2>
-                <p class="section-subtitle">A collection of games, utilities, and fun projects</p>
-            </div>
+                <p class="section-subtitle">A collection of games, utilities, and fun projects
+                   <br> Made Using My Own AI Model
+                </p>
+            </div> 
             
 
             <div class="filter-container">
@@ -992,7 +1114,16 @@
             </div>
 
             <div class="tools-grid">
+                <!--My AI-->
+                  <div class="keyyframess"><div class="tool-card" data-category="AI" >
+                    <span class="category-tag">AI</span>
+                    <div class="tool-icon"><img src="https://i.ibb.co/39m2zDZC/Chat-GPT-Image-Jan-30-2026-08-07-06-PM-removebg-preview.png" style=" width: 128px; height: 128px;"></div>
+                     <figure><h3 class="tool-title">Anthropic AI</h3></figure>
+                    <p class="tool-desc">A AI Agent IDE To Fulfill Your Every Coding Need For FREE</p>
+                 <a href="claude.html"><button class="launch-button" >Launch Tool</button></a>
+                </div></div>
                 <!-- Calculator -->
+                 
                 <div class="tool-card" data-category="utility" data-tool="calculator">
                     <span class="category-tag">Utility</span>
                     <div class="tool-icon">🔢</div>
