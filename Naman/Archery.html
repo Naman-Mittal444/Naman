@@ -1,445 +1,1381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Archer</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #1a1a2e;
-            font-family: 'Consolas', 'Courier New', monospace;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏹 Archer Kingdom - Epic Archery Game (Standalone)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        #game-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-        }
+    body {
+      overflow: hidden;
+      font-family: "Segoe UI", "Arial", sans-serif;
+      min-height: 100vh;
+      background: #0a0a15;
+      color: #fff;
+    }
 
-        #canvas {
-            background-color: #16213e;
-            border: 3px solid #0f3460;
-            box-shadow: 0 0 25px rgba(224, 251, 255, 0.5);
-            cursor: crosshair;
-        }
-        
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #e0fbff;
-            font-size: 2rem;
-            text-shadow: 0 0 10px #e0fbff;
-            display: flex;
-            gap: 40px;
-        }
+    #game-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
 
-        .level-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5rem;
-            color: #f7ff00;
-            text-shadow: 0 0 20px #f7ff00;
-            display: none;
-            text-align: center;
-        }
+    #canvas {
+      border: 4px solid rgba(255, 215, 0, 0.6);
+      border-radius: 16px;
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.3), 0 0 120px rgba(255, 100, 0, 0.1),
+        inset 0 0 80px rgba(0, 0, 0, 0.5);
+      cursor: crosshair;
+      background: #0b0b1a;
+    }
 
-        .controls-info {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(224, 251, 255, 0.7);
-            font-size: 1rem;
-        }
-    </style>
+    #ui-container {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    .ui-box {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 100, 0, 0.08) 100%);
+      border: 2px solid rgba(255, 215, 0, 0.5);
+      border-radius: 12px;
+      padding: 10px 20px;
+      color: #fff5d4;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .ui-box span {
+      color: #ffd700;
+      font-weight: 700;
+    }
+
+    .ui-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
+    }
+
+    #level-message {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3.5rem;
+      font-weight: 900;
+      text-align: center;
+      display: none;
+      z-index: 100;
+      text-transform: uppercase;
+      letter-spacing: 6px;
+      padding: 20px 40px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+    }
+
+    #level-message.success {
+      color: #88ce02;
+      text-shadow: 0 0 30px #88ce02, 0 0 60px rgba(136, 206, 2, 0.5);
+      border: 3px solid #88ce02;
+    }
+
+    #level-message.fail {
+      color: #ff4444;
+      text-shadow: 0 0 30px #ff4444, 0 0 60px rgba(255, 68, 68, 0.5);
+      border: 3px solid #ff4444;
+    }
+
+    #level-message.win {
+      color: #ffd700;
+      text-shadow: 0 0 30px #ffd700, 0 0 60px rgba(255, 215, 0, 0.5);
+      border: 3px solid #ffd700;
+      animation: rainbow 2s linear infinite;
+    }
+
+    @keyframes rainbow {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+
+      100% {
+        filter: hue-rotate(360deg);
+      }
+    }
+
+    .controls-info {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(5px);
+    }
+
+    .controls-info kbd {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: inherit;
+      margin: 0 2px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    #power-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #power-container.active {
+      opacity: 1;
+    }
+
+    #power-bar-horizontal {
+      width: 300px;
+      height: 25px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 3px solid rgba(255, 215, 0, 0.5);
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #power-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #88ce02 0%, #ffd700 50%, #ff4444 100%);
+      border-radius: 12px;
+      transition: width 0.05s ease;
+      box-shadow: 0 0 20px currentColor;
+    }
+
+    #power-text {
+      color: #ffd700;
+      font-size: 1rem;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    #power-icon {
+      font-size: 1.5rem;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    #restart-btn {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 18px 50px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+      border: none;
+      border-radius: 35px;
+      cursor: pointer;
+      display: none;
+      z-index: 101;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      box-shadow: 0 6px 30px rgba(255, 140, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    #restart-btn:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: 0 10px 40px rgba(255, 140, 0, 0.7);
+    }
+
+    #upload-container {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    #upload-btn {
+      background: linear-gradient(135deg, rgba(100, 50, 200, 0.3) 0%, rgba(150, 50, 150, 0.2) 100%);
+      border: 2px solid rgba(200, 100, 255, 0.5);
+      border-radius: 10px;
+      padding: 8px 16px;
+      color: #e0c0ff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #upload-btn:hover {
+      background: linear-gradient(135deg, rgba(100, 50, 200, 0.5) 0%, rgba(150, 50, 150, 0.3) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(200, 100, 255, 0.3);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    #reset-bg-btn {
+      background: linear-gradient(135deg, rgba(50, 50, 50, 0.5) 0%, rgba(30, 30, 30, 0.3) 100%);
+      border: 2px solid rgba(150, 150, 150, 0.5);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #ccc;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: none;
+    }
+
+    #reset-bg-btn:hover {
+      background: rgba(80, 80, 80, 0.5);
+    }
+
+    #level-progress {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      z-index: 10;
+    }
+
+    .level-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .level-dot.completed {
+      background: #88ce02;
+      box-shadow: 0 0 10px #88ce02;
+    }
+
+    .level-dot.current {
+      background: #ffd700;
+      box-shadow: 0 0 10px #ffd700;
+      transform: scale(1.3);
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="canvas"></canvas>
-        <div id="ui-container">
-            <div id="level-display">Level: 1</div>
-            <div id="score-display">Score: 0</div>
-            <div id="arrows-display">Arrows: 10</div>
-        </div>
-        <div id="level-message" class="level-message"></div>
-        <div class="controls-info">
-            Controls: [Mouse] OR [W/S/A/D + Spacebar]
-        </div>
+  <div id="game-container">
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-container">
+      <div class="ui-box" id="level-display">🏰 Level: <span>1</span>/70</div>
+      <div class="ui-box" id="score-display">⭐ Score: <span>0</span></div>
+      <div class="ui-box" id="arrows-display">🏹 Arrows: <span>10</span></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            const ui = {
-                level: document.getElementById('level-display'),
-                score: document.getElementById('score-display'),
-                arrows: document.getElementById('arrows-display'),
-                levelMessage: document.getElementById('level-message')
-            };
+    <div id="level-progress"></div>
 
-            canvas.width = 1280;
-            canvas.height = 720;
+    <div id="upload-container">
+      <label id="upload-btn">
+        🖼️ Custom Background
+        <input type="file" id="file-input" accept="image/*" />
+      </label>
+      <button id="reset-bg-btn">↩️ Reset Background</button>
+    </div>
 
-            let gameState = { score: 0, currentLevelIndex: 0, arrowsLeft: 0 };
-            let arrow = null;
-            let targets = [];
-            let isDrawing = false;
-            let drawStart = { x: 0, y: 0 };
-            let mousePos = { x: 0, y: 0 };
-            let drawPower = 0;
-            let aimAngle = 0;
-            let facingRight = true;
-            let keyboard = { up: false, down: false, left: false, right: false };
-            let isCheckingLevel = false; // Debounce flag
+    <div id="power-container">
+      <span id="power-icon">⚡</span>
+      <div id="power-bar-horizontal">
+        <div id="power-fill"></div>
+      </div>
+      <span id="power-text">POWER: 0%</span>
+    </div>
 
-            const gravity = 0.15;
-            const ARCHER_POS = { x: 150, y: 550 };
-            const ARROW_SPEED_MULTIPLIER = 0.28;
-            const MAX_DRAW_POWER = 150;
-            const AIM_SPEED = 0.03;
+    <div id="level-message"></div>
+    <button id="restart-btn">🔄 Play Again</button>
 
-            // 50 Levels of Content
-            const levels = [
-                // Levels 1-5: Introduction
-                { arrows: 10, targets: [{ x: 1100, y: 500, radius: 50, isHit: false }] },
-                { arrows: 8, targets: [{ x: 1050, y: 400, radius: 45, isHit: false }] },
-                { arrows: 10, targets: [{ x: 1200, y: 300, radius: 20, isHit: false }] },
-                { arrows: 8, targets: [{ x: 1150, y: 300, radius: 40, isHit: false }] },
-                { arrows: 5, targets: [{ x: 1100, y: 450, radius: 35, isHit: false }] },
-                // Levels 6-10: Introduction to Moving Targets
-                { arrows: 8, targets: [{ x: 1100, y: 300, radius: 40, isHit: false, dy: 2, minY: 200, maxY: 600 }] },
-                { arrows: 6, targets: [{ x: 1150, y: 200, radius: 35, isHit: false, dy: 3, minY: 150, maxY: 600 }] },
-                { arrows: 10, targets: [{ x: 1000, y: 550, radius: 40, isHit: false }, { x: 1150, y: 250, radius: 35, isHit: false, dy: 2, minY: 200, maxY: 400 }] },
-                { arrows: 7, targets: [{ x: 1100, y: 400, radius: 30, isHit: false, dy: -4, minY: 200, maxY: 650 }] },
-                // Levels 11-20: Multiple Movers & Smaller Targets
-                { arrows: 10, targets: [{ x: 1050, y: 200, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }, { x: 1180, y: 600, radius: 30, isHit: false, dy: 3, minY: 150, maxY: 650 }] },
-                { arrows: 8, targets: [{ x: 1000, y: 150, radius: 35, isHit: false, dy: 2.5, minY: 150, maxY: 350 }, { x: 1150, y: 600, radius: 35, isHit: false, dy: -2.5, minY: 450, maxY: 600 }] },
-                { arrows: 12, targets: [{ x: 1000, y: 200, radius: 40, isHit: false }, { x: 1150, y: 400, radius: 40, isHit: false }, { x: 1000, y: 600, radius: 40, isHit: false }] },
-                { arrows: 8, targets: [{ x: 1100, y: 250, radius: 25, isHit: false, dy: 5, minY: 150, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 1050, y: 200, radius: 30, isHit: false, dy: 4, minY: 150, maxY: 400 }, { x: 1050, y: 600, radius: 30, isHit: false, dy: -4, minY: 450, maxY: 650 }] },
-                { arrows: 7, targets: [{ x: 1000, y: 400, radius: 35, isHit: false }, { x: 1180, y: 400, radius: 35, isHit: false, dy: 3, minY: 300, maxY: 500 }] },
-                { arrows: 5, targets: [{ x: 1100, y: 200, radius: 20, isHit: false, dy: 6, minY: 150, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 1000, y: 150, radius: 30, isHit: false, dy: 3, minY: 150, maxY: 650 }, { x: 1150, y: 150, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }] },
-                { arrows: 8, targets: [{ x: 1100, y: 200, radius: 40, isHit: false, dy: 2, minY: 150, maxY: 350 }, { x: 1100, y: 500, radius: 40, isHit: false, dy: -2, minY: 450, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 1000, y: 500, radius: 25, isHit: false }, { x: 1100, y: 350, radius: 25, isHit: false }, { x: 1200, y: 200, radius: 25, isHit: false }] },
-                // Levels 21-30: Intro to Horizontal Movement
-                { arrows: 8, targets: [{ x: 950, y: 500, radius: 40, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
-                { arrows: 8, targets: [{ x: 1200, y: 300, radius: 35, isHit: false, dx: -2.5, minX: 950, maxX: 1200 }] },
-                { arrows: 10, targets: [{ x: 950, y: 250, radius: 35, isHit: false, dx: 3, minX: 950, maxX: 1200 }, { x: 1200, y: 550, radius: 35, isHit: false, dx: -3, minX: 950, maxX: 1200 }] },
-                { arrows: 7, targets: [{ x: 950, y: 400, radius: 30, isHit: false, dx: 4, minX: 950, maxX: 1200 }] },
-                { arrows: 10, targets: [{ x: 1075, y: 200, radius: 40, isHit: false, dy: 3, minY: 150, maxY: 650 }, { x: 950, y: 500, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
-                { arrows: 8, targets: [{ x: 1100, y: 200, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }, { x: 1000, y: 500, radius: 30, isHit: false, dx: -2, minX: 950, maxX: 1100 }] },
-                { arrows: 6, targets: [{ x: 950, y: 200, radius: 25, isHit: false, dx: 5, minX: 950, maxX: 1200 }] },
-                { arrows: 12, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 400, radius: 30, isHit: false, dx: -2, minX: 950, maxX: 1200 }, { x: 950, y: 600, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
-                { arrows: 7, targets: [{ x: 1100, y: 150, radius: 30, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1000, y: 600, radius: 30, isHit: false, dx: -3, minX: 950, maxX: 1150 }] },
-                { arrows: 5, targets: [{ x: 1100, y: 400, radius: 20, isHit: false, dx: -6, minX: 950, maxX: 1200 }] },
-                // Levels 31-40: Diagonal Movement
-                { arrows: 8, targets: [{ x: 950, y: 200, radius: 35, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 8, targets: [{ x: 1200, y: 600, radius: 30, isHit: false, dx: -3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 200, radius: 30, isHit: false, dx: -2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 7, targets: [{ x: 1075, y: 150, radius: 25, isHit: false, dx: -4, dy: 4, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 9, targets: [{ x: 950, y: 600, radius: 30, isHit: false, dx: 3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 600, radius: 30, isHit: false, dx: -2, dy: -2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 6, targets: [{ x: 1075, y: 400, radius: 20, isHit: false, dx: 5, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 12, targets: [{ x: 950, y: 200, radius: 25, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 200, radius: 25, isHit: false, dx: -2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 8, targets: [{ x: 1200, y: 150, radius: 25, isHit: false, dx: -3, dy: 3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 950, y: 650, radius: 25, isHit: false, dx: 3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 5, targets: [{ x: 950, y: 400, radius: 15, isHit: false, dx: 6, dy: 6, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                // Levels 41-50: Challenge
-                { arrows: 10, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dy: 5, minY: 150, maxY: 650 }, { x: 1050, y: 650, radius: 20, isHit: false, dy: -5, minY: 150, maxY: 650 }, { x: 1150, y: 150, radius: 20, isHit: false, dy: 5, minY: 150, maxY: 650 }] },
-                { arrows: 8, targets: [{ x: 950, y: 400, radius: 25, isHit: false, dx: 4, minX: 950, maxX: 1200 }, { x: 1200, y: 250, radius: 25, isHit: false, dx: -4, minX: 950, maxX: 1200 }] },
-                { arrows: 8, targets: [{ x: 1100, y: 150, radius: 20, isHit: false, dy: 6, minY: 150, maxY: 650 }, { x: 1000, y: 650, radius: 20, isHit: false, dx: 2, dy: -6, minX: 950, maxX: 1150, minY: 150, maxY: 650 }] },
-                { arrows: 6, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dx: 5, dy: 5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 150, radius: 20, isHit: false, dx: -5, dy: 5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 7, targets: [{ x: 950, y: 600, radius: 25, isHit: false, dx: -3, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 600, radius: 25, isHit: false, dx: 3, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 10, targets: [{ x: 950, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1075, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
-                { arrows: 5, targets: [{ x: 1075, y: 150, radius: 15, isHit: false, dx: 8, dy: 8, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
-                { arrows: 15, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1025, y: 150, radius: 20, isHit: false, dy: -4, minY: 150, maxY: 650 }, { x: 1100, y: 150, radius: 20, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1175, y: 150, radius: 20, isHit: false, dy: -4, minY: 150, maxY: 650 }] },
-                { arrows: 3, targets: [{ x: 1100, y: 400, radius: 50, isHit: false, dx: -8, minX: 950, maxX: 1200 }] },
-                { arrows: 5, targets: [{ x: 1075, y: 400, radius: 10, isHit: false, dy: 10, minY: 100, maxY: 680 }] },
-            ];
-            
-            function drawStickman() {
-                ctx.save();
-                ctx.translate(ARCHER_POS.x, ARCHER_POS.y);
-                if (!facingRight) ctx.scale(-1, 1);
-                ctx.strokeStyle = '#e0fbff';
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.arc(0, -50, 20, 0, Math.PI * 2);
-                ctx.moveTo(0, -30); ctx.lineTo(0, 40);
-                ctx.moveTo(0, 40); ctx.lineTo(-20, 90);
-                ctx.moveTo(0, 40); ctx.lineTo(20, 90);
-                ctx.stroke();
-                ctx.save();
-                ctx.rotate(aimAngle);
-                ctx.beginPath();
-                ctx.moveTo(0, 0); ctx.lineTo(40, 0); ctx.stroke();
-                drawBow();
-                ctx.restore();
-                if(isDrawing){
-                    ctx.beginPath();
-                    const pullDist = drawPower / 2;
-                    const pullAngle = aimAngle + Math.PI;
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(Math.cos(pullAngle) * pullDist, Math.sin(pullAngle) * pullDist);
-                    ctx.stroke();
-                }
-                ctx.restore();
-            }
-            
-            function drawBow() {
-                ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 8;
-                ctx.beginPath(); ctx.arc(40, 0, 60, Math.PI * 1.55, Math.PI * 0.45); ctx.stroke();
-                ctx.fillStyle = '#5C3317'; ctx.fillRect(35, -15, 10, 30);
-                ctx.strokeStyle = '#F0E68C'; ctx.lineWidth = 2;
-                ctx.beginPath();
-                const bowTipTop = { x: 40, y: -60 };
-                const bowTipBottom = { x: 40, y: 60 };
-                if (isDrawing) {
-                    const pullDist = drawPower / 1.5;
-                    ctx.moveTo(bowTipTop.x, bowTipTop.y);
-                    ctx.lineTo(-pullDist, 0);
-                    ctx.lineTo(bowTipBottom.x, bowTipBottom.y);
-                } else {
-                    ctx.moveTo(bowTipTop.x, bowTipTop.y);
-                    ctx.lineTo(bowTipTop.x, bowTipBottom.y);
-                }
-                ctx.stroke();
-            }
+    <div class="controls-info">
+      <kbd>Mouse</kbd> Aim &amp; Drag to shoot | <kbd>W</kbd><kbd>S</kbd> Aim | <kbd>D</kbd> Power | <kbd>Space</kbd> Fire
+    </div>
+  </div>
 
-            function drawPlatform(x, y, width, height) {
-                ctx.fillStyle = '#1e405c'; ctx.strokeStyle = '#0f3460'; ctx.lineWidth = 4;
-                ctx.fillRect(x, y, width, height); ctx.strokeRect(x, y, width, height);
-            }
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const ui = {
+        level: document.querySelector("#level-display span"),
+        score: document.querySelector("#score-display span"),
+        arrows: document.querySelector("#arrows-display span"),
+        levelMessage: document.getElementById("level-message"),
+        powerContainer: document.getElementById("power-container"),
+        powerFill: document.getElementById("power-fill"),
+        powerText: document.getElementById("power-text"),
+        restartBtn: document.getElementById("restart-btn"),
+        fileInput: document.getElementById("file-input"),
+        resetBgBtn: document.getElementById("reset-bg-btn"),
+        levelProgress: document.getElementById("level-progress"),
+      };
 
-            function drawTarget(target) {
-                if (target.isHit && target.radius <= 0) return; // Don't draw if fully shrunk
-                
-                ctx.save();
-                if (target.isHit) {
-                    // Shrink and fade animation
-                    ctx.globalAlpha = target.radius / levels[gameState.currentLevelIndex].targets.find(t => t.x === target.x && t.y === target.y).radius;
-                }
+      canvas.width = 1400;
+      canvas.height = 750;
 
-                drawPlatform(target.x - 10, target.y + target.radius, 20, canvas.height);
-                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.8, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#2196f3'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.6, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#f44336'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.4, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.2, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
-            
-            function drawArrow() {
-                if (!arrow) return;
-                ctx.save();
-                ctx.translate(arrow.x, arrow.y); ctx.rotate(arrow.rotation);
-                ctx.fillStyle = '#f7ff00'; ctx.shadowColor = '#f7ff00'; ctx.shadowBlur = 10;
-                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-40, -5); ctx.lineTo(-40, 5); ctx.closePath(); ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.restore();
-            }
+      function resizeCanvas() {
+        const maxWidth = window.innerWidth - 40;
+        const maxHeight = window.innerHeight - 60;
+        const aspectRatio = canvas.width / canvas.height;
+        let width = maxWidth;
+        let height = width / aspectRatio;
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = height * aspectRatio;
+        }
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
 
-            function drawTrajectory() {
-                if (!isDrawing || drawPower <= 10) return;
+      let gameState = {
+        score: 0,
+        currentLevelIndex: 0,
+        arrowsLeft: 0,
+        gameOver: false,
+        customBackground: null,
+      };
+      let arrow = null;
+      let stuckArrows = [];
+      let targets = [];
+      let particles = [];
+      let hitMessages = [];
+      let isDrawing = false;
+      let drawStart = { x: 0, y: 0 };
+      let mousePos = { x: 0, y: 0 };
+      let drawPower = 0;
+      let aimAngle = -0.4;
+      let facingRight = true;
+      let keyboard = { up: false, down: false, left: false, right: false };
+      let isCheckingLevel = false;
+      let backgroundOffset = 0;
+      let time = 0;
 
-                const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
-                const speed = drawPower * ARROW_SPEED_MULTIPLIER;
-                let simVx = Math.cos(finalAimAngle) * speed;
-                let simVy = Math.sin(finalAimAngle) * speed;
-                let simX = ARCHER_POS.x + Math.cos(finalAimAngle) * 50;
-                let simY = ARCHER_POS.y + Math.sin(finalAimAngle) * 50;
+      const gravity = 0.18;
+      const ARCHER_POS = { x: 180, y: 580 };
+      const ARROW_SPEED_MULTIPLIER = 0.32;
+      const MAX_DRAW_POWER = 180;
+      const AIM_SPEED = 0.025;
 
-                ctx.save();
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                for (let i = 0; i < 100; i++) {
-                    simVy += gravity;
-                    simVx *= 0.998;
-                    simX += simVx;
-                    simY += simVy;
-                    if (i % 5 === 0) {
-                        ctx.beginPath();
-                        ctx.arc(simX, simY, 2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-                ctx.restore();
-            }
-            
-            function loadLevel(levelIndex) {
-                if (levelIndex >= levels.length) {
-                    displayMessage("YOU WIN!", -1);
-                    return;
-                }
-                gameState.currentLevelIndex = levelIndex;
-                const levelData = levels[levelIndex];
-                gameState.arrowsLeft = levelData.arrows;
-                targets = JSON.parse(JSON.stringify(levelData.targets));
-                ui.level.textContent = `Level: ${gameState.currentLevelIndex + 1}`;
-                ui.arrows.textContent = `Arrows: ${gameState.arrowsLeft}`;
-                ui.score.textContent = `Score: ${gameState.score}`;
-                isCheckingLevel = false; // <<< CRITICAL FIX
-            }
+      const levels = [
+        { arrows: 10, targets: [{ x: 1150, y: 500, radius: 55 }] },
+        { arrows: 8, targets: [{ x: 1100, y: 400, radius: 50 }] },
+        { arrows: 8, targets: [{ x: 1200, y: 300, radius: 45 }] },
+        { arrows: 7, targets: [{ x: 1150, y: 350, radius: 40 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 250, radius: 38 }] },
+        { arrows: 8, targets: [{ x: 1000, y: 450, radius: 40 }, { x: 1200, y: 300, radius: 40 }] },
+        { arrows: 10, targets: [{ x: 950, y: 500, radius: 35 }, { x: 1100, y: 350, radius: 35 }, { x: 1250, y: 200, radius: 35 }] },
+        { arrows: 7, targets: [{ x: 1050, y: 250, radius: 30 }, { x: 1180, y: 450, radius: 30 }] },
+        { arrows: 5, targets: [{ x: 1150, y: 350, radius: 25 }] },
+        { arrows: 8, targets: [{ x: 950, y: 200, radius: 30 }, { x: 1100, y: 400, radius: 30 }, { x: 1250, y: 550, radius: 30 }] },
+        { arrows: 8, targets: [{ x: 1100, y: 300, radius: 45, dy: 2, minY: 180, maxY: 550 }] },
+        { arrows: 7, targets: [{ x: 1150, y: 200, radius: 40, dy: 3, minY: 150, maxY: 580 }] },
+        { arrows: 10, targets: [{ x: 1000, y: 500, radius: 40 }, { x: 1200, y: 250, radius: 35, dy: 2.5, minY: 180, maxY: 450 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 400, radius: 35, dy: -4, minY: 180, maxY: 600 }] },
+        { arrows: 8, targets: [{ x: 1050, y: 200, radius: 32, dy: -3, minY: 150, maxY: 580 }, { x: 1200, y: 550, radius: 32, dy: 3, minY: 180, maxY: 600 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 250, radius: 28, dy: 5, minY: 150, maxY: 600 }] },
+        { arrows: 10, targets: [{ x: 1000, y: 150, radius: 30, dy: 3, minY: 150, maxY: 600 }, { x: 1200, y: 600, radius: 30, dy: -3, minY: 150, maxY: 600 }] },
+        { arrows: 5, targets: [{ x: 1150, y: 200, radius: 25, dy: 6, minY: 130, maxY: 620 }] },
+        { arrows: 12, targets: [{ x: 950, y: 200, radius: 28, dy: 2, minY: 150, maxY: 400 }, { x: 1100, y: 400, radius: 28 }, { x: 1250, y: 550, radius: 28, dy: -2, minY: 400, maxY: 600 }] },
+        { arrows: 4, targets: [{ x: 1100, y: 350, radius: 22, dy: 7, minY: 120, maxY: 630 }] },
+        { arrows: 8, targets: [{ x: 950, y: 450, radius: 42, dx: 2, minX: 900, maxX: 1280 }] },
+        { arrows: 7, targets: [{ x: 1250, y: 300, radius: 38, dx: -2.5, minX: 900, maxX: 1300 }] },
+        { arrows: 9, targets: [{ x: 950, y: 250, radius: 35, dx: 3, minX: 900, maxX: 1280 }, { x: 1250, y: 500, radius: 35, dx: -3, minX: 900, maxX: 1300 }] },
+        { arrows: 6, targets: [{ x: 1000, y: 400, radius: 30, dx: 4, minX: 900, maxX: 1300 }] },
+        { arrows: 8, targets: [{ x: 1100, y: 200, radius: 32, dy: 3, minY: 150, maxY: 600 }, { x: 950, y: 500, radius: 32, dx: 2.5, minX: 900, maxX: 1200 }] },
+        { arrows: 5, targets: [{ x: 1200, y: 350, radius: 25, dx: -5, minX: 900, maxX: 1300 }] },
+        { arrows: 10, targets: [{ x: 950, y: 200, radius: 30, dx: 2.5, minX: 900, maxX: 1280 }, { x: 1250, y: 400, radius: 30, dx: -2.5, minX: 920, maxX: 1300 }, { x: 1100, y: 550, radius: 30 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 180, radius: 28, dx: 4, minX: 900, maxX: 1300 }, { x: 1000, y: 500, radius: 28, dx: -3, minX: 900, maxX: 1200 }] },
+        { arrows: 4, targets: [{ x: 1100, y: 380, radius: 22, dx: -6, minX: 880, maxX: 1320 }] },
+        { arrows: 8, targets: [{ x: 950, y: 300, radius: 30, dx: 3, minX: 900, maxX: 1300 }, { x: 1250, y: 300, radius: 30, dx: -3, minX: 900, maxX: 1300 }] },
+        { arrows: 8, targets: [{ x: 950, y: 200, radius: 38, dx: 2, dy: 2, minX: 900, maxX: 1280, minY: 150, maxY: 600 }] },
+        { arrows: 7, targets: [{ x: 1250, y: 550, radius: 35, dx: -2.5, dy: -2.5, minX: 900, maxX: 1300, minY: 150, maxY: 600 }] },
+        { arrows: 9, targets: [{ x: 950, y: 200, radius: 32, dx: 2, dy: 2, minX: 900, maxX: 1280, minY: 150, maxY: 600 }, { x: 1250, y: 200, radius: 32, dx: -2, dy: 2, minX: 920, maxX: 1300, minY: 150, maxY: 600 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 150, radius: 28, dx: -3.5, dy: 3.5, minX: 900, maxX: 1300, minY: 130, maxY: 620 }] },
+        { arrows: 8, targets: [{ x: 950, y: 550, radius: 30, dx: 3, dy: -3, minX: 900, maxX: 1280, minY: 150, maxY: 600 }] },
+        { arrows: 9, targets: [{ x: 950, y: 200, radius: 30, dx: 2.5, minX: 900, maxX: 1280 }, { x: 1250, y: 550, radius: 30, dx: -2, dy: -2, minX: 920, maxX: 1300, minY: 150, maxY: 600 }] },
+        { arrows: 5, targets: [{ x: 1100, y: 380, radius: 22, dx: 4.5, dy: -4.5, minX: 900, maxX: 1300, minY: 140, maxY: 610 }] },
+        { arrows: 10, targets: [{ x: 950, y: 200, radius: 28, dx: 2, dy: 2, minX: 900, maxX: 1280, minY: 150, maxY: 600 }, { x: 1250, y: 200, radius: 28, dx: -2, dy: 2, minX: 920, maxX: 1300, minY: 150, maxY: 600 }, { x: 1100, y: 450, radius: 28 }] },
+        { arrows: 6, targets: [{ x: 1250, y: 150, radius: 26, dx: -3, dy: 3, minX: 900, maxX: 1300, minY: 130, maxY: 620 }, { x: 950, y: 600, radius: 26, dx: 3, dy: -3, minX: 900, maxX: 1280, minY: 150, maxY: 620 }] },
+        { arrows: 4, targets: [{ x: 1000, y: 380, radius: 18, dx: 5.5, dy: 5.5, minX: 900, maxX: 1300, minY: 140, maxY: 620 }] },
+        { arrows: 10, targets: [{ x: 950, y: 150, radius: 25, dy: 4.5, minY: 140, maxY: 610 }, { x: 1100, y: 600, radius: 25, dy: -4.5, minY: 150, maxY: 620 }, { x: 1250, y: 150, radius: 25, dy: 4.5, minY: 140, maxY: 610 }] },
+        { arrows: 7, targets: [{ x: 950, y: 380, radius: 28, dx: 4, minX: 900, maxX: 1300 }, { x: 1250, y: 250, radius: 28, dx: -4, minX: 920, maxX: 1320 }] },
+        { arrows: 7, targets: [{ x: 1100, y: 150, radius: 24, dy: 5.5, minY: 130, maxY: 620 }, { x: 1000, y: 600, radius: 24, dx: 2, dy: -5.5, minX: 900, maxX: 1180, minY: 150, maxY: 620 }] },
+        { arrows: 5, targets: [{ x: 950, y: 150, radius: 22, dx: 4.5, dy: 4.5, minX: 900, maxX: 1280, minY: 140, maxY: 610 }, { x: 1250, y: 150, radius: 22, dx: -4.5, dy: 4.5, minX: 920, maxX: 1300, minY: 140, maxY: 610 }] },
+        { arrows: 6, targets: [{ x: 950, y: 550, radius: 26, dx: -3, dy: -4.5, minX: 900, maxX: 1280, minY: 150, maxY: 610 }, { x: 1250, y: 550, radius: 26, dx: 3, dy: -4.5, minX: 920, maxX: 1300, minY: 150, maxY: 610 }] },
+        { arrows: 9, targets: [{ x: 950, y: 380, radius: 32, dx: 2, minX: 900, maxX: 1280 }, { x: 1100, y: 380, radius: 32, dx: 2.5, minX: 920, maxX: 1300 }, { x: 1250, y: 380, radius: 32, dx: 2, minX: 940, maxX: 1320 }] },
+        { arrows: 4, targets: [{ x: 1100, y: 150, radius: 18, dx: 7, dy: 7, minX: 900, maxX: 1300, minY: 130, maxY: 620 }] },
+        { arrows: 12, targets: [{ x: 950, y: 150, radius: 24, dy: 4, minY: 140, maxY: 610 }, { x: 1050, y: 600, radius: 24, dy: -4, minY: 150, maxY: 620 }, { x: 1150, y: 150, radius: 24, dy: 4, minY: 140, maxY: 610 }, { x: 1250, y: 600, radius: 24, dy: -4, minY: 150, maxY: 620 }] },
+        { arrows: 3, targets: [{ x: 1100, y: 380, radius: 50, dx: -7, minX: 900, maxX: 1320 }] },
+        { arrows: 5, targets: [{ x: 1100, y: 380, radius: 15, dy: 8, minY: 120, maxY: 630 }] },
+        { arrows: 8, targets: [{ x: 950, y: 200, radius: 22, dx: 3, dy: 3, minX: 900, maxX: 1150, minY: 150, maxY: 400 }, { x: 1250, y: 500, radius: 22, dx: -3, dy: -3, minX: 1050, maxX: 1300, minY: 350, maxY: 600 }] },
+        { arrows: 6, targets: [{ x: 1000, y: 300, radius: 20, dx: 4, dy: -2, minX: 900, maxX: 1200, minY: 150, maxY: 450 }, { x: 1200, y: 500, radius: 20, dx: -2, dy: 4, minX: 1000, maxX: 1300, minY: 350, maxY: 600 }] },
+        { arrows: 4, targets: [{ x: 1100, y: 300, radius: 18, dx: -5, dy: 3, minX: 900, maxX: 1300, minY: 150, maxY: 550 }] },
+        { arrows: 10, targets: [{ x: 950, y: 250, radius: 25, dx: 2, minX: 900, maxX: 1100 }, { x: 1100, y: 400, radius: 25, dy: 3, minY: 250, maxY: 550 }, { x: 1250, y: 250, radius: 25, dx: -2, minX: 1100, maxX: 1300 }] },
+        { arrows: 3, targets: [{ x: 1100, y: 380, radius: 12, dx: 6, dy: -6, minX: 900, maxX: 1300, minY: 150, maxY: 600 }] },
+        { arrows: 8, targets: [{ x: 950, y: 200, radius: 20, dx: 3, dy: 2, minX: 900, maxX: 1120, minY: 150, maxY: 380 }, { x: 1250, y: 200, radius: 20, dx: -3, dy: 2, minX: 1080, maxX: 1300, minY: 150, maxY: 380 }, { x: 1100, y: 500, radius: 20, dy: -4, minY: 380, maxY: 600 }] },
+        { arrows: 5, targets: [{ x: 1000, y: 300, radius: 18, dx: 5, dy: 4, minX: 900, maxX: 1200, minY: 150, maxY: 500 }, { x: 1200, y: 500, radius: 18, dx: -4, dy: -5, minX: 1000, maxX: 1300, minY: 250, maxY: 600 }] },
+        { arrows: 6, targets: [{ x: 1100, y: 200, radius: 16, dy: 6, minY: 130, maxY: 620 }, { x: 950, y: 400, radius: 16, dx: 4, minX: 900, maxX: 1100 }, { x: 1250, y: 400, radius: 16, dx: -4, minX: 1100, maxX: 1300 }] },
+        { arrows: 4, targets: [{ x: 1100, y: 380, radius: 14, dx: 7, dy: -5, minX: 900, maxX: 1300, minY: 150, maxY: 600 }] },
+        { arrows: 10, targets: [{ x: 950, y: 180, radius: 18, dy: 3, minY: 150, maxY: 350 }, { x: 1050, y: 500, radius: 18, dy: -3, minY: 400, maxY: 600 }, { x: 1150, y: 180, radius: 18, dy: 3, minY: 150, maxY: 350 }, { x: 1250, y: 500, radius: 18, dy: -3, minY: 400, maxY: 600 }] },
+        { arrows: 3, targets: [{ x: 1100, y: 380, radius: 12, dx: -8, dy: 8, minX: 900, maxX: 1300, minY: 150, maxY: 620 }] },
+        { arrows: 8, targets: [{ x: 950, y: 300, radius: 22, dx: 3, dy: 3, minX: 900, maxX: 1100, minY: 200, maxY: 450 }, { x: 1250, y: 450, radius: 22, dx: -3, dy: -3, minX: 1100, maxX: 1300, minY: 300, maxY: 550 }, { x: 1100, y: 200, radius: 22, dy: 4, minY: 150, maxY: 350 }] },
+        { arrows: 5, targets: [{ x: 1000, y: 350, radius: 16, dx: 5, minX: 900, maxX: 1200 }, { x: 1200, y: 350, radius: 16, dx: -5, minX: 1000, maxX: 1300 }] },
+        { arrows: 3, targets: [{ x: 1100, y: 300, radius: 10, dy: 9, minY: 120, maxY: 630 }] },
+        { arrows: 6, targets: [{ x: 950, y: 250, radius: 15, dx: 4, dy: 3, minX: 900, maxX: 1120, minY: 150, maxY: 400 }, { x: 1250, y: 500, radius: 15, dx: -4, dy: -3, minX: 1080, maxX: 1300, minY: 350, maxY: 600 }] },
+        { arrows: 8, targets: [{ x: 950, y: 200, radius: 14, dx: 4, dy: 3, minX: 900, maxX: 1100, minY: 150, maxY: 350 }, { x: 1250, y: 200, radius: 14, dx: -4, dy: 3, minX: 1100, maxX: 1300, minY: 150, maxY: 350 }, { x: 1100, y: 500, radius: 14, dy: -5, minY: 400, maxY: 600 }] },
+        { arrows: 4, targets: [{ x: 1000, y: 300, radius: 12, dx: 6, dy: 5, minX: 900, maxX: 1200, minY: 150, maxY: 500 }, { x: 1200, y: 450, radius: 12, dx: -5, dy: -6, minX: 1000, maxX: 1300, minY: 200, maxY: 600 }] },
+        { arrows: 5, targets: [{ x: 1100, y: 200, radius: 10, dy: 7, minY: 130, maxY: 620 }, { x: 950, y: 450, radius: 10, dx: 5, minX: 900, maxX: 1100 }, { x: 1250, y: 450, radius: 10, dx: -5, minX: 1100, maxX: 1300 }] },
+        { arrows: 3, targets: [{ x: 1100, y: 380, radius: 10, dx: 8, dy: -7, minX: 900, maxX: 1300, minY: 140, maxY: 620 }] },
+        { arrows: 2, targets: [{ x: 1100, y: 380, radius: 8, dx: 9, dy: 9, minX: 900, maxX: 1300, minY: 130, maxY: 630 }] },
+      ];
 
-            function displayMessage(msg, duration = 2000) {
-                ui.levelMessage.textContent = msg;
-                ui.levelMessage.style.display = 'block';
-                if (duration > 0) {
-                    setTimeout(() => ui.levelMessage.style.display = 'none', duration);
-                }
-            }
+      function updateLevelProgress() {
+        ui.levelProgress.innerHTML = "";
+        const startLevel = Math.max(0, gameState.currentLevelIndex - 5);
+        const endLevel = Math.min(levels.length, startLevel + 12);
+        for (let i = startLevel; i < endLevel; i++) {
+          const dot = document.createElement("div");
+          dot.className = "level-dot";
+          if (i < gameState.currentLevelIndex) dot.classList.add("completed");
+          if (i === gameState.currentLevelIndex) dot.classList.add("current");
+          ui.levelProgress.appendChild(dot);
+        }
+      }
 
-            function checkLevelCompletion() {
-                if (isCheckingLevel) return;
+      function createParticles(x, y, color, count = 25) {
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 0.5) * 12,
+            life: 1,
+            color,
+            size: Math.random() * 8 + 3,
+          });
+        }
+      }
 
-                const allHit = targets.every(t => t.isHit);
-                if (allHit) {
-                    isCheckingLevel = true;
-                    displayMessage("LEVEL CLEARED!");
-                    setTimeout(() => {
-                        loadLevel(gameState.currentLevelIndex + 1);
-                    }, 2000);
-                } else if (gameState.arrowsLeft === 0) {
-                    isCheckingLevel = true;
-                    displayMessage("GAME OVER", -1);
-                }
-            }
+      function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.25;
+          p.life -= 0.025;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+      }
 
-            function fireArrow() {
-                if (drawPower <= 10) {
-                    drawPower = 0;
-                    isDrawing = false;
-                    return;
-                }
-
-                const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
-                const speed = drawPower * ARROW_SPEED_MULTIPLIER;
-                
-                arrow = {
-                    x: ARCHER_POS.x + Math.cos(finalAimAngle) * 50,
-                    y: ARCHER_POS.y + Math.sin(finalAimAngle) * 50,
-                    vx: Math.cos(finalAimAngle) * speed,
-                    vy: Math.sin(finalAimAngle) * speed,
-                    rotation: finalAimAngle
-                };
-
-                gameState.arrowsLeft--;
-                ui.arrows.textContent = `Arrows: ${gameState.arrowsLeft}`;
-                drawPower = 0;
-                isDrawing = false;
-            }
-            
-            function gameLoop() {
-                // Update Logic
-                const aimModifier = isDrawing ? 0.5 : 1;
-                if (keyboard.up) aimAngle -= AIM_SPEED * aimModifier;
-                if (keyboard.down) aimAngle += AIM_SPEED * aimModifier;
-                if (keyboard.right) { isDrawing = true; drawPower = Math.min(MAX_DRAW_POWER, drawPower + 2); }
-                if (keyboard.left) { isDrawing = true; drawPower = Math.max(0, drawPower - 2); }
-
-                targets.forEach(t => {
-                    if (t.isHit && t.radius > 0) {
-                        t.radius -= 2; // Shrink animation
-                        if (t.radius < 0) t.radius = 0;
-                    }
-                    if (t.dx) { t.x += t.dx; if (t.x < t.minX || t.x > t.maxX) t.dx *= -1; }
-                    if (t.dy) { t.y += t.dy; if (t.y < t.minY || t.y > t.maxY) t.dy *= -1; }
-                });
-
-                if (arrow) {
-                    arrow.vy += gravity;
-                    arrow.vx *= 0.998;
-                    arrow.x += arrow.vx;
-                    arrow.y += arrow.vy;
-                    arrow.rotation = Math.atan2(arrow.vy, arrow.vx);
-
-                    targets.forEach(target => {
-                        if (!target.isHit && Math.hypot(arrow.x - target.x, arrow.y - target.y) < target.radius) {
-                            target.isHit = true;
-                            gameState.score += 100;
-                            arrow = null;
-                            ui.score.textContent = `Score: ${gameState.score}`;
-                            setTimeout(checkLevelCompletion, 500);
-                        }
-                    });
-
-                    if (arrow && (arrow.y > canvas.height || arrow.x < 0 || arrow.x > canvas.width)) {
-                        arrow = null;
-                        checkLevelCompletion();
-                    }
-                }
-
-                // Drawing Logic
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawPlatform(100, 640, 100, canvas.height);
-                targets.forEach(drawTarget);
-                drawStickman();
-                drawArrow();
-                drawTrajectory();
-                
-                requestAnimationFrame(gameLoop);
-            }
-
-            // Event Listeners
-            function getMousePos(e) {
-                const rect = canvas.getBoundingClientRect();
-                return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-            }
-
-            canvas.addEventListener('mousedown', (e) => {
-                if (arrow || gameState.arrowsLeft === 0) return;
-                isDrawing = true;
-                drawStart = getMousePos(e);
-            });
-
-            canvas.addEventListener('mousemove', (e) => {
-                mousePos = getMousePos(e);
-                const dx = mousePos.x - ARCHER_POS.x;
-                const dy = mousePos.y - ARCHER_POS.y;
-                facingRight = dx >= 0;
-                aimAngle = facingRight ? Math.atan2(dy, dx) : Math.atan2(dy, -dx);
-
-                if (isDrawing) {
-                    const dragDist = Math.hypot(mousePos.x - drawStart.x, mousePos.y - drawStart.y);
-                    drawPower = Math.min(MAX_DRAW_POWER, dragDist);
-                }
-            });
-
-            canvas.addEventListener('mouseup', () => {
-                if (!isDrawing) return;
-                fireArrow();
-            });
-            
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'w' || e.key === 'ArrowUp') keyboard.up = true;
-                if (e.key === 's' || e.key === 'ArrowDown') keyboard.down = true;
-                if (e.key === 'a' || e.key === 'ArrowLeft') keyboard.left = true;
-                if (e.key === 'd' || e.key === 'ArrowRight') keyboard.right = true;
-                if (e.key === ' ' && !arrow && gameState.arrowsLeft > 0) {
-                     e.preventDefault();
-                     if (drawPower > 10) fireArrow(); else isDrawing = true;
-                }
-            });
-
-             window.addEventListener('keyup', (e) => {
-                if (e.key === 'w' || e.key === 'ArrowUp') keyboard.up = false;
-                if (e.key === 's' || e.key === 'ArrowDown') keyboard.down = false;
-                if (e.key === 'a' || e.key === 'ArrowLeft') keyboard.left = false;
-                if (e.key === 'd' || e.key === 'ArrowRight') keyboard.right = false;
-            });
-            
-            // Initialization
-            loadLevel(0);
-            gameLoop();
+      function drawParticles() {
+        particles.forEach((p) => {
+          ctx.save();
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
         });
-    </script>
+      }
+
+      function createHitMessage(x, y, text, color) {
+        hitMessages.push({ x, y, text, color, life: 1, vy: -4, scale: 0 });
+      }
+
+      function updateHitMessages() {
+        for (let i = hitMessages.length - 1; i >= 0; i--) {
+          const msg = hitMessages[i];
+          msg.y += msg.vy;
+          msg.life -= 0.018;
+          msg.scale = Math.min(1, msg.scale + 0.15);
+          if (msg.life <= 0) hitMessages.splice(i, 1);
+        }
+      }
+
+      function drawHitMessages() {
+        hitMessages.forEach((msg) => {
+          ctx.save();
+          ctx.globalAlpha = msg.life;
+          ctx.fillStyle = msg.color;
+          ctx.font = `bold ${36 * msg.scale}px Segoe UI`;
+          ctx.textAlign = "center";
+          ctx.shadowColor = msg.color;
+          ctx.shadowBlur = 25;
+          ctx.fillText(msg.text, msg.x, msg.y);
+          ctx.restore();
+        });
+      }
+
+      function drawCloud(x, y, size) {
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+        ctx.arc(x + size * 0.4, y - size * 0.1, size * 0.4, 0, Math.PI * 2);
+        ctx.arc(x + size * 0.8, y, size * 0.35, 0, Math.PI * 2);
+        ctx.arc(x + size * 0.4, y + size * 0.2, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawTree(x, groundY, height) {
+        ctx.fillStyle = "#2a1a10";
+        ctx.fillRect(x - 5, groundY - height * 0.3, 10, height * 0.3);
+
+        ctx.fillStyle = "#1a3020";
+        ctx.beginPath();
+        ctx.moveTo(x, groundY - height);
+        ctx.lineTo(x - 25, groundY - height * 0.3);
+        ctx.lineTo(x + 25, groundY - height * 0.3);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x, groundY - height * 1.2);
+        ctx.lineTo(x - 20, groundY - height * 0.6);
+        ctx.lineTo(x + 20, groundY - height * 0.6);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawCastle(x, y) {
+        ctx.fillStyle = "#1a1a30";
+        ctx.fillRect(x - 80, y, 160, 200);
+        ctx.fillRect(x - 100, y - 60, 40, 260);
+        ctx.fillRect(x + 60, y - 60, 40, 260);
+        ctx.fillRect(x - 30, y - 80, 60, 280);
+
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(x - 100 + i * 12, y - 80, 8, 20);
+          ctx.fillRect(x + 60 + i * 12, y - 80, 8, 20);
+        }
+        for (let i = 0; i < 5; i++) {
+          ctx.fillRect(x - 30 + i * 14, y - 100, 10, 20);
+        }
+
+        ctx.fillStyle = "#ffa040";
+        ctx.shadowColor = "#ffa040";
+        ctx.shadowBlur = 15;
+        ctx.fillRect(x - 90, y + 20, 15, 25);
+        ctx.fillRect(x + 75, y + 20, 15, 25);
+        ctx.fillRect(x - 10, y, 20, 30);
+        ctx.fillRect(x - 90, y + 80, 15, 25);
+        ctx.fillRect(x + 75, y + 80, 15, 25);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "#0a0a15";
+        ctx.beginPath();
+        ctx.arc(x, y + 150, 30, Math.PI, 0);
+        ctx.fillRect(x - 30, y + 150, 60, 50);
+        ctx.fill();
+
+        ctx.fillStyle = "#cc3030";
+        ctx.beginPath();
+        ctx.moveTo(x, y - 100);
+        ctx.lineTo(x, y - 140);
+        ctx.lineTo(x + 30, y - 125);
+        ctx.lineTo(x, y - 110);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "#1a1a30";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 100);
+        ctx.lineTo(x, y - 145);
+        ctx.stroke();
+      }
+
+      function drawBackground() {
+        if (gameState.customBackground) {
+          ctx.drawImage(gameState.customBackground, 0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
+
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        skyGradient.addColorStop(0, "#0a0a20");
+        skyGradient.addColorStop(0.3, "#151540");
+        skyGradient.addColorStop(0.6, "#1a2050");
+        skyGradient.addColorStop(1, "#2a3060");
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ffffff";
+        for (let i = 0; i < 80; i++) {
+          const x = (i * 97 + backgroundOffset * 0.05) % canvas.width;
+          const y = (i * 37) % (canvas.height * 0.5);
+          const twinkle = Math.sin(time * 0.1 + i) * 0.5 + 0.5;
+          const size = ((i % 3) + 1) * twinkle;
+          ctx.globalAlpha = 0.3 + twinkle * 0.5;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        const moonX = 1150 + Math.sin(time * 0.005) * 20;
+        const moonY = 100 + Math.sin(time * 0.003) * 10;
+
+        const moonGlow = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, 120);
+        moonGlow.addColorStop(0, "rgba(255, 255, 200, 0.4)");
+        moonGlow.addColorStop(0.5, "rgba(255, 255, 200, 0.1)");
+        moonGlow.addColorStop(1, "transparent");
+        ctx.fillStyle = moonGlow;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, 120, 0, Math.PI * 2);
+        ctx.fill();
+
+        const moonGradient = ctx.createRadialGradient(moonX - 15, moonY - 15, 0, moonX, moonY, 55);
+        moonGradient.addColorStop(0, "#fffef0");
+        moonGradient.addColorStop(0.7, "#f0e8c0");
+        moonGradient.addColorStop(1, "#d0c8a0");
+        ctx.fillStyle = moonGradient;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, 55, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(180, 170, 140, 0.5)";
+        ctx.beginPath();
+        ctx.arc(moonX - 15, moonY - 10, 12, 0, Math.PI * 2);
+        ctx.arc(moonX + 20, moonY + 15, 8, 0, Math.PI * 2);
+        ctx.arc(moonX + 5, moonY + 25, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#1a1a40";
+        ctx.beginPath();
+        ctx.moveTo(0, 550);
+        for (let x = 0; x <= canvas.width; x += 80) {
+          const offsetX = ((x + backgroundOffset * 0.1) % (canvas.width + 200)) - 100;
+          const h = 150 + Math.sin(x * 0.008) * 80 + Math.cos(x * 0.012) * 40;
+          ctx.lineTo(offsetX, 550 - h);
+        }
+        ctx.lineTo(canvas.width, 550);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#252560";
+        ctx.beginPath();
+        ctx.moveTo(0, 580);
+        for (let x = 0; x <= canvas.width; x += 60) {
+          const offsetX = ((x + backgroundOffset * 0.2) % (canvas.width + 200)) - 100;
+          const h = 100 + Math.sin(x * 0.01 + 1) * 60 + Math.cos(x * 0.015) * 30;
+          ctx.lineTo(offsetX, 580 - h);
+        }
+        ctx.lineTo(canvas.width, 580);
+        ctx.closePath();
+        ctx.fill();
+
+        const castleX = 1050 + Math.sin(time * 0.002) * 5;
+        drawCastle(castleX, 420);
+
+        ctx.fillStyle = "#1a3020";
+        for (let i = 0; i < 15; i++) {
+          const x = ((i * 120 + backgroundOffset * 0.4) % (canvas.width + 200)) - 100;
+          const h = 60 + (i % 3) * 25;
+          drawTree(x, 620, h);
+        }
+
+        const grassGradient = ctx.createLinearGradient(0, 620, 0, canvas.height);
+        grassGradient.addColorStop(0, "#1a4020");
+        grassGradient.addColorStop(0.3, "#153518");
+        grassGradient.addColorStop(1, "#0a2010");
+        ctx.fillStyle = grassGradient;
+        ctx.fillRect(0, 620, canvas.width, canvas.height - 620);
+
+        ctx.strokeStyle = "#2a5530";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 100; i++) {
+          const x = ((i * 25 + backgroundOffset * 0.5) % canvas.width);
+          const h = 15 + Math.sin(time * 0.1 + i) * 5;
+          ctx.beginPath();
+          ctx.moveTo(x, 620);
+          ctx.quadraticCurveTo(
+            x + Math.sin(time * 0.1 + i) * 5,
+            620 - h / 2,
+            x + Math.sin(time * 0.05 + i) * 3,
+            620 - h
+          );
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#3a7040";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "#4a9050";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(0, 620);
+        ctx.lineTo(canvas.width, 620);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        for (let i = 0; i < 5; i++) {
+          const cloudX = ((i * 350 + backgroundOffset * 0.15 + time * 0.2) % (canvas.width + 300)) - 150;
+          const cloudY = 80 + (i % 3) * 50;
+          drawCloud(cloudX, cloudY, 60 + (i % 2) * 30);
+        }
+      }
+
+      function drawNockedArrow() {
+        ctx.fillStyle = "#8a7355";
+        ctx.fillRect(0, -2.5, 70, 5);
+        ctx.fillStyle = "#c0c0c0";
+        ctx.beginPath();
+        ctx.moveTo(78, 0);
+        ctx.lineTo(68, -6);
+        ctx.lineTo(70, 0);
+        ctx.lineTo(68, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#88ce02";
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(-10, -8);
+        ctx.lineTo(-5, 0);
+        ctx.lineTo(-10, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(-12, -3, 8, 6);
+      }
+
+      function drawBow() {
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(40, -10, 10, 20);
+
+        const bowGradient = ctx.createLinearGradient(45, -60, 45, 60);
+        bowGradient.addColorStop(0, "#ffd700");
+        bowGradient.addColorStop(0.3, "#b8860b");
+        bowGradient.addColorStop(0.5, "#ffd700");
+        bowGradient.addColorStop(0.7, "#b8860b");
+        bowGradient.addColorStop(1, "#ffd700");
+
+        ctx.strokeStyle = bowGradient;
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        const flex = isDrawing ? drawPower / 15 : 0;
+        ctx.beginPath();
+        ctx.moveTo(45, -55);
+        ctx.quadraticCurveTo(60 - flex, 0, 45, 55);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(45, -55, 5, 0, Math.PI * 2);
+        ctx.arc(45, 55, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#f5deb3";
+        ctx.lineWidth = 2;
+        ctx.shadowColor = "#f5deb3";
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        if (isDrawing) {
+          const pullDist = drawPower / 1.2;
+          ctx.moveTo(45, -55);
+          ctx.lineTo(-pullDist + 45, 0);
+          ctx.lineTo(45, 55);
+          ctx.save();
+          ctx.translate(-pullDist + 45, 0);
+          drawNockedArrow();
+          ctx.restore();
+        } else {
+          ctx.moveTo(45, -55);
+          ctx.lineTo(45, 55);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      function drawArcher() {
+        ctx.save();
+        ctx.translate(ARCHER_POS.x, ARCHER_POS.y);
+        if (!facingRight) ctx.scale(-1, 1);
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 20;
+
+        ctx.fillStyle = "#8B0000";
+        ctx.beginPath();
+        ctx.moveTo(-5, -30);
+        ctx.quadraticCurveTo(-25 + Math.sin(time * 0.1) * 5, 20, -30 + Math.sin(time * 0.08) * 8, 60);
+        ctx.lineTo(-10, 30);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#2d5016";
+        ctx.beginPath();
+        ctx.ellipse(0, 10, 18, 35, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#5c3a21";
+        ctx.fillRect(-18, 5, 36, 10);
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(0, 10, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#3d2914";
+        ctx.fillRect(-12, 40, 10, 40);
+        ctx.fillRect(2, 40, 10, 40);
+
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(-14, 75, 14, 8);
+        ctx.fillRect(0, 75, 14, 8);
+
+        ctx.fillStyle = "#e8c39e";
+        ctx.beginPath();
+        ctx.arc(0, -45, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#1a3010";
+        ctx.beginPath();
+        ctx.arc(0, -50, 24, Math.PI, 0);
+        ctx.lineTo(24, -45);
+        ctx.quadraticCurveTo(25, -35, 15, -30);
+        ctx.lineTo(-15, -30);
+        ctx.quadraticCurveTo(-25, -35, -24, -45);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#1a1a1a";
+        ctx.beginPath();
+        ctx.arc(-7, -48, 3, 0, Math.PI * 2);
+        ctx.arc(7, -48, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(15, -5);
+        ctx.rotate(aimAngle);
+        ctx.fillStyle = "#e8c39e";
+        ctx.beginPath();
+        ctx.ellipse(20, 0, 25, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawBow();
+        ctx.restore();
+
+        if (isDrawing) {
+          ctx.save();
+          ctx.translate(-5, 0);
+          const pullAngle = aimAngle + Math.PI;
+          const pullDist = drawPower / 2.5;
+          ctx.fillStyle = "#e8c39e";
+          ctx.beginPath();
+          ctx.ellipse(
+            Math.cos(pullAngle) * pullDist / 2,
+            Math.sin(pullAngle) * pullDist / 2,
+            pullDist / 2 + 10,
+            8,
+            pullAngle,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.fillStyle = "#5c3a21";
+        ctx.save();
+        ctx.rotate(-0.3);
+        ctx.fillRect(-25, -20, 12, 50);
+        ctx.restore();
+
+        if (gameState.arrowsLeft > 0) {
+          ctx.strokeStyle = "#aaa";
+          ctx.lineWidth = 2;
+          for (let i = 0; i < Math.min(gameState.arrowsLeft, 5); i++) {
+            ctx.save();
+            ctx.rotate(-0.3 + (i - 2) * 0.05);
+            ctx.beginPath();
+            ctx.moveTo(-22, -25);
+            ctx.lineTo(-22, -50 - i * 3);
+            ctx.stroke();
+            ctx.fillStyle = "#88ce02";
+            ctx.beginPath();
+            ctx.moveTo(-22, -50 - i * 3);
+            ctx.lineTo(-26, -45 - i * 3);
+            ctx.lineTo(-22, -47 - i * 3);
+            ctx.lineTo(-18, -45 - i * 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      function drawPlatform(x, y, width, height) {
+        const gradient = ctx.createLinearGradient(x, y, x, y + height);
+        gradient.addColorStop(0, "#4a4a6a");
+        gradient.addColorStop(0.5, "#3a3a5a");
+        gradient.addColorStop(1, "#2a2a4a");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, [8, 8, 0, 0]);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < height; i += 25) {
+          ctx.beginPath();
+          ctx.moveTo(x, y + i);
+          ctx.lineTo(x + width, y + i);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.fillRect(x + 3, y + 3, width - 6, 8);
+        ctx.strokeStyle = "rgba(255, 215, 0, 0.3)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, [8, 8, 0, 0]);
+        ctx.stroke();
+      }
+
+      function drawTarget(target) {
+        if (target.isHit && target.radius <= 0) return;
+        ctx.save();
+        if (target.isHit) {
+          const originalTarget = levels[gameState.currentLevelIndex].targets.find((t, i) => targets[i] === target);
+          if (originalTarget) ctx.globalAlpha = target.radius / originalTarget.radius;
+        }
+        drawPlatform(target.x - 15, target.y + target.radius, 30, canvas.height - target.y - target.radius + 100);
+        ctx.shadowColor = target.isHit ? "#88ce02" : "#ffffff";
+        ctx.shadowBlur = 25;
+        const rings = [
+          { color: "#ffffff", size: 1 },
+          { color: "#222222", size: 0.82 },
+          { color: "#2196f3", size: 0.64 },
+          { color: "#f44336", size: 0.46 },
+          { color: "#ffd700", size: 0.28 },
+        ];
+        rings.forEach((ring) => {
+          const gradient = ctx.createRadialGradient(
+            target.x - target.radius * ring.size * 0.2,
+            target.y - target.radius * ring.size * 0.2,
+            0,
+            target.x,
+            target.y,
+            target.radius * ring.size
+          );
+          gradient.addColorStop(0, ring.color);
+          gradient.addColorStop(1, ring.color === "#ffffff" ? "#cccccc" : ring.color);
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(target.x, target.y, target.radius * ring.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.beginPath();
+        ctx.ellipse(target.x - target.radius * 0.3, target.y - target.radius * 0.3, target.radius * 0.2, target.radius * 0.1, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawFlyingArrow() {
+        if (!arrow) return;
+        ctx.save();
+        ctx.translate(arrow.x, arrow.y);
+        ctx.rotate(arrow.rotation);
+        ctx.strokeStyle = "rgba(255, 215, 0, 0.3)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-80, 0);
+        ctx.lineTo(0, 0);
+        ctx.stroke();
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = "#8a7355";
+        ctx.fillRect(-60, -3, 65, 6);
+        ctx.fillStyle = "#c0c0c0";
+        ctx.beginPath();
+        ctx.moveTo(12, 0);
+        ctx.lineTo(0, -8);
+        ctx.lineTo(5, 0);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#88ce02";
+        ctx.beginPath();
+        ctx.moveTo(-55, 0);
+        ctx.lineTo(-70, -10);
+        ctx.lineTo(-60, 0);
+        ctx.lineTo(-70, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawStuckArrows() {
+        stuckArrows.forEach((arr) => {
+          ctx.save();
+          ctx.translate(arr.x, arr.y);
+          ctx.rotate(arr.rotation);
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = "#6a5540";
+          ctx.fillRect(-40, -2, 45, 4);
+          ctx.fillStyle = "#888";
+          ctx.beginPath();
+          ctx.moveTo(8, 0);
+          ctx.lineTo(0, -5);
+          ctx.lineTo(0, 5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function drawTrajectory() {
+        if (!isDrawing || drawPower <= 15) return;
+        const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
+        const speed = drawPower * ARROW_SPEED_MULTIPLIER;
+        let simVx = Math.cos(finalAimAngle) * speed;
+        let simVy = Math.sin(finalAimAngle) * speed;
+        let simX = ARCHER_POS.x + Math.cos(finalAimAngle) * 60;
+        let simY = ARCHER_POS.y + Math.sin(finalAimAngle) * 60;
+        ctx.save();
+        for (let i = 0; i < 100; i++) {
+          simVy += gravity;
+          simVx *= 0.998;
+          simX += simVx;
+          simY += simVy;
+          if (i % 4 === 0 && simY < canvas.height) {
+            const alpha = 1 - i / 100;
+            const hue = 50 + (i / 100) * 30;
+            ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${alpha * 0.7})`;
+            ctx.beginPath();
+            ctx.arc(simX, simY, 4 - i / 35, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      function loadLevel(levelIndex) {
+        if (levelIndex >= levels.length) {
+          displayMessage("🏆 CHAMPION! 🏆", "win");
+          ui.restartBtn.style.display = "block";
+          gameState.gameOver = true;
+          return;
+        }
+        gameState.currentLevelIndex = levelIndex;
+        const levelData = levels[levelIndex];
+        gameState.arrowsLeft = levelData.arrows;
+        targets = levelData.targets.map((t) => ({ ...t, isHit: false }));
+        stuckArrows = [];
+        ui.level.textContent = gameState.currentLevelIndex + 1;
+        ui.arrows.textContent = gameState.arrowsLeft;
+        ui.score.textContent = gameState.score;
+        isCheckingLevel = false;
+        gameState.gameOver = false;
+        updateLevelProgress();
+      }
+
+      function displayMessage(msg, type = "success") {
+        ui.levelMessage.textContent = msg;
+        ui.levelMessage.className = type;
+        ui.levelMessage.style.display = "block";
+      }
+
+      function hideMessage() {
+        ui.levelMessage.style.display = "none";
+      }
+
+      function checkLevelCompletion() {
+        if (isCheckingLevel || gameState.gameOver) return;
+        const allHit = targets.every((t) => t.isHit);
+        if (allHit) {
+          isCheckingLevel = true;
+          displayMessage("⚔️ VICTORY! ⚔️", "success");
+          setTimeout(() => {
+            hideMessage();
+            loadLevel(gameState.currentLevelIndex + 1);
+          }, 1800);
+        } else if (gameState.arrowsLeft === 0 && !arrow) {
+          isCheckingLevel = true;
+          displayMessage("💀 DEFEATED 💀", "fail");
+          ui.restartBtn.style.display = "block";
+          gameState.gameOver = true;
+        }
+      }
+
+      function fireArrow() {
+        if (drawPower <= 15) {
+          drawPower = 0;
+          isDrawing = false;
+          ui.powerContainer.classList.remove("active");
+          return;
+        }
+        const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
+        const speed = drawPower * ARROW_SPEED_MULTIPLIER;
+        arrow = {
+          x: ARCHER_POS.x + Math.cos(finalAimAngle) * 60,
+          y: ARCHER_POS.y + Math.sin(finalAimAngle) * 60,
+          vx: Math.cos(finalAimAngle) * speed,
+          vy: Math.sin(finalAimAngle) * speed,
+          rotation: finalAimAngle,
+        };
+        gameState.arrowsLeft--;
+        ui.arrows.textContent = gameState.arrowsLeft;
+        drawPower = 0;
+        isDrawing = false;
+        ui.powerContainer.classList.remove("active");
+      }
+
+      function gameLoop() {
+        time++;
+        backgroundOffset += 0.5;
+        const aimModifier = isDrawing ? 0.4 : 1;
+        if (keyboard.up) aimAngle -= AIM_SPEED * aimModifier;
+        if (keyboard.down) aimAngle += AIM_SPEED * aimModifier;
+        if (keyboard.right && !arrow && gameState.arrowsLeft > 0) {
+          isDrawing = true;
+          drawPower = Math.min(MAX_DRAW_POWER, drawPower + 2.5);
+          ui.powerContainer.classList.add("active");
+        }
+        aimAngle = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 3, aimAngle));
+        const powerPercent = (drawPower / MAX_DRAW_POWER) * 100;
+        ui.powerFill.style.width = powerPercent + "%";
+        ui.powerText.textContent = `POWER: ${Math.round(powerPercent)}%`;
+        if (isDrawing) {
+          ui.powerContainer.classList.add("active");
+        }
+        targets.forEach((t, idx) => {
+          if (t.isHit && t.radius > 0) {
+            t.radius -= 2.5;
+            if (t.radius < 0) t.radius = 0;
+          }
+          if (t.dx) {
+            t.x += t.dx;
+            if (t.x < t.minX || t.x > t.maxX) t.dx *= -1;
+          }
+          if (t.dy) {
+            t.y += t.dy;
+            if (t.y < t.minY || t.y > t.maxY) t.dy *= -1;
+          }
+        });
+        if (arrow) {
+          arrow.vy += gravity;
+          arrow.vx *= 0.998;
+          arrow.x += arrow.vx;
+          arrow.y += arrow.vy;
+          arrow.rotation = Math.atan2(arrow.vy, arrow.vx);
+          targets.forEach((target) => {
+            if (!target.isHit) {
+              const dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
+              if (dist < target.radius) {
+                target.isHit = true;
+                const accuracy = 1 - dist / target.radius;
+                let points, message, color;
+                if (accuracy > 0.85) {
+                  points = 500;
+                  message = "🎯 BULLSEYE!";
+                  color = "#ffd700";
+                } else if (accuracy > 0.6) {
+                  points = 300;
+                  message = "⭐ PERFECT!";
+                  color = "#88ce02";
+                } else if (accuracy > 0.35) {
+                  points = 200;
+                  message = "✨ GREAT!";
+                  color = "#2196f3";
+                } else {
+                  points = 100;
+                  message = "👍 HIT!";
+                  color = "#ff9800";
+                }
+                if (gameState.currentLevelIndex >= 50) points *= 2;
+                else if (gameState.currentLevelIndex >= 30) points *= 1.5;
+                gameState.score += Math.round(points);
+                createParticles(target.x, target.y, color, 35);
+                createHitMessage(target.x, target.y - 50, `${message} +${Math.round(points)}`, color);
+                stuckArrows.push({ x: arrow.x, y: arrow.y, rotation: arrow.rotation });
+                arrow = null;
+                ui.score.textContent = gameState.score;
+                setTimeout(checkLevelCompletion, 400);
+              }
+            }
+          });
+          if (arrow && (arrow.y > canvas.height + 50 || arrow.x < -50 || arrow.x > canvas.width + 50)) {
+            createParticles(Math.max(0, Math.min(arrow.x, canvas.width)), Math.min(arrow.y, canvas.height - 20), "#ff4444", 12);
+            createHitMessage(
+              Math.max(100, Math.min(arrow.x, canvas.width - 100)),
+              canvas.height - 100,
+              "💨 MISS!",
+              "#ff4444"
+            );
+            arrow = null;
+            setTimeout(checkLevelCompletion, 100);
+          }
+        }
+        updateParticles();
+        updateHitMessages();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawPlatform(130, 620, 100, canvas.height - 620 + 100);
+        targets.forEach(drawTarget);
+        drawStuckArrows();
+        drawArcher();
+        drawFlyingArrow();
+        drawTrajectory();
+        drawParticles();
+        drawHitMessages();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (e.clientX - rect.left) * scaleX,
+          y: (e.clientY - rect.top) * scaleY,
+        };
+      }
+
+      canvas.addEventListener("mousedown", (e) => {
+        if (arrow || gameState.arrowsLeft === 0 || gameState.gameOver) return;
+        isDrawing = true;
+        drawStart = getMousePos(e);
+        ui.powerContainer.classList.add("active");
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        mousePos = getMousePos(e);
+        const dx = mousePos.x - ARCHER_POS.x;
+        const dy = mousePos.y - ARCHER_POS.y;
+        facingRight = dx >= 0;
+        aimAngle = facingRight ? Math.atan2(dy, dx) : Math.atan2(dy, -dx);
+        aimAngle = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 3, aimAngle));
+        if (isDrawing) {
+          const dragDist = Math.hypot(mousePos.x - drawStart.x, mousePos.y - drawStart.y);
+          drawPower = Math.min(MAX_DRAW_POWER, dragDist);
+        }
+      });
+
+      canvas.addEventListener("mouseup", () => {
+        if (!isDrawing || gameState.gameOver) return;
+        fireArrow();
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        if (isDrawing && !gameState.gameOver) fireArrow();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (gameState.gameOver) return;
+        if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") keyboard.up = true;
+        if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") keyboard.down = true;
+        if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") keyboard.left = true;
+        if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") keyboard.right = true;
+        if (e.key === " " && !arrow && gameState.arrowsLeft > 0) {
+          e.preventDefault();
+          if (drawPower > 15) fireArrow();
+          else {
+            isDrawing = true;
+            ui.powerContainer.classList.add("active");
+          }
+        }
+      });
+
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") keyboard.up = false;
+        if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") keyboard.down = false;
+        if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") keyboard.left = false;
+        if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") {
+          keyboard.right = false;
+          if (isDrawing && !arrow) fireArrow();
+        }
+      });
+
+      ui.restartBtn.addEventListener("click", () => {
+        gameState.score = 0;
+        ui.restartBtn.style.display = "none";
+        hideMessage();
+        loadLevel(0);
+      });
+
+      ui.fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              gameState.customBackground = img;
+              ui.resetBgBtn.style.display = "block";
+            };
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      ui.resetBgBtn.addEventListener("click", () => {
+        gameState.customBackground = null;
+        ui.resetBgBtn.style.display = "none";
+        ui.fileInput.value = "";
+      });
+
+      loadLevel(0);
+      gameLoop();
+    });
+  </script>
 </body>
 </html>
