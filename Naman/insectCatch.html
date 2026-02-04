@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catch The Insect</title>
+
+<!--
+  Catch The Insect
+  Author: Naman Mittal
+  Original logic preserved
+  Enhancements: Sound, High Score, Glass UI
+-->
+
+<link rel="icon" href="https://www.instagram.com/p/Cn9NTmYrgtD/">
+<link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  font-family: "Press Start 2P", sans-serif;
+  background: linear-gradient(135deg, #516dff, #7f53ff);
+  color: #fff;
+  text-align: center;
+}
+
+/* 🔹 ORIGINAL SCREEN LOGIC (UNCHANGED) */
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  transition: margin 0.5s ease-out;
+}
+
+.screen.up {
+  margin-top: -100vh;
+}
+
+/* 🔹 Glass UI */
+.screen > * {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(14px);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+.btn {
+  border: none;
+  background: linear-gradient(135deg, #00f2fe, #4facfe);
+  color: #000;
+  padding: 15px 25px;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 30px;
+}
+
+.btn:hover { opacity: 0.9; }
+
+.insects-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+}
+
+.insects-list li { margin: 10px; }
+
+.choose-insect-btn {
+  background: rgba(255,255,255,0.2);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  width: 150px;
+  height: 150px;
+  border-radius: 20px;
+}
+
+.choose-insect-btn:hover {
+  background: rgba(255,255,255,0.4);
+  color: #000;
+}
+
+.choose-insect-btn img {
+  width: 100px;
+  height: 100px;
+}
+
+/* 🔹 GAME */
+.game-container {
+  position: relative;
+  background: none;
+  box-shadow: none;
+}
+
+.time, .score, .high-score {
+  position: absolute;
+  top: 20px;
+}
+
+.time { left: 20px; }
+.score { right: 20px; }
+.high-score { left: 50%; transform: translateX(-50%); }
+
+.message {
+  line-height: 1.7;
+  background-color: rgba(0,0,0,0.6);
+  width: 100%;
+  padding: 20px;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -150%);
+  transition: 0.4s;
+}
+
+.message.visible {
+  transform: translate(-50%, 150%);
+  opacity: 1;
+}
+
+.insect {
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.3s ease-in-out;
+}
+
+.insect img {
+  width: 100px;
+  height: 100px;
+}
+
+.insect.caught {
+  transform: translate(-50%, -50%) scale(0);
+}
+</style>
+</head>
+
+<body>
+
+<!-- SCREEN 1 -->
+<div class="screen">
+  <h1>Catch The Insect</h1>
+  <button class="btn" id="start-btn">Play Game</button>
+</div>
+
+<!-- SCREEN 2 -->
+<div class="screen">
+  <h1>Pick Your Insect</h1>
+  <ul class="insects-list">
+    <li><button class="choose-insect-btn"><p>Fly</p><img src="http://pngimg.com/uploads/fly/fly_PNG3946.png" alt="fly"></button></li>
+    <li><button class="choose-insect-btn"><p>Mosquito</p><img src="http://pngimg.com/uploads/mosquito/mosquito_PNG18175.png" alt="mosquito"></button></li>
+    <li><button class="choose-insect-btn"><p>Spider</p><img src="http://pngimg.com/uploads/spider/spider_PNG12.png" alt="spider"></button></li>
+    <li><button class="choose-insect-btn"><p>Roach</p><img src="http://pngimg.com/uploads/roach/roach_PNG12163.png" alt="roach"></button></li>
+  </ul>
+</div>
+
+<!-- SCREEN 3 -->
+<div class="screen game-container" id="game-container">
+  <h3 id="time" class="time">Time: 00:00</h3>
+  <h3 id="score" class="score">Score: 0</h3>
+  <h3 id="highScore" class="high-score">Best: 0</h3>
+
+  <h5 id="message" class="message">
+    Are you annoyed yet?<br>You are playing an impossible game!!
+  </h5>
+</div>
+
+<!-- 🔊 Sounds -->
+<audio id="hit" src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3"></audio>
+<audio id="startSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-start-213.mp3"></audio>
+
+<script>
+const screens = document.querySelectorAll(".screen");
+const chooseInsectButtons = document.querySelectorAll(".choose-insect-btn");
+const startButton = document.getElementById("start-btn");
+const gameContainer = document.getElementById("game-container");
+const timeElement = document.getElementById("time");
+const scoreElement = document.getElementById("score");
+const highScoreElement = document.getElementById("highScore");
+const message = document.getElementById("message");
+
+const hitSound = document.getElementById("hit");
+const startSound = document.getElementById("startSound");
+
+let seconds = 0;
+let score = 0;
+let selectedInsect = {};
+let highScore = localStorage.getItem("highScore") || 0;
+highScoreElement.innerText = `Best: ${highScore}`;
+
+startButton.addEventListener("click", () => {
+  screens[0].classList.add("up");
+  startSound.play();
+});
+
+function increaseTime() {
+  let m = Math.floor(seconds / 60);
+  let s = seconds % 60;
+  timeElement.innerHTML = `Time: ${m < 10 ? "0"+m : m}:${s < 10 ? "0"+s : s}`;
+  seconds++;
+}
+
+function startGame() {
+  setInterval(increaseTime, 1000);
+}
+
+function increaseScore() {
+  score++;
+  scoreElement.innerHTML = `Score: ${score}`;
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+    highScoreElement.innerText = `Best: ${highScore}`;
+  }
+
+  if (score > 19) message.classList.add("visible");
+}
+
+function getRandomLocation() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return {
+    x: Math.random() * (width - 200) + 100,
+    y: Math.random() * (height - 200) + 100
+  };
+}
+
+function createInsect() {
+  const insect = document.createElement("div");
+  insect.classList.add("insect");
+
+  const { x, y } = getRandomLocation();
+  insect.style.top = `${y}px`;
+  insect.style.left = `${x}px`;
+
+  insect.innerHTML = `<img src="${selectedInsect.src}" alt="${selectedInsect.alt}" />`;
+
+  insect.addEventListener("click", () => {
+    hitSound.play();
+    increaseScore();
+    insect.classList.add("caught");
+    setTimeout(() => insect.remove(), 200);
+    setTimeout(createInsect, 1000);
+    setTimeout(createInsect, 1500);
+  });
+
+  gameContainer.appendChild(insect);
+}
+
+chooseInsectButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    const img = button.querySelector("img");
+    selectedInsect = { src: img.src, alt: img.alt };
+    screens[1].classList.add("up");
+    setTimeout(createInsect, 1000);
+    startGame();
+  });
+});
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Catch The Insect</title>
+
+  <!--
+    Game: Catch The Insect
+    Converted to Single HTML File
+    Author: Naman Mittal
+  -->
+
+  <link rel="icon" href="https://i.ibb.co/M6KTWnf/pic.jpg">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #516dff;
+      color: #fff;
+      font-family: "Press Start 2P", sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      text-align: center;
+    }
+
+    h1 {
+      line-height: 1.4;
+    }
+
+    .btn {
+      border: 0;
+      background-color: #fff;
+      color: #516dff;
+      padding: 15px 20px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      transition: margin 0.5s ease-out;
+    }
+
+    .screen.up {
+      margin-top: -100vh;
+    }
+
+    .insects-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      list-style: none;
+      padding: 0;
+    }
+
+    .insects-list li {
+      margin: 10px;
+    }
+
+    .choose-insect-btn {
+      background-color: transparent;
+      border: 2px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      width: 150px;
+      height: 150px;
+    }
+
+    .choose-insect-btn:hover {
+      background-color: #fff;
+      color: #516dff;
+    }
+
+    .choose-insect-btn img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    }
+
+    .game-container {
+      position: relative;
+    }
+
+    .time,
+    .score {
+      position: absolute;
+      top: 20px;
+    }
+
+    .time {
+      left: 20px;
+    }
+
+    .score {
+      right: 20px;
+    }
+
+    .message {
+      line-height: 1.7;
+      background-color: rgba(0, 0, 0, 0.5);
+      width: 100%;
+      padding: 20px;
+      z-index: 100;
+      text-align: center;
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -150%);
+      transition: 0.4s ease;
+    }
+
+    .message.visible {
+      transform: translate(-50%, 150%);
+      opacity: 1;
+    }
+
+    .insect {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      transform: translate(-50%, -50%) scale(1);
+      transition: transform 0.3s ease-in-out;
+      cursor: pointer;
+    }
+
+    .insect img {
+      width: 100px;
+      height: 100px;
+    }
+
+    .insect.caught {
+      transform: translate(-50%, -50%) scale(0);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="screen">
+    <h1>Catch The Insect</h1>
+    <button class="btn" id="start-btn">Play Game</button>
+  </div>
+
+  <div class="screen">
+    <h1>What is your "favorite" insect?</h1>
+    <ul class="insects-list">
+      <li>
+        <button class="choose-insect-btn">
+          <p>Fly</p>
+          <img src="http://pngimg.com/uploads/fly/fly_PNG3946.png" alt="fly">
+        </button>
+      </li>
+      <li>
+        <button class="choose-insect-btn">
+          <p>Mosquito</p>
+          <img src="http://pngimg.com/uploads/mosquito/mosquito_PNG18175.png" alt="mosquito">
+        </button>
+      </li>
+      <li>
+        <button class="choose-insect-btn">
+          <p>Spider</p>
+          <img src="http://pngimg.com/uploads/spider/spider_PNG12.png" alt="spider">
+        </button>
+      </li>
+      <li>
+        <button class="choose-insect-btn">
+          <p>Roach</p>
+          <img src="http://pngimg.com/uploads/roach/roach_PNG12163.png" alt="roach">
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="screen game-container" id="game-container">
+    <h3 id="time" class="time">Time: 00:00</h3>
+    <h3 id="score" class="score">Score: 0</h3>
+    <h5 id="message" class="message">
+      Are you annoyed yet? <br>
+      You are playing an impossible game!!
+    </h5>
+  </div>
+
+  <script>
+    const screens = document.querySelectorAll(".screen");
+    const chooseInsectButtons = document.querySelectorAll(".choose-insect-btn");
+    const startButton = document.getElementById("start-btn");
+    const gameContainer = document.getElementById("game-container");
+    const timeElement = document.getElementById("time");
+    const scoreElement = document.getElementById("score");
+    const message = document.getElementById("message");
+
+    let seconds = 0;
+    let score = 0;
+    let selectedInsect = {};
+
+    startButton.addEventListener("click", () => {
+      screens[0].classList.add("up");
+    });
+
+    function increaseScore() {
+      score++;
+      if (score > 19) message.classList.add("visible");
+      scoreElement.innerHTML = `Score: ${score}`;
+    }
+
+    function getRandomLocation() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const x = Math.random() * (width - 200) + 100;
+      const y = Math.random() * (height - 200) + 100;
+      return { x, y };
+    }
+
+    function createInsect() {
+      const insect = document.createElement("div");
+      insect.classList.add("insect");
+
+      const { x, y } = getRandomLocation();
+      insect.style.left = `${x}px`;
+      insect.style.top = `${y}px`;
+
+      insect.innerHTML = `
+        <img src="${selectedInsect.src}"
+             alt="${selectedInsect.alt}"
+             style="transform: rotate(${Math.random() * 360}deg)">
+      `;
+
+      insect.addEventListener("click", () => {
+        increaseScore();
+        insect.classList.add("caught");
+        setTimeout(() => insect.remove(), 200);
+        setTimeout(createInsect, 1000);
+        setTimeout(createInsect, 1500);
+      });
+
+      gameContainer.appendChild(insect);
+    }
+
+    function increaseTime() {
+      let m = Math.floor(seconds / 60);
+      let s = seconds % 60;
+      m = m < 10 ? `0${m}` : m;
+      s = s < 10 ? `0${s}` : s;
+      timeElement.innerHTML = `Time: ${m}:${s}`;
+      seconds++;
+    }
+
+    function startGame() {
+      setInterval(increaseTime, 1000);
+    }
+
+    chooseInsectButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const img = button.querySelector("img");
+        selectedInsect = {
+          src: img.src,
+          alt: img.alt
+        };
+
+        screens[1].classList.add("up");
+        setTimeout(createInsect, 1000);
+        startGame();
+      });
+    });
+  </script>
+
+</body>
+</html>

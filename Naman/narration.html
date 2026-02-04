@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Narrator Studio Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e1e2e;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a6a;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a7a;
+        }
+        
+        .glow-red {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.3);
+        }
+        
+        .pulse-recording {
+            animation: pulse-rec 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-rec {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .gradient-border {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2px;
+            border-radius: 12px;
+        }
+        
+        .gradient-border-inner {
+            background: #1a1a2e;
+            border-radius: 10px;
+        }
+        
+        textarea:focus, select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .ambient-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .ambient-btn.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .voice-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .voice-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .range-slider {
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #2d2d4a;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+        }
+        
+        .syntax-help {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+        }
+        
+        .current-line {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-left: 3px solid #667eea;
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn.active {
+            background: rgba(102, 126, 234, 0.2);
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .dialogue-color-1 { color: #f87171; }
+        .dialogue-color-2 { color: #60a5fa; }
+        .dialogue-color-3 { color: #34d399; }
+        .dialogue-color-4 { color: #fbbf24; }
+        .dialogue-color-5 { color: #a78bfa; }
+        .dialogue-color-6 { color: #f472b6; }
+        .dialogue-color-7 { color: #2dd4bf; }
+        .dialogue-color-8 { color: #fb923c; }
+        .dialogue-color-9 { color: #818cf8; }
+        .dialogue-color-10 { color: #e879f9; }
+        
+        .syntax-error {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .collapsible-content.open {
+            max-height: 2000px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+    </style>
+</head>
+<body class="bg-[#0d0d1a] text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent mb-1">
+                🎙️ AI Narrator Studio Pro
+            </h1>
+            <p class="text-gray-400 text-sm">Advanced cinematic text-to-speech with multi-character support</p>
+        </header>
+
+        <!-- Recording Indicator -->
+        <div id="recordingIndicator" class="hidden fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 glow-red z-50">
+            <span class="w-3 h-3 bg-white rounded-full pulse-recording"></span>
+            <span class="font-semibold">Recording...</span>
+            <span id="recordingTime">00:00</span>
+        </div>
+
+        <!-- Narration Progress Bar -->
+        <div id="progressContainer" class="hidden fixed top-0 left-0 right-0 h-1 bg-gray-800 z-40">
+            <div id="progressBar" class="progress-bar h-full w-0"></div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-4">
+            <!-- Main Editor Panel -->
+            <div class="xl:col-span-2 space-y-4">
+                <!-- Text Editor with Tabs -->
+                <div class="gradient-border">
+                    <div class="gradient-border-inner">
+                        <!-- Tabs -->
+                        <div class="flex border-b border-gray-700">
+                            <button onclick="switchTab('editor')" id="tabEditor" class="tab-btn active px-4 py-3 text-sm font-medium">
+                                📝 Editor
+                            </button>
+                            <button onclick="switchTab('preview')" id="tabPreview" class="tab-btn px-4 py-3 text-sm font-medium">
+                                👁️ Live Preview
+                            </button>
+                            <button onclick="switchTab('analysis')" id="tabAnalysis" class="tab-btn px-4 py-3 text-sm font-medium">
+                                📊 Analysis
+                            </button>
+                        </div>
+                        
+                        <div class="p-4">
+                            <!-- Editor Tab -->
+                            <div id="editorPanel">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs text-gray-500">Line <span id="currentLineNum">1</span> | <span id="charCount">0</span> chars</span>
+                                    <div class="flex gap-2">
+                                        <button onclick="insertSnippet('[pause:1s]')" class="text-xs bg-purple-900/50 hover:bg-purple-900 px-2 py-1 rounded">+ Pause</button>
+                                        <button onclick="insertSnippet('[dialogue1]\n\"\"')" class="text-xs bg-blue-900/50 hover:bg-blue-900 px-2 py-1 rounded">+ Dialogue</button>
+                                        <button onclick="insertSnippet('[emotion:calm]')" class="text-xs bg-green-900/50 hover:bg-green-900 px-2 py-1 rounded">+ Emotion</button>
+                                        <button onclick="clearText()" class="text-xs text-gray-400 hover:text-white">Clear</button>
+                                    </div>
+                                </div>
+                                <textarea 
+                                    id="storyText" 
+                                    class="w-full h-72 bg-[#12121f] border border-gray-700 rounded-lg p-4 text-gray-200 resize-none text-sm leading-relaxed font-mono"
+                                    placeholder="[TITLE]
+The Last Signal
+
+[STORY]
+The radio crackled softly.
+
+[pause:1.5s]
+
+[dialogue1][pitch:1.1][speed:1.2] &quot;Is anyone out there?&quot;
+
+[dialogue2][pitch:0.85][speed:0.8][emotion:scared] &quot;You're not alone.&quot;
+
+[pause:2s]
+
+The signal faded into static.
+
+[ENDING]
+And the silence returned forever.
+
+--- OR use multi-line format ---
+
+[dialogue1]
+[pitch:1.1]
+[speed:1.2]
+&quot;Is anyone out there?&quot;"
+                                    oninput="onTextChange()"
+                                    onkeyup="updateLineNumber()"
+                                    onclick="updateLineNumber()"
+                                ></textarea>
+                            </div>
+                            
+                            <!-- Preview Tab -->
+                            <div id="previewPanel" class="hidden">
+                                <div id="livePreview" class="h-72 overflow-y-auto bg-[#12121f] border border-gray-700 rounded-lg p-4 text-sm">
+                                    <p class="text-gray-500 italic">Start typing to see live preview...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Analysis Tab -->
+                            <div id="analysisPanel" class="hidden">
+                                <div class="h-72 overflow-y-auto space-y-3">
+                                    <div class="bg-[#12121f] border border-gray-700 rounded-lg p-4">
+                                        <h4 class="text-purple-400 font-medium mb-2">⏱️ Estimated Duration</h4>
+                                        <p id="estimatedDuration" class="text-2xl font-bold">0:00</p>
+                                    </div>
+                                    <div class="bg-[#12121f] border border-gray-700 rounded-lg p-4">
+                                        <h4 class="text-blue-400 font-medium mb-2">🎭 Dialogue Summary</h4>
+                                        <div id="dialogueSummary" class="text-sm space-y-1"></div>
+                                    </div>
+                                    <div class="bg-[#12121f] border border-gray-700 rounded-lg p-4">
+                                        <h4 class="text-amber-400 font-medium mb-2">⚠️ Syntax Warnings</h4>
+                                        <div id="syntaxWarnings" class="text-sm space-y-1"></div>
+                                    </div>
+                                    <button onclick="exportScript()" class="w-full bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm">
+                                        📤 Export Script as JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Syntax Help (Collapsible) -->
+                        <div class="border-t border-gray-700">
+                            <button onclick="toggleSyntaxHelp()" class="w-full px-4 py-2 text-left text-sm text-purple-400 hover:bg-purple-900/20 flex items-center justify-between">
+                                <span>📖 Syntax Reference</span>
+                                <span id="syntaxHelpArrow">▼</span>
+                            </button>
+                            <div id="syntaxHelpContent" class="collapsible-content">
+                                <div class="px-4 pb-4 text-xs text-gray-400 space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[TITLE]</code> Title section</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[STORY]</code> Main story</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[ENDING]</code> Ending section</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[pause:Xs]</code> Pause X seconds</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[dialogue1-10]</code> Character voice</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[pitch:X.X]</code> Set pitch (0.5-2.0)</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[speed:X.X]</code> Set speed (0.5-2.5)</div>
+                                        <div><code class="bg-purple-900/50 px-1 rounded">[emotion:X]</code> angry/calm/scared/happy</div>
+                                    </div>
+                                    <div class="bg-[#12121f] p-2 rounded border border-gray-700">
+                                        <p class="text-cyan-400 font-medium mb-1">✨ Inline Syntax (all on one line):</p>
+                                        <code class="text-green-400 text-xs block">[dialogue2][pitch:1.0][speed:1.2][emotion:calm] "Hello there!"</code>
+                                    </div>
+                                    <p class="text-gray-500">Empty lines = automatic 1s pause | Both <code class="bg-gray-800 px-1 rounded">[tag:value]</code> and <code class="bg-gray-800 px-1 rounded">[tag-value]</code> formats work</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Speed: <span id="rateValue">1.0</span>x</label>
+                                <input type="range" id="rateSlider" min="0.5" max="2" step="0.1" value="1" 
+                                    class="w-full range-slider" onchange="updateSliderValue('rate')">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Pitch: <span id="pitchValue">1.0</span></label>
+                                <input type="range" id="pitchSlider" min="0.5" max="2" step="0.1" value="1" 
+                                    class="w-full range-slider" onchange="updateSliderValue('pitch')">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Volume: <span id="volumeValue">100</span>%</label>
+                                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" 
+                                    class="w-full range-slider" onchange="updateSliderValue('volume')">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="speakText()" id="speakBtn" 
+                                class="btn-primary px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+                                <span>▶️</span> Speak
+                            </button>
+                            <button onclick="stopSpeaking()" 
+                                class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+                                <span>⏹️</span> Stop
+                            </button>
+                            <button onclick="startRecording()" id="startRecBtn" 
+                                class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
+                                <span>🔴</span> Record
+                            </button>
+                            <button onclick="stopRecording()" id="stopRecBtn" disabled
+                                class="btn-danger px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>⏹️</span> Stop Rec
+                            </button>
+                        </div>
+                        
+                        <p id="statusText" class="mt-2 text-xs text-gray-400"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Settings Panel -->
+            <div class="space-y-4">
+                <div class="gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>🎤</span> Voice Settings
+                        </h2>
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs text-gray-400 mb-1">Filter by Accent</label>
+                            <select id="accentFilter" onchange="filterVoices()" 
+                                class="w-full bg-[#12121f] border border-gray-700 rounded-lg p-2 text-sm text-gray-200">
+                                <option value="all">All Voices</option>
+                                <option value="en-US">American English</option>
+                                <option value="en-GB">British English</option>
+                                <option value="en-IN">Indian English</option>
+                                <option value="en-AU">Australian English</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Section Voices -->
+                            <div class="voice-card p-3 rounded-lg">
+                                <label class="block text-xs text-purple-400 mb-1 font-medium">🎬 Title Voice</label>
+                                <select id="titleVoice" class="w-full bg-[#1a1a2e] border border-gray-700 rounded p-1.5 text-xs text-gray-200"></select>
+                            </div>
+                            
+                            <div class="voice-card p-3 rounded-lg">
+                                <label class="block text-xs text-blue-400 mb-1 font-medium">📖 Narrator Voice</label>
+                                <select id="narratorVoice" class="w-full bg-[#1a1a2e] border border-gray-700 rounded p-1.5 text-xs text-gray-200"></select>
+                            </div>
+                            
+                            <div class="voice-card p-3 rounded-lg">
+                                <label class="block text-xs text-amber-400 mb-1 font-medium">🎭 Ending Voice</label>
+                                <select id="endingVoice" class="w-full bg-[#1a1a2e] border border-gray-700 rounded p-1.5 text-xs text-gray-200"></select>
+                            </div>
+                        </div>
+                        
+                        <button onclick="loadVoices()" class="mt-2 text-xs text-purple-400 hover:text-purple-300">
+                            🔄 Refresh Voices
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Character Voices -->
+                <div class="gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>👥</span> Character Voices
+                        </h2>
+                        <p class="text-xs text-gray-500 mb-3">Configure up to 10 unique character voices</p>
+                        
+                        <div class="space-y-2 max-h-80 overflow-y-auto" id="characterVoicesContainer">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="space-y-4">
+                <!-- Ambient Sounds -->
+                <div class="gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>🎵</span> Ambience
+                        </h2>
+                        
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <button onclick="toggleAmbient('rain')" id="rainBtn" 
+                                class="ambient-btn bg-[#12121f] border border-gray-700 p-2 rounded-lg text-center hover:border-gray-500">
+                                <span class="text-xl">🌧️</span>
+                                <div class="text-xs mt-1">Rain</div>
+                            </button>
+                            
+                            <button onclick="toggleAmbient('forest')" id="forestBtn" 
+                                class="ambient-btn bg-[#12121f] border border-gray-700 p-2 rounded-lg text-center hover:border-gray-500">
+                                <span class="text-xl">🌲</span>
+                                <div class="text-xs mt-1">Forest</div>
+                            </button>
+                            
+                            <button onclick="toggleAmbient('horror')" id="horrorBtn" 
+                                class="ambient-btn bg-[#12121f] border border-gray-700 p-2 rounded-lg text-center hover:border-gray-500">
+                                <span class="text-xl">👻</span>
+                                <div class="text-xs mt-1">Horror</div>
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Volume: <span id="ambientVolValue">30</span>%</label>
+                            <input type="range" id="ambientVolSlider" min="0" max="0.5" step="0.05" value="0.3" 
+                                class="w-full range-slider" onchange="updateAmbientVolume()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion Presets -->
+                <div class="gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>🎭</span> Emotion Presets
+                        </h2>
+                        <p class="text-xs text-gray-500 mb-3">Use [emotion:name] in your script</p>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-red-400">😠 angry</span>
+                                <div class="text-gray-500">pitch: 1.2, speed: 1.3</div>
+                            </div>
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-blue-400">😌 calm</span>
+                                <div class="text-gray-500">pitch: 0.9, speed: 0.8</div>
+                            </div>
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-purple-400">😨 scared</span>
+                                <div class="text-gray-500">pitch: 1.3, speed: 1.4</div>
+                            </div>
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-yellow-400">😊 happy</span>
+                                <div class="text-gray-500">pitch: 1.15, speed: 1.1</div>
+                            </div>
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-gray-400">😢 sad</span>
+                                <div class="text-gray-500">pitch: 0.85, speed: 0.7</div>
+                            </div>
+                            <div class="bg-[#12121f] border border-gray-700 p-2 rounded">
+                                <span class="text-green-400">🤫 whisper</span>
+                                <div class="text-gray-500">pitch: 0.9, speed: 0.6</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Download Section -->
+                <div id="downloadSection" class="hidden gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>💾</span> Download
+                        </h2>
+                        <a id="downloadLink" class="btn-primary block text-center px-4 py-2 rounded-lg font-medium text-sm">
+                            ⬇️ Download Audio
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Currently Speaking -->
+                <div id="currentlyPlayingSection" class="hidden gradient-border">
+                    <div class="gradient-border-inner p-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <span>🔊</span> Now Speaking
+                        </h2>
+                        <div id="currentlyPlayingText" class="text-sm text-gray-300 italic max-h-20 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-8 text-gray-500 text-xs">
+            <p>AI Narrator Studio Pro • Supports 10 character voices • Web Speech API & MediaRecorder</p>
+        </footer>
+    </div>
+
+    <script>
+        // ============ State Management ============
+        let voices = [];
+        let allVoices = [];
+        let currentUtterance = null;
+        let isSpeaking = false;
+        let speechQueue = [];
+        let queueIndex = 0;
+        
+        // Recording
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let recordingStartTime = null;
+        let recordingTimer = null;
+        
+        // Audio Context for Ambient
+        let audioContext = null;
+        let ambientNodes = {};
+        let activeAmbient = null;
+        let ambientVolume = 0.3;
+        
+        // Character voice settings (up to 10)
+        const characterSettings = {};
+        for (let i = 1; i <= 10; i++) {
+            characterSettings[i] = { voiceIndex: 0, pitch: 1.0, speed: 1.0 };
+        }
+        
+        // Emotion presets
+        const emotionPresets = {
+            angry: { pitch: 1.2, speed: 1.3 },
+            calm: { pitch: 0.9, speed: 0.8 },
+            scared: { pitch: 1.3, speed: 1.4 },
+            happy: { pitch: 1.15, speed: 1.1 },
+            sad: { pitch: 0.85, speed: 0.7 },
+            whisper: { pitch: 0.9, speed: 0.6 },
+            excited: { pitch: 1.25, speed: 1.35 },
+            serious: { pitch: 0.95, speed: 0.85 }
+        };
+        
+        // Dialogue colors for UI
+        const dialogueColors = [
+            '#f87171', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa',
+            '#f472b6', '#2dd4bf', '#fb923c', '#818cf8', '#e879f9'
+        ];
+
+        // ============ Voice Management ============
+        function loadVoices() {
+            allVoices = speechSynthesis.getVoices();
+            filterVoices();
+        }
+
+        function filterVoices() {
+            const filter = document.getElementById('accentFilter').value;
+            
+            if (filter === 'all') {
+                voices = allVoices.filter(v => v.lang.startsWith('en'));
+            } else {
+                voices = allVoices.filter(v => v.lang === filter);
+            }
+            
+            if (voices.length === 0) {
+                voices = allVoices.filter(v => v.lang.startsWith('en'));
+            }
+            
+            if (voices.length === 0) {
+                voices = allVoices;
+            }
+            
+            populateVoiceSelects();
+            populateCharacterVoices();
+        }
+
+        function populateVoiceSelects() {
+            const selects = ['titleVoice', 'narratorVoice', 'endingVoice'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                const currentValue = select.value;
+                select.innerHTML = '';
+                
+                voices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${voice.name.substring(0, 25)}${voice.name.length > 25 ? '...' : ''} (${voice.lang})`;
+                    select.appendChild(option);
+                });
+                
+                if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                    select.value = currentValue;
+                }
+            });
+            
+            updateStatus(`Loaded ${voices.length} voices`);
+        }
+
+        function populateCharacterVoices() {
+            const container = document.getElementById('characterVoicesContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 10; i++) {
+                const div = document.createElement('div');
+                div.className = 'voice-card p-2 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full" style="background: ${dialogueColors[i-1]}"></span>
+                        <label class="text-xs font-medium" style="color: ${dialogueColors[i-1]}">Character ${i}</label>
+                    </div>
+                    <select id="dialogueVoice${i}" onchange="updateCharacterSetting(${i}, 'voiceIndex', this.value)" 
+                        class="w-full bg-[#1a1a2e] border border-gray-700 rounded p-1 text-xs text-gray-200 mb-1">
+                    </select>
+                    <div class="grid grid-cols-2 gap-1">
+                        <div>
+                            <label class="text-xs text-gray-500">Pitch</label>
+                            <input type="range" min="0.5" max="2" step="0.1" value="${characterSettings[i].pitch}" 
+                                onchange="updateCharacterSetting(${i}, 'pitch', this.value)"
+                                class="w-full range-slider h-1">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Speed</label>
+                            <input type="range" min="0.5" max="2.5" step="0.1" value="${characterSettings[i].speed}"
+                                onchange="updateCharacterSetting(${i}, 'speed', this.value)"
+                                class="w-full range-slider h-1">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+                
+                // Populate voice select
+                const select = document.getElementById(`dialogueVoice${i}`);
+                voices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${voice.name.substring(0, 20)}... (${voice.lang})`;
+                    select.appendChild(option);
+                });
+                
+                // Set different default voice for each character
+                if (voices.length > i) {
+                    select.value = i % voices.length;
+                    characterSettings[i].voiceIndex = i % voices.length;
+                }
+            }
+        }
+
+        function updateCharacterSetting(charNum, setting, value) {
+            if (setting === 'voiceIndex') {
+                characterSettings[charNum].voiceIndex = parseInt(value);
+            } else {
+                characterSettings[charNum][setting] = parseFloat(value);
+            }
+        }
+
+        // ============ Advanced Text Parsing ============
+        
+        // Helper function to extract inline tags from a line
+        // Supports both [tag-value] and [tag:value] formats
+        function extractInlineTags(text) {
+            const result = {
+                dialogue: null,
+                pitch: null,
+                speed: null,
+                emotion: null,
+                remainingText: text
+            };
+            
+            // Pattern to match all inline tags at the start or anywhere in the line before the quote
+            // Supports: [dialogue1], [pitch-1.0], [pitch:1.0], [speed-1.5x], [speed:1.5], [emotion:calm]
+            const tagPattern = /\[(dialogue(\d+)|pitch[:\-](\d+\.?\d*)|speed[:\-](\d+\.?\d*)x?|emotion[:\-](\w+))\]/gi;
+            
+            let cleanedText = text;
+            let match;
+            
+            // Find all tags and extract their values
+            while ((match = tagPattern.exec(text)) !== null) {
+                const fullMatch = match[0];
+                const innerContent = match[1];
+                
+                // Check for dialogue tag
+                if (match[2]) {
+                    const num = parseInt(match[2]);
+                    if (num >= 1 && num <= 10) {
+                        result.dialogue = num;
+                    }
+                }
+                // Check for pitch tag
+                else if (match[3]) {
+                    result.pitch = parseFloat(match[3]);
+                }
+                // Check for speed tag
+                else if (match[4]) {
+                    result.speed = parseFloat(match[4]);
+                }
+                // Check for emotion tag
+                else if (match[5]) {
+                    const emotionName = match[5].toLowerCase();
+                    if (emotionPresets[emotionName]) {
+                        result.emotion = emotionName;
+                    }
+                }
+                
+                // Remove this tag from the cleaned text
+                cleanedText = cleanedText.replace(fullMatch, '');
+            }
+            
+            result.remainingText = cleanedText.trim();
+            return result;
+        }
+        
+        function parseText(text) {
+            const segments = [];
+            let currentSection = 'STORY';
+            let currentDialogue = null;
+            let currentPitch = null;
+            let currentSpeed = null;
+            let currentEmotion = null;
+            let lineNumber = 0;
+            
+            const lines = text.split('\n');
+            let consecutiveEmptyLines = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                lineNumber = i + 1;
+                
+                // Check for section markers (standalone only)
+                if (trimmed === '[TITLE]') {
+                    currentSection = 'TITLE';
+                    currentDialogue = null;
+                    continue;
+                } else if (trimmed === '[STORY]') {
+                    currentSection = 'STORY';
+                    currentDialogue = null;
+                    continue;
+                } else if (trimmed === '[ENDING]') {
+                    currentSection = 'ENDING';
+                    currentDialogue = null;
+                    continue;
+                }
+                
+                // Check for standalone dialogue markers [dialogue1] - [dialogue10]
+                const standaloneDialogueMatch = trimmed.match(/^\[dialogue(\d+)\]$/i);
+                if (standaloneDialogueMatch) {
+                    const num = parseInt(standaloneDialogueMatch[1]);
+                    if (num >= 1 && num <= 10) {
+                        currentDialogue = num;
+                    }
+                    continue;
+                }
+                
+                // Check for standalone pitch modifier [pitch-X.X] or [pitch:X.X]
+                const standalonePitchMatch = trimmed.match(/^\[pitch[:\-](\d+\.?\d*)\]$/i);
+                if (standalonePitchMatch) {
+                    currentPitch = parseFloat(standalonePitchMatch[1]);
+                    continue;
+                }
+                
+                // Check for standalone speed modifier [speed-X.Xx] or [speed:X.X]
+                const standaloneSpeedMatch = trimmed.match(/^\[speed[:\-](\d+\.?\d*)x?\]$/i);
+                if (standaloneSpeedMatch) {
+                    currentSpeed = parseFloat(standaloneSpeedMatch[1]);
+                    continue;
+                }
+                
+                // Check for standalone emotion modifier [emotion:name] or [emotion-name]
+                const standaloneEmotionMatch = trimmed.match(/^\[emotion[:\-](\w+)\]$/i);
+                if (standaloneEmotionMatch) {
+                    const emotionName = standaloneEmotionMatch[1].toLowerCase();
+                    if (emotionPresets[emotionName]) {
+                        currentEmotion = emotionName;
+                    }
+                    continue;
+                }
+                
+                // Check for standalone pause [pause:Xs]
+                const standalonePauseMatch = trimmed.match(/^\[pause[:\-](\d+\.?\d*)s?\]$/i);
+                if (standalonePauseMatch) {
+                    const duration = parseFloat(standalonePauseMatch[1]) * 1000;
+                    segments.push({ type: 'pause', duration, lineNumber });
+                    continue;
+                }
+                
+                // Empty line = automatic pause
+                if (trimmed === '') {
+                    consecutiveEmptyLines++;
+                    if (consecutiveEmptyLines === 1) {
+                        segments.push({ type: 'pause', duration: 1000, lineNumber });
+                    } else if (consecutiveEmptyLines <= 3) {
+                        // Stack pauses for multiple empty lines (up to 3)
+                        segments.push({ type: 'pause', duration: 500, lineNumber });
+                    }
+                    continue;
+                }
+                
+                consecutiveEmptyLines = 0;
+                
+                // Check for inline tags on the same line as text
+                // e.g., [dialogue2][pitch:1.0][speed:1.0][emotion:calm] "Hello there"
+                const inlineTags = extractInlineTags(trimmed);
+                
+                // Use inline tags if found, otherwise use current persistent state
+                const effectiveDialogue = inlineTags.dialogue !== null ? inlineTags.dialogue : currentDialogue;
+                const effectivePitch = inlineTags.pitch !== null ? inlineTags.pitch : currentPitch;
+                const effectiveSpeed = inlineTags.speed !== null ? inlineTags.speed : currentSpeed;
+                const effectiveEmotion = inlineTags.emotion !== null ? inlineTags.emotion : currentEmotion;
+                
+                // If inline dialogue tag was found, update current state for subsequent lines
+                if (inlineTags.dialogue !== null) {
+                    currentDialogue = inlineTags.dialogue;
+                }
+                
+                // Parse the remaining text (with tags removed) for dialogue
+                const remainingText = inlineTags.remainingText;
+                
+                if (remainingText) {
+                    const parsedSegments = parseLine(remainingText, currentSection, effectiveDialogue, effectivePitch, effectiveSpeed, effectiveEmotion, lineNumber);
+                    segments.push(...parsedSegments);
+                }
+                
+                // Reset per-dialogue modifiers after dialogue text (if inline tags were used)
+                if (inlineTags.dialogue !== null || (currentDialogue !== null && trimmed.includes('"'))) {
+                    currentPitch = null;
+                    currentSpeed = null;
+                    currentEmotion = null;
+                }
+            }
+            
+            return segments;
+        }
+
+        function parseLine(text, section, dialogueNum, pitch, speed, emotion, lineNumber) {
+            const segments = [];
+            
+            // Check if entire line is quoted dialogue (handles various quote styles)
+            const fullQuoteMatch = text.match(/^[""]([^""]+)[""]$/);
+            if (fullQuoteMatch) {
+                segments.push({
+                    type: 'speech',
+                    text: fullQuoteMatch[1],
+                    voice: dialogueNum ? `DIALOGUE${dialogueNum}` : 'CHARACTER',
+                    dialogueNum: dialogueNum,
+                    pitch: pitch,
+                    speed: speed,
+                    emotion: emotion,
+                    isDialogue: true,
+                    lineNumber
+                });
+                return segments;
+            }
+            
+            // Parse for inline pauses and mixed content (dialogue quotes within narration)
+            const regex = /(\[pause[:\-](\d+\.?\d*)s?\])|([""]([^""]+)[""])/g;
+            let lastIndex = 0;
+            let match;
+            
+            while ((match = regex.exec(text)) !== null) {
+                // Add text before this match (but skip if it's just whitespace or residual tags)
+                if (match.index > lastIndex) {
+                    let beforeText = text.substring(lastIndex, match.index).trim();
+                    // Remove any residual tags that might have been missed
+                    beforeText = beforeText.replace(/\[[^\]]+\]/g, '').trim();
+                    if (beforeText) {
+                        segments.push({
+                            type: 'speech',
+                            text: beforeText,
+                            voice: section,
+                            isDialogue: false,
+                            lineNumber
+                        });
+                    }
+                }
+                
+                if (match[1] && match[1].match(/\[pause/i)) {
+                    const duration = parseFloat(match[2]) * 1000;
+                    segments.push({ type: 'pause', duration, lineNumber });
+                } else if (match[3]) {
+                    segments.push({
+                        type: 'speech',
+                        text: match[4],
+                        voice: dialogueNum ? `DIALOGUE${dialogueNum}` : 'CHARACTER',
+                        dialogueNum: dialogueNum,
+                        pitch: pitch,
+                        speed: speed,
+                        emotion: emotion,
+                        isDialogue: true,
+                        lineNumber
+                    });
+                }
+                
+                lastIndex = match.index + match[0].length;
+            }
+            
+            // Add remaining text (excluding any leftover tags)
+            if (lastIndex < text.length) {
+                let remaining = text.substring(lastIndex).trim();
+                // Remove any residual tags
+                remaining = remaining.replace(/\[[^\]]+\]/g, '').trim();
+                if (remaining) {
+                    segments.push({
+                        type: 'speech',
+                        text: remaining,
+                        voice: section,
+                        isDialogue: false,
+                        lineNumber
+                    });
+                }
+            }
+            
+            // If no matches found, check if whole text is speakable (not just tags)
+            if (segments.length === 0) {
+                let cleanText = text.replace(/\[[^\]]+\]/g, '').trim();
+                if (cleanText) {
+                    segments.push({
+                        type: 'speech',
+                        text: cleanText,
+                        voice: section,
+                        isDialogue: false,
+                        lineNumber
+                    });
+                }
+            }
+            
+            return segments;
+        }
+
+        // ============ Speech Synthesis ============
+        function getVoiceForSection(section, dialogueNum) {
+            if (section.startsWith('DIALOGUE') && dialogueNum) {
+                const charSettings = characterSettings[dialogueNum];
+                return voices[charSettings.voiceIndex] || voices[0];
+            }
+            
+            let selectId;
+            switch (section) {
+                case 'TITLE': selectId = 'titleVoice'; break;
+                case 'CHARACTER': selectId = 'dialogueVoice1'; break; // Default character voice
+                case 'ENDING': selectId = 'endingVoice'; break;
+                default: selectId = 'narratorVoice';
+            }
+            
+            const select = document.getElementById(selectId);
+            if (!select) return voices[0];
+            
+            const index = parseInt(select.value);
+            return voices[index] || voices[0];
+        }
+
+        function speakText() {
+            const text = document.getElementById('storyText').value;
+            if (!text.trim()) {
+                updateStatus('Please enter some text to speak');
+                return;
+            }
+            
+            stopSpeaking();
+            
+            speechQueue = parseText(text);
+            queueIndex = 0;
+            isSpeaking = true;
+            
+            document.getElementById('speakBtn').classList.add('opacity-50');
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.getElementById('currentlyPlayingSection').classList.remove('hidden');
+            updateStatus('Speaking...');
+            
+            processQueue();
+        }
+
+        function processQueue() {
+            if (!isSpeaking || queueIndex >= speechQueue.length) {
+                finishSpeaking();
+                return;
+            }
+            
+            // Update progress bar
+            const progress = (queueIndex / speechQueue.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            const segment = speechQueue[queueIndex];
+            queueIndex++;
+            
+            // Highlight current line in preview
+            highlightCurrentLine(segment.lineNumber);
+            
+            if (segment.type === 'pause') {
+                document.getElementById('currentlyPlayingText').innerHTML = '<span class="text-gray-500">[ pause ]</span>';
+                setTimeout(() => processQueue(), segment.duration);
+            } else if (segment.type === 'speech') {
+                // Show currently speaking text
+                const displayText = segment.isDialogue ? `"${segment.text}"` : segment.text;
+                const color = segment.dialogueNum ? dialogueColors[segment.dialogueNum - 1] : '#9ca3af';
+                document.getElementById('currentlyPlayingText').innerHTML = `<span style="color: ${color}">${displayText}</span>`;
+                
+                const utterance = new SpeechSynthesisUtterance(segment.text);
+                
+                utterance.voice = getVoiceForSection(segment.voice, segment.dialogueNum);
+                
+                // Base values from global sliders
+                let rate = parseFloat(document.getElementById('rateSlider').value);
+                let pitch = parseFloat(document.getElementById('pitchSlider').value);
+                utterance.volume = parseFloat(document.getElementById('volumeSlider').value);
+                
+                // Apply character-specific settings for dialogue
+                if (segment.dialogueNum) {
+                    const charSettings = characterSettings[segment.dialogueNum];
+                    pitch *= charSettings.pitch;
+                    rate *= charSettings.speed;
+                }
+                
+                // Apply emotion preset if set
+                if (segment.emotion && emotionPresets[segment.emotion]) {
+                    const preset = emotionPresets[segment.emotion];
+                    pitch *= preset.pitch;
+                    rate *= preset.speed;
+                }
+                
+                // Apply per-dialogue pitch/speed overrides
+                if (segment.pitch) {
+                    pitch = segment.pitch;
+                }
+                if (segment.speed) {
+                    rate = segment.speed;
+                }
+                
+                // Clamp values to valid ranges
+                utterance.pitch = Math.max(0.1, Math.min(2, pitch));
+                utterance.rate = Math.max(0.1, Math.min(2.5, rate));
+                
+                // Add micro-variation for realism
+                utterance.pitch += (Math.random() - 0.5) * 0.05;
+                utterance.rate += (Math.random() - 0.5) * 0.03;
+                
+                utterance.onend = () => {
+                    setTimeout(() => processQueue(), 200);
+                };
+                
+                utterance.onerror = (e) => {
+                    console.error('Speech error:', e);
+                    processQueue();
+                };
+                
+                currentUtterance = utterance;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function highlightCurrentLine(lineNumber) {
+            // This updates the live preview to show current line
+            updateLivePreview(lineNumber);
+        }
+
+        function finishSpeaking() {
+            isSpeaking = false;
+            document.getElementById('speakBtn').classList.remove('opacity-50');
+            document.getElementById('progressBar').style.width = '100%';
+            
+            setTimeout(() => {
+                document.getElementById('progressContainer').classList.add('hidden');
+                document.getElementById('progressBar').style.width = '0%';
+            }, 500);
+            
+            document.getElementById('currentlyPlayingSection').classList.add('hidden');
+            updateStatus('Finished speaking');
+            
+            if (isRecording) {
+                setTimeout(() => {
+                    stopRecording();
+                }, 500);
+            }
+        }
+
+        function stopSpeaking() {
+            isSpeaking = false;
+            speechSynthesis.cancel();
+            speechQueue = [];
+            queueIndex = 0;
+            document.getElementById('speakBtn').classList.remove('opacity-50');
+            document.getElementById('progressContainer').classList.add('hidden');
+            document.getElementById('currentlyPlayingSection').classList.add('hidden');
+            updateStatus('Stopped');
+        }
+
+        // ============ Recording ============
+        async function startRecording() {
+            try {
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                const audioTracks = displayStream.getAudioTracks();
+                if (audioTracks.length === 0) {
+                    updateStatus('⚠️ No audio captured. Share "Tab Audio" or "System Audio"');
+                    displayStream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+                
+                displayStream.getVideoTracks().forEach(track => track.stop());
+                
+                const audioStream = new MediaStream(audioTracks);
+                
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(audioStream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = url;
+                    downloadLink.download = `narration_${Date.now()}.webm`;
+                    
+                    document.getElementById('downloadSection').classList.remove('hidden');
+                    updateStatus('Recording saved! Click download to save.');
+                };
+                
+                mediaRecorder.start(100);
+                isRecording = true;
+                recordingStartTime = Date.now();
+                
+                document.getElementById('recordingIndicator').classList.remove('hidden');
+                document.getElementById('startRecBtn').disabled = true;
+                document.getElementById('stopRecBtn').disabled = false;
+                
+                recordingTimer = setInterval(updateRecordingTime, 1000);
+                
+                updateStatus('🔴 Recording - Click "Speak" to narrate');
+                
+            } catch (err) {
+                console.error('Recording error:', err);
+                updateStatus('Recording failed: ' + err.message);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                document.getElementById('recordingIndicator').classList.add('hidden');
+                document.getElementById('startRecBtn').disabled = false;
+                document.getElementById('stopRecBtn').disabled = true;
+                
+                clearInterval(recordingTimer);
+            }
+        }
+
+        function updateRecordingTime() {
+            if (!recordingStartTime) return;
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
+        }
+
+        // ============ Ambient Sound Generation ============
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        function createNoiseBuffer(seconds = 2) {
+            const ctx = initAudioContext();
+            const bufferSize = ctx.sampleRate * seconds;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            return buffer;
+        }
+
+        function createRainAmbient() {
+            const ctx = initAudioContext();
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = ambientVolume;
+            
+            const noiseBuffer = createNoiseBuffer(2);
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            noise.loop = true;
+            
+            const lowpass = ctx.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 800;
+            
+            const highpass = ctx.createBiquadFilter();
+            highpass.type = 'highpass';
+            highpass.frequency.value = 100;
+            
+            noise.connect(lowpass);
+            lowpass.connect(highpass);
+            highpass.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            noise.start();
+            
+            return { source: noise, gain: gainNode };
+        }
+
+        function createForestAmbient() {
+            const ctx = initAudioContext();
+            const masterGain = ctx.createGain();
+            masterGain.gain.value = ambientVolume;
+            
+            const noiseBuffer = createNoiseBuffer(3);
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            noise.loop = true;
+            
+            const bandpass = ctx.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.value = 400;
+            bandpass.Q.value = 0.5;
+            
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.value = 0.3;
+            
+            noise.connect(bandpass);
+            bandpass.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            const birdOsc = ctx.createOscillator();
+            birdOsc.type = 'sine';
+            birdOsc.frequency.value = 2000;
+            
+            const birdGain = ctx.createGain();
+            birdGain.gain.value = 0;
+            
+            const lfo = ctx.createOscillator();
+            lfo.frequency.value = 0.3;
+            const lfoGain = ctx.createGain();
+            lfoGain.gain.value = 0.05;
+            
+            lfo.connect(lfoGain);
+            lfoGain.connect(birdGain.gain);
+            
+            birdOsc.connect(birdGain);
+            birdGain.connect(masterGain);
+            
+            masterGain.connect(ctx.destination);
+            
+            noise.start();
+            birdOsc.start();
+            lfo.start();
+            
+            return { 
+                source: noise, 
+                gain: masterGain,
+                extras: [birdOsc, lfo]
+            };
+        }
+
+        function createHorrorAmbient() {
+            const ctx = initAudioContext();
+            const masterGain = ctx.createGain();
+            masterGain.gain.value = ambientVolume;
+            
+            const drone = ctx.createOscillator();
+            drone.type = 'sawtooth';
+            drone.frequency.value = 55;
+            
+            const droneGain = ctx.createGain();
+            droneGain.gain.value = 0.15;
+            
+            const droneLowpass = ctx.createBiquadFilter();
+            droneLowpass.type = 'lowpass';
+            droneLowpass.frequency.value = 200;
+            
+            drone.connect(droneLowpass);
+            droneLowpass.connect(droneGain);
+            droneGain.connect(masterGain);
+            
+            const eerieOsc = ctx.createOscillator();
+            eerieOsc.type = 'sine';
+            eerieOsc.frequency.value = 440;
+            
+            const eerieGain = ctx.createGain();
+            eerieGain.gain.value = 0.02;
+            
+            const vibrato = ctx.createOscillator();
+            vibrato.frequency.value = 0.1;
+            const vibratoGain = ctx.createGain();
+            vibratoGain.gain.value = 10;
+            
+            vibrato.connect(vibratoGain);
+            vibratoGain.connect(eerieOsc.frequency);
+            
+            eerieOsc.connect(eerieGain);
+            eerieGain.connect(masterGain);
+            
+            const noiseBuffer = createNoiseBuffer(2);
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            noise.loop = true;
+            
+            const noiseBandpass = ctx.createBiquadFilter();
+            noiseBandpass.type = 'bandpass';
+            noiseBandpass.frequency.value = 1000;
+            noiseBandpass.Q.value = 5;
+            
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.value = 0.05;
+            
+            noise.connect(noiseBandpass);
+            noiseBandpass.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            masterGain.connect(ctx.destination);
+            
+            drone.start();
+            eerieOsc.start();
+            vibrato.start();
+            noise.start();
+            
+            return {
+                source: drone,
+                gain: masterGain,
+                extras: [eerieOsc, vibrato, noise]
+            };
+        }
+
+        function toggleAmbient(type) {
+            initAudioContext();
+            
+            if (activeAmbient) {
+                if (ambientNodes[activeAmbient]) {
+                    try {
+                        ambientNodes[activeAmbient].source.stop();
+                        if (ambientNodes[activeAmbient].extras) {
+                            ambientNodes[activeAmbient].extras.forEach(e => {
+                                try { e.stop(); } catch(ex) {}
+                            });
+                        }
+                    } catch(e) {}
+                    delete ambientNodes[activeAmbient];
+                }
+                document.getElementById(`${activeAmbient}Btn`).classList.remove('active');
+                
+                if (activeAmbient === type) {
+                    activeAmbient = null;
+                    updateStatus('Ambient sound stopped');
+                    return;
+                }
+            }
+            
+            let nodes;
+            switch (type) {
+                case 'rain': nodes = createRainAmbient(); break;
+                case 'forest': nodes = createForestAmbient(); break;
+                case 'horror': nodes = createHorrorAmbient(); break;
+            }
+            
+            ambientNodes[type] = nodes;
+            activeAmbient = type;
+            document.getElementById(`${type}Btn`).classList.add('active');
+            updateStatus(`Playing ${type} ambient`);
+        }
+
+        function updateAmbientVolume() {
+            ambientVolume = parseFloat(document.getElementById('ambientVolSlider').value);
+            document.getElementById('ambientVolValue').textContent = Math.round(ambientVolume * 100);
+            
+            if (activeAmbient && ambientNodes[activeAmbient]) {
+                ambientNodes[activeAmbient].gain.gain.value = ambientVolume;
+            }
+        }
+
+        // ============ UI Helpers ============
+        function updateSliderValue(type) {
+            const slider = document.getElementById(`${type}Slider`);
+            const valueSpan = document.getElementById(`${type}Value`);
+            
+            if (type === 'volume') {
+                valueSpan.textContent = Math.round(slider.value * 100);
+            } else {
+                valueSpan.textContent = slider.value;
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        function clearText() {
+            document.getElementById('storyText').value = '';
+            stopSpeaking();
+            onTextChange();
+        }
+
+        function insertSnippet(snippet) {
+            const textarea = document.getElementById('storyText');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            textarea.value = text.substring(0, start) + snippet + text.substring(end);
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + snippet.length;
+            onTextChange();
+        }
+
+        function updateLineNumber() {
+            const textarea = document.getElementById('storyText');
+            const text = textarea.value.substring(0, textarea.selectionStart);
+            const lineNumber = text.split('\n').length;
+            document.getElementById('currentLineNum').textContent = lineNumber;
+        }
+
+        function onTextChange() {
+            const text = document.getElementById('storyText').value;
+            document.getElementById('charCount').textContent = text.length;
+            
+            // Update live preview and analysis
+            updateLivePreview();
+            updateAnalysis();
+        }
+
+        // ============ Tab Management ============
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+            
+            document.getElementById('editorPanel').classList.add('hidden');
+            document.getElementById('previewPanel').classList.add('hidden');
+            document.getElementById('analysisPanel').classList.add('hidden');
+            
+            document.getElementById(`${tab}Panel`).classList.remove('hidden');
+            
+            if (tab === 'preview') {
+                updateLivePreview();
+            } else if (tab === 'analysis') {
+                updateAnalysis();
+            }
+        }
+
+        function toggleSyntaxHelp() {
+            const content = document.getElementById('syntaxHelpContent');
+            const arrow = document.getElementById('syntaxHelpArrow');
+            content.classList.toggle('open');
+            arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+        }
+
+        // ============ Live Preview ============
+        function updateLivePreview(highlightLine = null) {
+            const text = document.getElementById('storyText').value;
+            const previewDiv = document.getElementById('livePreview');
+            
+            if (!text.trim()) {
+                previewDiv.innerHTML = '<p class="text-gray-500 italic">Start typing to see live preview...</p>';
+                return;
+            }
+            
+            const lines = text.split('\n');
+            let html = '';
+            let currentDialogue = null;
+            
+            lines.forEach((line, index) => {
+                const lineNum = index + 1;
+                const trimmed = line.trim();
+                const isHighlighted = highlightLine === lineNum;
+                const highlightClass = isHighlighted ? 'current-line' : '';
+                
+                // Section markers
+                if (trimmed === '[TITLE]' || trimmed === '[STORY]' || trimmed === '[ENDING]') {
+                    html += `<div class="text-purple-400 font-bold ${highlightClass}">${escapeHtml(trimmed)}</div>`;
+                    currentDialogue = null;
+                }
+                // Standalone dialogue markers
+                else if (trimmed.match(/^\[dialogue(\d+)\]$/i)) {
+                    const match = trimmed.match(/^\[dialogue(\d+)\]$/i);
+                    currentDialogue = parseInt(match[1]);
+                    const color = dialogueColors[(currentDialogue - 1) % 10];
+                    html += `<div class="${highlightClass}" style="color: ${color}">${escapeHtml(trimmed)}</div>`;
+                }
+                // Standalone Pitch/Speed/Emotion modifiers
+                else if (trimmed.match(/^\[(pitch|speed|emotion)[:\-][^\]]+\]$/i)) {
+                    html += `<div class="text-cyan-400 ${highlightClass}">${escapeHtml(trimmed)}</div>`;
+                }
+                // Standalone Pause
+                else if (trimmed.match(/^\[pause[:\-]\d/i)) {
+                    html += `<div class="text-yellow-400 ${highlightClass}">${escapeHtml(trimmed)}</div>`;
+                }
+                // Empty line
+                else if (trimmed === '') {
+                    html += `<div class="h-4 ${highlightClass}"></div>`;
+                }
+                // Inline tags with dialogue (e.g., [dialogue2][pitch:1.0] "text")
+                else if (trimmed.match(/\[dialogue\d+\]/i) && trimmed.includes('"')) {
+                    const dialogueMatch = trimmed.match(/\[dialogue(\d+)\]/i);
+                    if (dialogueMatch) {
+                        currentDialogue = parseInt(dialogueMatch[1]);
+                    }
+                    const color = currentDialogue ? dialogueColors[(currentDialogue - 1) % 10] : '#60a5fa';
+                    // Highlight tags and dialogue differently
+                    let formatted = escapeHtml(trimmed);
+                    // Color the tags cyan
+                    formatted = formatted.replace(/\[([^\]]+)\]/g, '<span class="text-cyan-400">[$1]</span>');
+                    // Color the quoted text
+                    formatted = formatted.replace(/(&quot;|"|")([^"&]+)(&quot;|"|")/g, `<span style="color: ${color}">"$2"</span>`);
+                    html += `<div class="${highlightClass}">${formatted}</div>`;
+                }
+                // Simple dialogue text
+                else if ((trimmed.startsWith('"') || trimmed.startsWith('"')) && (trimmed.endsWith('"') || trimmed.endsWith('"'))) {
+                    const color = currentDialogue ? dialogueColors[(currentDialogue - 1) % 10] : '#60a5fa';
+                    html += `<div class="${highlightClass}" style="color: ${color}">${escapeHtml(line)}</div>`;
+                }
+                // Line with tags but no quotes (narration with inline modifiers)
+                else if (trimmed.match(/\[(dialogue|pitch|speed|emotion)[:\-]/i)) {
+                    let formatted = escapeHtml(trimmed);
+                    formatted = formatted.replace(/\[([^\]]+)\]/g, '<span class="text-cyan-400">[$1]</span>');
+                    html += `<div class="text-gray-300 ${highlightClass}">${formatted}</div>`;
+                }
+                // Regular text
+                else {
+                    html += `<div class="text-gray-300 ${highlightClass}">${escapeHtml(line) || '&nbsp;'}</div>`;
+                }
+            });
+            
+            previewDiv.innerHTML = html;
+        }
+        
+        // Helper to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============ Analysis ============
+        function updateAnalysis() {
+            const text = document.getElementById('storyText').value;
+            const segments = parseText(text);
+            
+            // Estimate duration
+            let totalDuration = 0;
+            const dialogueUsage = {};
+            const warnings = [];
+            
+            segments.forEach(seg => {
+                if (seg.type === 'pause') {
+                    totalDuration += seg.duration;
+                } else if (seg.type === 'speech') {
+                    // Rough estimate: 150 words per minute average
+                    const words = seg.text.split(/\s+/).length;
+                    const baseSpeed = parseFloat(document.getElementById('rateSlider').value);
+                    const speed = seg.speed || baseSpeed;
+                    totalDuration += (words / (150 * speed)) * 60 * 1000;
+                    
+                    // Track dialogue usage
+                    if (seg.dialogueNum) {
+                        dialogueUsage[seg.dialogueNum] = (dialogueUsage[seg.dialogueNum] || 0) + 1;
+                    }
+                }
+            });
+            
+            // Update duration display
+            const mins = Math.floor(totalDuration / 60000);
+            const secs = Math.floor((totalDuration % 60000) / 1000);
+            document.getElementById('estimatedDuration').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            // Update dialogue summary
+            const dialogueSummaryDiv = document.getElementById('dialogueSummary');
+            if (Object.keys(dialogueUsage).length === 0) {
+                dialogueSummaryDiv.innerHTML = '<span class="text-gray-500">No dialogues detected</span>';
+            } else {
+                let summaryHtml = '';
+                for (const [num, count] of Object.entries(dialogueUsage)) {
+                    const color = dialogueColors[(parseInt(num) - 1) % 10];
+                    summaryHtml += `<div style="color: ${color}">Character ${num}: ${count} line${count > 1 ? 's' : ''}</div>`;
+                }
+                dialogueSummaryDiv.innerHTML = summaryHtml;
+            }
+            
+            // Check for syntax warnings
+            const lines = text.split('\n');
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+                
+                // Check for invalid pitch values (both standalone and inline)
+                const pitchMatches = trimmed.matchAll(/\[pitch[:\-](\d+\.?\d*)\]/gi);
+                for (const pitchMatch of pitchMatches) {
+                    const val = parseFloat(pitchMatch[1]);
+                    if (val < 0.5 || val > 2) {
+                        warnings.push(`Line ${index + 1}: Pitch ${val} outside range (0.5-2.0)`);
+                    }
+                }
+                
+                // Check for invalid speed values (both standalone and inline)
+                const speedMatches = trimmed.matchAll(/\[speed[:\-](\d+\.?\d*)x?\]/gi);
+                for (const speedMatch of speedMatches) {
+                    const val = parseFloat(speedMatch[1]);
+                    if (val < 0.5 || val > 2.5) {
+                        warnings.push(`Line ${index + 1}: Speed ${val} outside range (0.5-2.5)`);
+                    }
+                }
+                
+                // Check for invalid dialogue numbers (both standalone and inline)
+                const dialogueMatches = trimmed.matchAll(/\[dialogue(\d+)\]/gi);
+                for (const dialogueMatch of dialogueMatches) {
+                    const num = parseInt(dialogueMatch[1]);
+                    if (num < 1 || num > 10) {
+                        warnings.push(`Line ${index + 1}: Dialogue ${num} invalid (use 1-10)`);
+                    }
+                }
+                
+                // Check for unknown emotions (both standalone and inline)
+                const emotionMatches = trimmed.matchAll(/\[emotion[:\-](\w+)\]/gi);
+                for (const emotionMatch of emotionMatches) {
+                    const emotion = emotionMatch[1].toLowerCase();
+                    if (!emotionPresets[emotion]) {
+                        warnings.push(`Line ${index + 1}: Unknown emotion "${emotion}"`);
+                    }
+                }
+            });
+            
+            const warningsDiv = document.getElementById('syntaxWarnings');
+            if (warnings.length === 0) {
+                warningsDiv.innerHTML = '<span class="text-green-400">✓ No issues found</span>';
+            } else {
+                warningsDiv.innerHTML = warnings.map(w => `<div class="text-amber-400">⚠ ${w}</div>`).join('');
+            }
+        }
+
+        // ============ Export ============
+        function exportScript() {
+            const text = document.getElementById('storyText').value;
+            const segments = parseText(text);
+            
+            const exportData = {
+                version: '2.0',
+                timestamp: new Date().toISOString(),
+                rawScript: text,
+                parsedSegments: segments,
+                settings: {
+                    globalSpeed: parseFloat(document.getElementById('rateSlider').value),
+                    globalPitch: parseFloat(document.getElementById('pitchSlider').value),
+                    globalVolume: parseFloat(document.getElementById('volumeSlider').value),
+                    characterSettings: characterSettings
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `narrator_script_${Date.now()}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            updateStatus('Script exported as JSON');
+        }
+
+        // ============ Initialization ============
+        window.addEventListener('DOMContentLoaded', () => {
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+            loadVoices();
+            
+            updateSliderValue('rate');
+            updateSliderValue('pitch');
+            updateSliderValue('volume');a
+            
+            onTextChange();
+            
+            updateStatus('Ready - Enter text and click Speak');
+        });
+
+        // Chrome bug workaround
+        setInterval(() => {
+            if (isSpeaking) {
+                speechSynthesis.pause();
+                speechSynthesis.resume();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Crush - Real Mechanics</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-glass: rgba(255, 255, 255, 0.15);
+            --candy-size: 65px;
+        }
+
+        body {
+            background: #2c3e50 url('https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/bg.png') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stats-bar {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            gap: 40px;
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-item span { display: block; font-size: 10px; text-transform: uppercase; opacity: 0.8; }
+        .stat-item b { font-size: 20px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, var(--candy-size));
+            grid-template-rows: repeat(8, var(--candy-size));
+            background: var(--bg-glass);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 5px solid rgba(255,255,255,0.1);
+            gap: 2px;
+        }
+
+        .grid div {
+            width: var(--candy-size);
+            height: var(--candy-size);
+            background-size: 85%;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Match Animation */
+        .match-effect {
+            animation: popOut 0.3s forwards;
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Hint Animation */
+        .hint-pulse {
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        @keyframes pulseHint {
+            from { transform: scale(0.85); opacity: 0.7; }
+            to { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Mode Overlay */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+        }
+
+        .btn {
+            background: #2ecc71;
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+
+        .btn:hover { background: #27ae60; transform: scale(1.05); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1 style="font-size: 50px; margin-bottom: 10px;">CANDY CRUSH</h1>
+        <p id="highScoreText">BEST SCORE: 0</p>
+        <button class="btn" onclick="startGame('endless')">ENDLESS MODE</button>
+        <button class="btn" style="background:#3498db" onclick="startGame('timed')">TIMED MODE (2:00)</button>
+    </div>
+
+    <div class="game-wrapper hidden" id="gameArea">
+        <div class="stats-bar">
+            <div class="stat-item"><span>Score</span><b id="score">0</b></div>
+            <div class="stat-item"><span>Timer</span><b id="timer">--</b></div>
+            <div class="stat-item"><button onclick="location.reload()" style="background:none; border:1px solid white; color:white; cursor:pointer; border-radius:4px;">Menu</button></div>
+        </div>
+        <div class="grid"></div>
+    </div>
+
+    <audio id="swapSound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <audio id="matchSound" src="https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3"></audio>
+
+    <script>
+        const width = 8;
+        const candyColors = [
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/red-candy.png)",
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/blue-candy.png)",
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/green-candy.png)",
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/yellow-candy.png)",
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/orange-candy.png)",
+            "url(https://raw.githubusercontent.com/arpit456jain/Amazing-Js-Projects/master/Candy%20Crush/utils/purple-candy.png)",
+        ];
+
+        let squares = [];
+        let score = 0;
+        let idDragged, idReplaced, colorDragged, colorReplaced;
+        let hintTimeout;
+
+        // Initialization
+        const highScore = localStorage.getItem('candyCrushHigh') || 0;
+        document.getElementById('highScoreText').innerText = `BEST SCORE: ${highScore}`;
+
+        function startGame(mode) {
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            const grid = document.querySelector('.grid');
+
+            for (let i = 0; i < width * width; i++) {
+                const square = document.createElement('div');
+                square.setAttribute('draggable', true);
+                square.setAttribute('id', i);
+                square.style.backgroundImage = candyColors[Math.floor(Math.random() * candyColors.length)];
+                grid.appendChild(square);
+                squares.push(square);
+            }
+
+            // Clean start: ensure no matches exist at the beginning
+            clearInitialMatches();
+
+            squares.forEach(sq => {
+                sq.addEventListener('dragstart', dragStart);
+                sq.addEventListener('dragend', dragEnd);
+                sq.addEventListener('dragover', e => e.preventDefault());
+                sq.addEventListener('drop', dragDrop);
+            });
+
+            if (mode === 'timed') startTimer(120);
+            resetHintTimer();
+            setInterval(gameLogic, 100);
+        }
+
+        function dragStart() {
+            colorDragged = this.style.backgroundImage;
+            idDragged = parseInt(this.id);
+            clearHint();
+        }
+
+        function dragDrop() {
+            colorReplaced = this.style.backgroundImage;
+            idReplaced = parseInt(this.id);
+        }
+
+        function dragEnd() {
+            let validMoves = [idDragged - 1, idDragged + 1, idDragged - width, idDragged + width];
+            
+            if (idReplaced !== undefined && validMoves.includes(idReplaced)) {
+                // Perform temporary swap
+                squares[idReplaced].style.backgroundImage = colorDragged;
+                squares[idDragged].style.backgroundImage = colorReplaced;
+
+                // Check if this swap creates a match
+                if (!checkPossibleMatch()) {
+                    // NO MATCH: REAL CRUSH LOGIC - Revert back
+                    setTimeout(() => {
+                        squares[idReplaced].style.backgroundImage = colorReplaced;
+                        squares[idDragged].style.backgroundImage = colorDragged;
+                    }, 300);
+                } else {
+                    // MATCH SUCCESS
+                    document.getElementById('swapSound').play();
+                }
+            }
+            idReplaced = undefined;
+            resetHintTimer();
+        }
+
+        function checkPossibleMatch() {
+            let hasMatch = false;
+            // Horizontal check
+            for (let i = 0; i < 64; i++) {
+                if (i % width < 6) {
+                    let r3 = [i, i+1, i+2];
+                    if (r3.every(idx => squares[idx].style.backgroundImage === squares[i].style.backgroundImage)) hasMatch = true;
+                }
+                if (i < 48) {
+                    let c3 = [i, i+width, i+width*2];
+                    if (c3.every(idx => squares[idx].style.backgroundImage === squares[i].style.backgroundImage)) hasMatch = true;
+                }
+            }
+            return hasMatch;
+        }
+
+        function gameLogic() {
+            checkMatches();
+            moveDown();
+        }
+
+        function checkMatches() {
+            for (let i = 0; i < 64; i++) {
+                let color = squares[i].style.backgroundImage;
+                if (!color) continue;
+
+                // Check Row of 3
+                if (i % width < 6) {
+                    let row = [i, i+1, i+2];
+                    if (row.every(idx => squares[idx].style.backgroundImage === color)) {
+                        triggerMatch(row);
+                    }
+                }
+                // Check Col of 3
+                if (i < 48) {
+                    let col = [i, i+width, i+width*2];
+                    if (col.every(idx => squares[idx].style.backgroundImage === color)) {
+                        triggerMatch(col);
+                    }
+                }
+            }
+        }
+
+        function triggerMatch(arr) {
+            score += arr.length;
+            document.getElementById('score').innerText = score;
+            document.getElementById('matchSound').play();
+            arr.forEach(idx => {
+                squares[idx].classList.add('match-effect');
+                setTimeout(() => {
+                    squares[idx].style.backgroundImage = '';
+                    squares[idx].classList.remove('match-effect');
+                }, 300);
+            });
+            if(score > highScore) localStorage.setItem('candyCrushHigh', score);
+            resetHintTimer();
+        }
+
+        function moveDown() {
+            for (let i = 0; i < 56; i++) {
+                if (squares[i + width].style.backgroundImage === "") {
+                    squares[i + width].style.backgroundImage = squares[i].style.backgroundImage;
+                    squares[i].style.backgroundImage = "";
+                }
+            }
+            // Spawn new candies at top
+            for (let i = 0; i < 8; i++) {
+                if (squares[i].style.backgroundImage === "") {
+                    squares[i].style.backgroundImage = candyColors[Math.floor(Math.random() * candyColors.length)];
+                }
+            }
+        }
+
+        // QOL: Clear matches that appear on generate
+        function clearInitialMatches() {
+            while(checkPossibleMatch()) {
+                squares.forEach(sq => {
+                    sq.style.backgroundImage = candyColors[Math.floor(Math.random() * candyColors.length)];
+                });
+            }
+        }
+
+        // QOL: Hint Logic
+        function resetHintTimer() {
+            clearHint();
+            hintTimeout = setTimeout(showHint, 5000); // 5 seconds of inactivity
+        }
+
+        function showHint() {
+            // Find a random square and pulse it
+            let randomIdx = Math.floor(Math.random() * 64);
+            squares[randomIdx].classList.add('hint-pulse');
+        }
+
+        function clearHint() {
+            clearTimeout(hintTimeout);
+            squares.forEach(sq => sq.classList.remove('hint-pulse'));
+        }
+
+        function startTimer(seconds) {
+            let time = seconds;
+            const timerEl = document.getElementById('timer');
+            const tInt = setInterval(() => {
+                time--;
+                let mins = Math.floor(time/60);
+                let secs = time % 60;
+                timerEl.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                if (time <= 0) {
+                    clearInterval(tInt);
+                    alert("TIME UP! Score: " + score);
+                    location.reload();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

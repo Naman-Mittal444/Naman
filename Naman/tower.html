@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tower Blocks 3D+ — Enhanced</title>
+    <link rel="icon" href="https://i.ibb.co/M6KTWnf/pic.jpg" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://codepen.io/steveg3003/pen/zBVakw"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
+    <style>
+      :root {
+        --glass: rgba(255, 255, 255, 0.16);
+        --glass-strong: rgba(255, 255, 255, 0.25);
+        --outline: rgba(255, 255, 255, 0.35);
+        --accent: #a78bfa;
+        --accent-2: #22d3ee;
+        --accent-3: #34d399;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        font-family: "Comfortaa", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at 20% 20%, #141b2b, #0b0f17 60%);
+      }
+      #container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        isolation: isolate;
+      }
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+      #score {
+        position: absolute;
+        top: 18px;
+        width: 100%;
+        text-align: center;
+        font-size: min(10vh, 84px);
+        color: #e2e8f0;
+        letter-spacing: 0.08em;
+        text-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+        transform: translateY(-200px) scale(1);
+        transition: transform 0.5s ease;
+      }
+      .hud {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto 1fr auto;
+        padding: 20px;
+        gap: 16px;
+        z-index: 5;
+      }
+      .hud-card {
+        pointer-events: auto;
+        backdrop-filter: blur(18px);
+        background: var(--glass);
+        border: 1px solid var(--outline);
+        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+      }
+      .hud-left {
+        grid-column: 1 / 2;
+        align-self: start;
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(320px, 90vw);
+      }
+      .hud-right {
+        grid-column: 2 / 3;
+        align-self: start;
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: min(320px, 92vw);
+      }
+      .hud-bottom {
+        grid-column: 1 / 3;
+        align-self: end;
+        justify-self: center;
+        padding: 10px 20px;
+        color: #cbd5f5;
+        font-size: 0.9rem;
+        letter-spacing: 0.06em;
+      }
+      .badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: linear-gradient(120deg, rgba(167, 139, 250, 0.3), rgba(34, 211, 238, 0.2));
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #e0f2fe;
+        width: fit-content;
+      }
+      .stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.95rem;
+        color: #e2e8f0;
+      }
+      .stat span {
+        font-weight: 600;
+        color: #f8fafc;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #f8fafc;
+        font-size: 0.9rem;
+      }
+      .toggle input {
+        appearance: none;
+        width: 42px;
+        height: 24px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        position: relative;
+        transition: all 0.25s ease;
+        cursor: pointer;
+      }
+      .toggle input::after {
+        content: "";
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: white;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: all 0.25s ease;
+      }
+      .toggle input:checked {
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        border-color: rgba(167, 139, 250, 0.6);
+      }
+      .toggle input:checked::after {
+        transform: translateX(18px);
+      }
+      .pill-button {
+        pointer-events: auto;
+        border-radius: 999px;
+        padding: 10px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(120deg, rgba(34, 211, 238, 0.25), rgba(167, 139, 250, 0.35));
+        color: #e0f2fe;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.8rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 18px 30px rgba(15, 23, 42, 0.4);
+      }
+      .pill-button:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 24px 40px rgba(15, 23, 42, 0.45);
+      }
+      .meter {
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.3);
+        overflow: hidden;
+      }
+      .meter span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(120deg, var(--accent-3), var(--accent));
+        width: 0;
+        transition: width 0.25s ease;
+      }
+      #instructions {
+        position: absolute;
+        width: 100%;
+        top: 16vh;
+        left: 0;
+        text-align: center;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        opacity: 0;
+        color: #e2e8f0;
+        text-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+        letter-spacing: 0.08em;
+      }
+      #instructions.hide {
+        opacity: 0 !important;
+      }
+      .game-over,
+      .game-ready {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 85%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .game-over * {
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        opacity: 0;
+        transform: translateY(-50px);
+        color: #e2e8f0;
+        text-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+      }
+      .game-over h2 {
+        margin: 0;
+        padding: 0;
+        font-size: 40px;
+      }
+      .game-ready #start-button {
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        opacity: 0;
+        transform: translateY(-50px);
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        padding: 12px 26px;
+        background: linear-gradient(120deg, rgba(167, 139, 250, 0.4), rgba(34, 211, 238, 0.35));
+        color: #e2e8f0;
+        font-size: 28px;
+        border-radius: 16px;
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+      }
+      #container.playing #score,
+      #container.resetting #score {
+        transform: translateY(0) scale(1);
+      }
+      #container.playing #instructions {
+        opacity: 1;
+      }
+      #container.ready .game-ready #start-button {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      #container.ended #score {
+        transform: translateY(6vh) scale(1.5);
+      }
+      #container.ended .game-over * {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #container.ended .game-over p {
+        transition-delay: 0.3s;
+      }
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 12px;
+        font-size: 0.78rem;
+        color: rgba(226, 232, 240, 0.78);
+      }
+      footer {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(226, 232, 240, 0.6);
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        z-index: 6;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container" class="ready">
+      <div id="game"></div>
+      <div id="score">0</div>
+      <div id="instructions">Tap, click, or press Space to drop a block</div>
+      <div class="game-over">
+        <h2>Game Over</h2>
+        <p>Nice stack! Beat your streak.</p>
+        <p>Click or Space to restart.</p>
+      </div>
+      <div class="game-ready">
+        <div id="start-button">Start</div>
+      </div>
+      <div class="hud" id="hud">
+        <div class="hud-card hud-left">
+          <div class="badge">Tower Controls</div>
+          <div class="stat">Speed <span id="speed-value">1.0x</span></div>
+          <input id="speed" type="range" min="0.6" max="2.2" value="1" step="0.1" />
+          <div class="meter"><span id="speed-meter"></span></div>
+          <div class="stat">Combo <span id="combo">0</span></div>
+          <div class="stat">Perfect Drops <span id="perfects">0</span></div>
+          <button id="boost" class="pill-button">Speed Burst</button>
+        </div>
+        <div class="hud-card hud-right">
+          <div class="badge">Cheats & FX</div>
+          <label class="toggle"><span>Auto Place</span><input id="auto-place" type="checkbox" /></label>
+          <label class="toggle"><span>Magnet Align</span><input id="magnet" type="checkbox" /></label>
+          <label class="toggle"><span>Slow Motion</span><input id="slowmo" type="checkbox" /></label>
+          <label class="toggle"><span>Particles</span><input id="particles" type="checkbox" checked /></label>
+          <label class="toggle"><span>Sound FX</span><input id="sound" type="checkbox" checked /></label>
+          <label class="toggle"><span>Neon Glow</span><input id="neon" type="checkbox" checked /></label>
+          <div class="legend">
+            <span>Space = Drop</span>
+            <span>Shift = Burst</span>
+            <span>R = Restart</span>
+            <span>P = Pause</span>
+          </div>
+        </div>
+        <div class="hud-card hud-bottom">Stack higher • Perfect streaks boost score • Cheats are toggleable</div>
+      </div>
+    </div>
+    <footer>Project By -: Naman Mittal • Enhanced UI/UX</footer>
+
+    <script>
+      console.clear();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const soundSettings = { enabled: true };
+      function playTone(freq = 440, time = 0.15, type = "sine") {
+        if (!soundSettings.enabled) return;
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = freq;
+        gainNode.gain.value = 0.15;
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + time);
+        oscillator.stop(audioContext.currentTime + time);
+      }
+
+      class Stage {
+        constructor() {
+          this.container = document.getElementById("game");
+          this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.renderer.setClearColor("#0f172a", 1);
+          this.renderer.shadowMap.enabled = true;
+          this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          this.container.appendChild(this.renderer.domElement);
+
+          this.scene = new THREE.Scene();
+          this.scene.fog = new THREE.Fog(0x0f172a, 15, 85);
+
+          const aspect = window.innerWidth / window.innerHeight;
+          const d = 22;
+          this.camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, -100, 1000);
+          this.camera.position.set(10, 12, 10);
+          this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+          this.light = new THREE.DirectionalLight(0xffffff, 0.75);
+          this.light.position.set(20, 60, 10);
+          this.light.castShadow = true;
+          this.light.shadow.mapSize.width = 2048;
+          this.light.shadow.mapSize.height = 2048;
+          this.scene.add(this.light);
+
+          this.softLight = new THREE.AmbientLight(0x9ca3af, 0.5);
+          this.scene.add(this.softLight);
+
+          const floorGeometry = new THREE.BoxGeometry(120, 2, 120);
+          const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6, metalness: 0.2 });
+          this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
+          this.floor.receiveShadow = true;
+          this.floor.position.y = -1;
+          this.scene.add(this.floor);
+
+          window.addEventListener("resize", () => this.onResize());
+          this.onResize();
+        }
+        render() {
+          this.renderer.render(this.scene, this.camera);
+        }
+        add(elem) {
+          this.scene.add(elem);
+        }
+        remove(elem) {
+          this.scene.remove(elem);
+        }
+        setCamera(y, speed = 0.3) {
+          TweenLite.to(this.camera.position, speed, { y: y + 12, ease: Power1.easeInOut });
+          TweenLite.to(this.camera.lookAt, speed, { y: y, ease: Power1.easeInOut });
+        }
+        onResize() {
+          const viewSize = 30;
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.camera.left = window.innerWidth / -viewSize;
+          this.camera.right = window.innerWidth / viewSize;
+          this.camera.top = window.innerHeight / viewSize;
+          this.camera.bottom = window.innerHeight / -viewSize;
+          this.camera.updateProjectionMatrix();
+        }
+      }
+
+      class Block {
+        constructor(block, config) {
+          this.STATES = { ACTIVE: "active", STOPPED: "stopped", MISSED: "missed" };
+          this.MOVE_AMOUNT = 12;
+          this.dimension = { width: 0, height: 0, depth: 0 };
+          this.position = { x: 0, y: 0, z: 0 };
+          this.targetBlock = block;
+          this.index = (this.targetBlock ? this.targetBlock.index : 0) + 1;
+          this.workingPlane = this.index % 2 ? "x" : "z";
+          this.workingDimension = this.index % 2 ? "width" : "depth";
+
+          this.dimension.width = this.targetBlock ? this.targetBlock.dimension.width : 10;
+          this.dimension.height = this.targetBlock ? this.targetBlock.dimension.height : 2;
+          this.dimension.depth = this.targetBlock ? this.targetBlock.dimension.depth : 10;
+
+          this.position.x = this.targetBlock ? this.targetBlock.position.x : 0;
+          this.position.y = this.dimension.height * this.index;
+          this.position.z = this.targetBlock ? this.targetBlock.position.z : 0;
+
+          this.colorOffset = this.targetBlock ? this.targetBlock.colorOffset : Math.round(Math.random() * 100);
+
+          if (!this.targetBlock) {
+            this.color = 0x0f172a;
+          } else {
+            const offset = this.index + this.colorOffset;
+            const r = Math.sin(0.3 * offset) * 55 + 200;
+            const g = Math.sin(0.3 * offset + 2) * 55 + 200;
+            const b = Math.sin(0.3 * offset + 4) * 55 + 200;
+            this.color = new THREE.Color(r / 255, g / 255, b / 255);
+          }
+
+          this.state = this.index > 1 ? this.STATES.ACTIVE : this.STATES.STOPPED;
+          this.speed = -0.1 - this.index * 0.005;
+          if (this.speed < -4) this.speed = -4;
+          this.speed *= config.speedMultiplier;
+          this.direction = this.speed;
+
+          const geometry = new THREE.BoxGeometry(this.dimension.width, this.dimension.height, this.dimension.depth);
+          geometry.applyMatrix(new THREE.Matrix4().makeTranslation(this.dimension.width / 2, this.dimension.height / 2, this.dimension.depth / 2));
+
+          this.material = new THREE.MeshToonMaterial({ color: this.color, shading: THREE.FlatShading });
+          this.mesh = new THREE.Mesh(geometry, this.material);
+          this.mesh.castShadow = true;
+          this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+
+          if (this.state == this.STATES.ACTIVE) {
+            this.position[this.workingPlane] = Math.random() > 0.5 ? -this.MOVE_AMOUNT : this.MOVE_AMOUNT;
+          }
+        }
+
+        reverseDirection() {
+          this.direction = this.direction > 0 ? this.speed : Math.abs(this.speed);
+        }
+
+        place(magnet = false) {
+          this.state = this.STATES.STOPPED;
+          let overlap = this.targetBlock.dimension[this.workingDimension] - Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]);
+          const blocksToReturn = { plane: this.workingPlane, direction: this.direction };
+
+          if (magnet && overlap < this.dimension[this.workingDimension] * 0.9) {
+            overlap = this.dimension[this.workingDimension];
+          }
+
+          if (this.dimension[this.workingDimension] - overlap < 0.3) {
+            overlap = this.dimension[this.workingDimension];
+            blocksToReturn.bonus = true;
+            this.position.x = this.targetBlock.position.x;
+            this.position.z = this.targetBlock.position.z;
+            this.dimension.width = this.targetBlock.dimension.width;
+            this.dimension.depth = this.targetBlock.dimension.depth;
+          }
+
+          if (overlap > 0) {
+            const choppedDimensions = {
+              width: this.dimension.width,
+              height: this.dimension.height,
+              depth: this.dimension.depth,
+            };
+            choppedDimensions[this.workingDimension] -= overlap;
+            this.dimension[this.workingDimension] = overlap;
+
+            const placedGeometry = new THREE.BoxGeometry(this.dimension.width, this.dimension.height, this.dimension.depth);
+            placedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(this.dimension.width / 2, this.dimension.height / 2, this.dimension.depth / 2));
+            const placedMesh = new THREE.Mesh(placedGeometry, this.material);
+            placedMesh.castShadow = true;
+            placedMesh.receiveShadow = true;
+
+            const choppedGeometry = new THREE.BoxGeometry(choppedDimensions.width, choppedDimensions.height, choppedDimensions.depth);
+            choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2, choppedDimensions.height / 2, choppedDimensions.depth / 2));
+            const choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+            choppedMesh.castShadow = true;
+
+            const choppedPosition = { x: this.position.x, y: this.position.y, z: this.position.z };
+            if (this.position[this.workingPlane] < this.targetBlock.position[this.workingPlane]) {
+              this.position[this.workingPlane] = this.targetBlock.position[this.workingPlane];
+            } else {
+              choppedPosition[this.workingPlane] += overlap;
+            }
+            placedMesh.position.set(this.position.x, this.position.y, this.position.z);
+            choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
+            blocksToReturn.placed = placedMesh;
+            if (!blocksToReturn.bonus) blocksToReturn.chopped = choppedMesh;
+          } else {
+            this.state = this.STATES.MISSED;
+          }
+          this.dimension[this.workingDimension] = overlap;
+          return blocksToReturn;
+        }
+
+        tick(speedFactor = 1) {
+          if (this.state == this.STATES.ACTIVE) {
+            const value = this.position[this.workingPlane];
+            if (value > this.MOVE_AMOUNT || value < -this.MOVE_AMOUNT) this.reverseDirection();
+            this.position[this.workingPlane] += this.direction * speedFactor;
+            this.mesh.position[this.workingPlane] = this.position[this.workingPlane];
+          }
+        }
+      }
+
+      class ParticleSystem {
+        constructor(stage) {
+          this.stage = stage;
+          this.particles = new THREE.Group();
+          this.stage.add(this.particles);
+        }
+
+        burst(position, color = 0x38bdf8) {
+          const count = 14;
+          for (let i = 0; i < count; i++) {
+            const geometry = new THREE.SphereGeometry(0.18, 6, 6);
+            const material = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.8, roughness: 0.4, metalness: 0.6 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(position.x, position.y + 0.5, position.z);
+            this.particles.add(mesh);
+            const velocity = {
+              x: (Math.random() - 0.5) * 6,
+              y: Math.random() * 6 + 4,
+              z: (Math.random() - 0.5) * 6,
+            };
+            TweenLite.to(mesh.position, 1, {
+              x: mesh.position.x + velocity.x,
+              y: mesh.position.y + velocity.y,
+              z: mesh.position.z + velocity.z,
+              ease: Power2.easeOut,
+              onComplete: () => this.particles.remove(mesh),
+            });
+            TweenLite.to(mesh.material, 1, { opacity: 0, transparent: true, ease: Power2.easeOut });
+          }
+        }
+      }
+
+      class Game {
+        constructor() {
+          this.STATES = { LOADING: "loading", PLAYING: "playing", READY: "ready", ENDED: "ended", RESETTING: "resetting", PAUSED: "paused" };
+          this.blocks = [];
+          this.state = this.STATES.LOADING;
+          this.stage = new Stage();
+          this.mainContainer = document.getElementById("container");
+          this.scoreContainer = document.getElementById("score");
+          this.instructions = document.getElementById("instructions");
+          this.speedSlider = document.getElementById("speed");
+          this.speedValue = document.getElementById("speed-value");
+          this.speedMeter = document.getElementById("speed-meter");
+          this.comboEl = document.getElementById("combo");
+          this.perfectsEl = document.getElementById("perfects");
+          this.autoPlaceToggle = document.getElementById("auto-place");
+          this.magnetToggle = document.getElementById("magnet");
+          this.slowmoToggle = document.getElementById("slowmo");
+          this.particlesToggle = document.getElementById("particles");
+          this.soundToggle = document.getElementById("sound");
+          this.neonToggle = document.getElementById("neon");
+          this.boostButton = document.getElementById("boost");
+          this.scoreContainer.innerHTML = "0";
+          this.newBlocks = new THREE.Group();
+          this.placedBlocks = new THREE.Group();
+          this.choppedBlocks = new THREE.Group();
+          this.stage.add(this.newBlocks);
+          this.stage.add(this.placedBlocks);
+          this.stage.add(this.choppedBlocks);
+          this.particles = new ParticleSystem(this.stage);
+          this.combo = 0;
+          this.perfects = 0;
+          this.autoPlace = false;
+          this.magnet = false;
+          this.slowmo = false;
+          this.neon = true;
+          this.speedMultiplier = 1;
+          this.paused = false;
+          this.hudPulse = 0;
+          this.actionLocked = false;
+          this.actionCooldown = 220;
+          this.addBlock();
+          this.tick();
+          this.updateState(this.STATES.READY);
+          this.setupEvents();
+          this.updateUI();
+        }
+
+        setupEvents() {
+          document.addEventListener("keydown", (e) => {
+            if (e.keyCode == 32) this.onAction();
+            if (e.key.toLowerCase() === "r") this.restartGame();
+            if (e.key.toLowerCase() === "p") this.togglePause();
+            if (e.key === "Shift") this.triggerBoost();
+          });
+          document.addEventListener("click", (event) => {
+            const hud = document.getElementById("hud");
+            if (hud && hud.contains(event.target)) return;
+            this.onAction();
+          });
+
+          this.speedSlider.addEventListener("input", (e) => {
+            this.speedMultiplier = parseFloat(e.target.value);
+            this.updateUI();
+          });
+          this.autoPlaceToggle.addEventListener("change", (e) => (this.autoPlace = e.target.checked));
+          this.magnetToggle.addEventListener("change", (e) => (this.magnet = e.target.checked));
+          this.slowmoToggle.addEventListener("change", (e) => (this.slowmo = e.target.checked));
+          this.particlesToggle.addEventListener("change", (e) => (this.particleFx = e.target.checked));
+          this.soundToggle.addEventListener("change", (e) => {
+            soundSettings.enabled = e.target.checked;
+          });
+          this.neonToggle.addEventListener("change", (e) => (this.neon = e.target.checked));
+          this.boostButton.addEventListener("click", () => this.triggerBoost());
+        }
+
+        updateUI() {
+          this.speedValue.textContent = `${this.speedMultiplier.toFixed(1)}x`;
+          const meterValue = ((this.speedMultiplier - 0.6) / (2.2 - 0.6)) * 100;
+          this.speedMeter.style.width = `${meterValue}%`;
+          this.comboEl.textContent = this.combo;
+          this.perfectsEl.textContent = this.perfects;
+        }
+
+        togglePause() {
+          if (this.state !== this.STATES.PLAYING) return;
+          this.paused = !this.paused;
+          this.mainContainer.classList.toggle("paused", this.paused);
+          if (this.paused) {
+            this.updateState(this.STATES.PAUSED);
+          } else {
+            this.updateState(this.STATES.PLAYING);
+          }
+        }
+
+        triggerBoost() {
+          this.speedMultiplier = Math.min(this.speedMultiplier + 0.3, 2.2);
+          this.speedSlider.value = this.speedMultiplier;
+          this.updateUI();
+          playTone(720, 0.12, "triangle");
+        }
+
+        updateState(newState) {
+          for (const key in this.STATES) this.mainContainer.classList.remove(this.STATES[key]);
+          this.mainContainer.classList.add(newState);
+          this.state = newState;
+        }
+
+        onAction() {
+          if (this.paused) return;
+          if (this.actionLocked) return;
+          this.actionLocked = true;
+          setTimeout(() => {
+            this.actionLocked = false;
+          }, this.actionCooldown);
+          switch (this.state) {
+            case this.STATES.READY:
+              this.startGame();
+              break;
+            case this.STATES.PLAYING:
+              this.placeBlock();
+              break;
+            case this.STATES.ENDED:
+              this.restartGame();
+              break;
+          }
+        }
+
+        startGame() {
+          if (this.state != this.STATES.PLAYING) {
+            this.combo = 0;
+            this.perfects = 0;
+            this.scoreContainer.innerHTML = "0";
+            this.updateState(this.STATES.PLAYING);
+            this.addBlock();
+          }
+        }
+
+        restartGame() {
+          if (this.state === this.STATES.RESETTING) return;
+          this.updateState(this.STATES.RESETTING);
+          const oldBlocks = this.placedBlocks.children;
+          const removeSpeed = 0.2;
+          const delayAmount = 0.02;
+          for (let i = 0; i < oldBlocks.length; i++) {
+            TweenLite.to(oldBlocks[i].scale, removeSpeed, {
+              x: 0,
+              y: 0,
+              z: 0,
+              delay: (oldBlocks.length - i) * delayAmount,
+              ease: Power1.easeIn,
+              onComplete: () => this.placedBlocks.remove(oldBlocks[i]),
+            });
+            TweenLite.to(oldBlocks[i].rotation, removeSpeed, {
+              y: 0.5,
+              delay: (oldBlocks.length - i) * delayAmount,
+              ease: Power1.easeIn,
+            });
+          }
+          const cameraMoveSpeed = removeSpeed * 2 + oldBlocks.length * delayAmount;
+          this.stage.setCamera(2, cameraMoveSpeed);
+          const countdown = { value: this.blocks.length - 1 };
+          TweenLite.to(countdown, cameraMoveSpeed, {
+            value: 0,
+            onUpdate: () => {
+              this.scoreContainer.innerHTML = String(Math.round(countdown.value));
+            },
+          });
+          this.blocks = this.blocks.slice(0, 1);
+          setTimeout(() => this.startGame(), cameraMoveSpeed * 1000);
+        }
+
+        placeBlock() {
+          const currentBlock = this.blocks[this.blocks.length - 1];
+          const newBlocks = currentBlock.place(this.magnet);
+          this.newBlocks.remove(currentBlock.mesh);
+          if (newBlocks.placed) this.placedBlocks.add(newBlocks.placed);
+          if (newBlocks.chopped) {
+            this.choppedBlocks.add(newBlocks.chopped);
+            const positionParams = {
+              y: "-=30",
+              ease: Power1.easeIn,
+              onComplete: () => this.choppedBlocks.remove(newBlocks.chopped),
+            };
+            const rotateRandomness = 10;
+            const rotationParams = {
+              delay: 0.05,
+              x: newBlocks.plane == "z" ? Math.random() * rotateRandomness - rotateRandomness / 2 : 0.1,
+              z: newBlocks.plane == "x" ? Math.random() * rotateRandomness - rotateRandomness / 2 : 0.1,
+              y: Math.random() * 0.1,
+            };
+            if (newBlocks.chopped.position[newBlocks.plane] > newBlocks.placed.position[newBlocks.plane]) {
+              positionParams[newBlocks.plane] = "+=" + 40 * Math.abs(newBlocks.direction);
+            } else {
+              positionParams[newBlocks.plane] = "-=" + 40 * Math.abs(newBlocks.direction);
+            }
+            TweenLite.to(newBlocks.chopped.position, 1, positionParams);
+            TweenLite.to(newBlocks.chopped.rotation, 1, rotationParams);
+          }
+          if (newBlocks.bonus) {
+            this.combo += 1;
+            this.perfects += 1;
+            if (this.particleFx) this.particles.burst(currentBlock.mesh.position, 0xa78bfa);
+            playTone(880, 0.1, "triangle");
+          } else {
+            this.combo = 0;
+            playTone(520, 0.08, "sine");
+          }
+          this.updateUI();
+          this.addBlock();
+        }
+
+        addBlock() {
+          const lastBlock = this.blocks[this.blocks.length - 1];
+          if (lastBlock && lastBlock.state == lastBlock.STATES.MISSED) {
+            return this.endGame();
+          }
+          this.scoreContainer.innerHTML = String(this.blocks.length - 1);
+          const newBlock = new Block(lastBlock, { speedMultiplier: this.speedMultiplier });
+          if (this.neon) newBlock.material.emissive = new THREE.Color(0.15, 0.25, 0.4);
+          this.newBlocks.add(newBlock.mesh);
+          this.blocks.push(newBlock);
+          this.stage.setCamera(this.blocks.length * 2);
+          if (this.blocks.length >= 5) this.instructions.classList.add("hide");
+        }
+
+        endGame() {
+          playTone(220, 0.2, "sawtooth");
+          this.updateState(this.STATES.ENDED);
+        }
+
+        tick() {
+          const currentBlock = this.blocks[this.blocks.length - 1];
+          const slowmoFactor = this.slowmo ? 0.35 : 1;
+          const speedFactor = this.speedMultiplier * slowmoFactor;
+          if (!this.paused && currentBlock) {
+            currentBlock.tick(speedFactor);
+          }
+          if (this.state === this.STATES.PLAYING && this.autoPlace && currentBlock) {
+            const diff = Math.abs(currentBlock.position[currentBlock.workingPlane] - (currentBlock.targetBlock ? currentBlock.targetBlock.position[currentBlock.workingPlane] : 0));
+            if (diff < 0.1) this.placeBlock();
+          }
+          this.stage.render();
+          requestAnimationFrame(() => this.tick());
+        }
+      }
+
+      const game = new Game();
+    </script>
+  </body>
+</html>

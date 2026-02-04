@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS Ultra | Neon Duel</title>
+    <style>
+        :root {
+            --bg: #05070a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon-blue: #00d2ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --text: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #05070a 100%);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- Particle Canvas --- */
+        #canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* --- Main Container --- */
+        .game-card {
+            position: relative;
+            z-index: 10;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle { opacity: 0.6; font-size: 0.9rem; margin-bottom: 30px; }
+
+        /* --- Scoreboard --- */
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 12px;
+        }
+        .score-box .val { font-size: 2rem; font-weight: 800; display: block; }
+        .score-box .label { font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; }
+        .user-color { color: var(--neon-blue); }
+        .cpu-color { color: var(--neon-pink); }
+
+        /* --- Choices --- */
+        .choices {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .btn-choice {
+            background: var(--glass);
+            border: 2px solid rgba(255,255,255,0.1);
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-choice svg { width: 40px; height: 40px; fill: white; transition: 0.3s; }
+        .btn-choice span { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; opacity: 0.5; }
+
+        .btn-choice:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-choice:hover svg { fill: var(--neon-blue); transform: scale(1.1); }
+        .btn-choice:active { transform: scale(0.9); }
+
+        /* --- Results Area --- */
+        .results-display {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #status {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            min-height: 1.5em;
+        }
+
+        .versus {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: 0.3s;
+        }
+        .versus.show { opacity: 1; transform: scale(1); }
+        .choice-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--neon-blue);
+        }
+
+        /* --- Animations --- */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(-1deg); }
+            40% { transform: translate(3px, 2px) rotate(1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            80% { transform: translate(3px, 1px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(1deg); }
+        }
+        .shake { animation: shake 0.3s; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="game-card" id="main-card">
+        <h1>RPS ULTRA</h1>
+        <p class="subtitle">SYSTEM DUEL ACTIVE</p>
+
+        <div class="scoreboard">
+            <div class="score-box">
+                <span class="label">User</span>
+                <span id="user-score" class="val user-color">0</span>
+            </div>
+            <div class="score-box">
+                <span class="label">Draws</span>
+                <span id="draw-score" class="val">0</span>
+            </div>
+            <div class="score-box">
+                <span class="label">CPU</span>
+                <span id="cpu-score" class="val cpu-color">0</span>
+            </div>
+        </div>
+
+        <div class="choices">
+            <button class="btn-choice" onclick="play('rock')">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/></svg>
+                <span>Rock</span>
+            </button>
+            <button class="btn-choice" onclick="play('paper')">
+                <svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                <span>Paper</span>
+            </button>
+            <button class="btn-choice" onclick="play('scissor')">
+                <svg viewBox="0 0 24 24"><path d="M19,3L13,9L15,11L21,5V3M3,3V5L9,11L11,9L5,3M12,12.5A1.5,1.5 0 0,0 10.5,14L7,14V15L10,18H11L14,15V14A1.5,1.5 0 0,0 12.5,12.5Z"/></svg>
+                <span>Scissor</span>
+            </button>
+        </div>
+
+        <div class="results-display">
+            <p id="status">CHOOSE YOUR WEAPON</p>
+            <div class="versus" id="versus-box">
+                <span class="choice-badge user-color" id="user-pick"></span>
+                <span>VS</span>
+                <span class="choice-badge cpu-color" id="cpu-pick"></span>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /** * AUDIO ENGINE
+     * Synthesizing retro arcade sounds
+     */
+    const AudioEngine = {
+        ctx: new (window.AudioContext || window.webkitAudioContext)(),
+        async play(type) {
+            if (this.ctx.state === 'suspended') await this.ctx.resume();
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.connect(g); g.connect(this.ctx.destination);
+
+            if (type === 'win') {
+                o.type = 'square';
+                o.frequency.setValueAtTime(400, this.ctx.currentTime);
+                o.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.2);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                o.start(); o.stop(this.ctx.currentTime + 0.3);
+            } else if (type === 'lose') {
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(150, this.ctx.currentTime);
+                o.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.4);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+                o.start(); o.stop(this.ctx.currentTime + 0.4);
+            } else { // Click
+                o.type = 'sine';
+                o.frequency.setValueAtTime(600, this.ctx.currentTime);
+                g.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+                o.start(); o.stop(this.ctx.currentTime + 0.1);
+            }
+        }
+    };
+
+    /**
+     * PARTICLE SYSTEM
+     */
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y;
+            this.color = color;
+            this.size = Math.random() * 4 + 2;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0;
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            this.vy += 0.1;
+            this.life -= 0.02;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+        }
+    }
+
+    function spawnParticles(x, y, color) {
+        for(let i=0; i<30; i++) particles.push(new Particle(x, y, color));
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles = particles.filter(p => p.life > 0);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    /**
+     * GAME LOGIC
+     */
+    let scores = { user: 0, cpu: 0, draw: 0 };
+    const statusEl = document.getElementById('status');
+    const versusBox = document.getElementById('versus-box');
+    const card = document.getElementById('main-card');
+
+    function play(userChoice) {
+        const choices = ['rock', 'paper', 'scissor'];
+        const cpuChoice = choices[Math.floor(Math.random() * 3)];
+        
+        AudioEngine.play('click');
+        
+        // Show Picks
+        document.getElementById('user-pick').innerText = userChoice.toUpperCase();
+        document.getElementById('cpu-pick').innerText = cpuChoice.toUpperCase();
+        versusBox.classList.add('show');
+
+        // Logic
+        if (userChoice === cpuChoice) {
+            updateScore('draw');
+            statusEl.innerText = "LINK ESTABLISHED: DRAW";
+            statusEl.style.color = "white";
+        } else if (
+            (userChoice === 'rock' && cpuChoice === 'scissor') ||
+            (userChoice === 'paper' && cpuChoice === 'rock') ||
+            (userChoice === 'scissor' && cpuChoice === 'paper')
+        ) {
+            updateScore('user');
+            statusEl.innerText = "SYSTEM BREACH: YOU WIN!";
+            statusEl.style.color = "var(--neon-green)";
+            AudioEngine.play('win');
+            const rect = card.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width/2, rect.top, 'var(--neon-green)');
+        } else {
+            updateScore('cpu');
+            statusEl.innerText = "CRITICAL ERROR: YOU LOSE";
+            statusEl.style.color = "var(--neon-pink)";
+            AudioEngine.play('lose');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 300);
+        }
+    }
+
+    function updateScore(winner) {
+        scores[winner]++;
+        document.getElementById(`${winner}-score`).innerText = scores[winner];
+        document.getElementById(`${winner}-score`).style.transform = 'scale(1.5)';
+        setTimeout(() => {
+            document.getElementById(`${winner}-score`).style.transform = 'scale(1)';
+        }, 200);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Naman Mittal – Number Guessing Game</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#1446a0;
+  --accent:#db3069;
+  --success:#2ecc71;
+  --danger:#e74c3c;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:"Poppins",sans-serif;
+}
+
+body{
+  min-height:100vh;
+  margin:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,var(--accent),#ff7a9c);
+}
+
+.game-card{
+  width:100%;
+  max-width:380px;
+  background:white;
+  border-radius:20px;
+  padding:30px 25px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  text-align:center;
+  animation:pop .6s ease;
+}
+
+@keyframes pop{
+  from{transform:scale(.9);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+h1{
+  font-size:22px;
+  color:var(--primary);
+  margin-bottom:8px;
+}
+
+.creator{
+  font-size:12px;
+  color:#777;
+  margin-bottom:20px;
+}
+
+.range{
+  color:#555;
+  font-size:15px;
+  margin-bottom:15px;
+}
+
+input{
+  width:100%;
+  height:55px;
+  font-size:22px;
+  text-align:center;
+  border-radius:10px;
+  border:2px solid var(--primary);
+  outline:none;
+  transition:.2s;
+}
+
+input:focus{
+  box-shadow:0 0 0 3px rgba(20,70,160,.2);
+}
+
+input:disabled{
+  background:#eee;
+  cursor:not-allowed;
+}
+
+button{
+  margin-top:15px;
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  border:none;
+  border-radius:12px;
+  background:var(--primary);
+  color:white;
+  cursor:pointer;
+  transition:.2s;
+}
+
+button:hover{
+  transform:translateY(-2px);
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+.message{
+  margin-top:15px;
+  min-height:24px;
+  font-weight:600;
+}
+
+.chances{
+  margin-top:10px;
+  font-size:14px;
+  color:#333;
+}
+
+.badge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:20px;
+  background:var(--primary);
+  color:white;
+}
+
+footer{
+  margin-top:18px;
+  font-size:11px;
+  color:#888;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-card">
+  <h1>🎯 Number Guessing Game</h1>
+  <div class="creator">Created by <strong>Naman Mittal</strong></div>
+
+  <div class="range">Guess a number between <b>1</b> and <b>100</b></div>
+
+  <input type="number" id="guessInput" placeholder="Enter number" />
+
+  <div class="message" id="message"></div>
+
+  <button id="checkBtn">Check Guess</button>
+
+  <div class="chances">
+    Chances left: <span class="badge" id="chanceCount">10</span>
+  </div>
+
+  <footer>Good luck 🍀</footer>
+</div>
+
+<script>
+const inputEl = document.getElementById("guessInput");
+const messageEl = document.getElementById("message");
+const checkBtn = document.getElementById("checkBtn");
+const chanceCountEl = document.getElementById("chanceCount");
+
+let randomNumber = Math.floor(Math.random() * 100) + 1;
+let chances = 10;
+let gameOver = false;
+
+checkBtn.addEventListener("click", () => {
+  if(gameOver){
+    location.reload();
+    return;
+  }
+
+  const value = Number(inputEl.value);
+  if(!value || value < 1 || value > 100){
+    showMessage("❌ Invalid number!", "danger");
+    return;
+  }
+
+  chances--;
+  chanceCountEl.textContent = chances;
+
+  if(value === randomNumber){
+    showMessage("🎉 Correct! You won!", "success");
+    endGame("Play Again");
+  }
+  else if(chances === 0){
+    showMessage(`💀 You lost! Number was ${randomNumber}`, "danger");
+    endGame("Try Again");
+  }
+  else if(value > randomNumber){
+    showMessage("📈 Too high!", "info");
+  }
+  else{
+    showMessage("📉 Too low!", "info");
+  }
+
+  inputEl.value = "";
+});
+
+function showMessage(text, type){
+  messageEl.textContent = text;
+  messageEl.style.color =
+    type === "success" ? "var(--success)" :
+    type === "danger"  ? "var(--danger)"  :
+    "var(--primary)";
+}
+
+function endGame(btnText){
+  gameOver = true;
+  inputEl.disabled = true;
+  checkBtn.textContent = btnText;
+}
+</script>
+
+</body>
+</html>

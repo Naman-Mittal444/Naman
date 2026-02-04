@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Naman Mittal – Connect Four</title>
+
+<!--
+Author: Naman Mittal
+Single-file HTML version (HTML + CSS + JS)
+Original concept adapted and refactored into one file
+-->
+
+<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
+
+<style>
+/* =======================
+   GLOBAL
+======================= */
+body {
+    margin: 0;
+    background-color: #e9e7fd;
+    font-family: "Poppins", sans-serif;
+}
+
+/* =======================
+   MAIN CONTAINER
+======================= */
+#main-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =======================
+   PLAYER INFO
+======================= */
+#player {
+    background-color: #d5deff;
+    border: 8px solid #4f3ff0;
+    border-radius: 10px;
+    margin-top: 50px;
+    padding: 20px;
+    width: 550px;
+}
+
+#player-type {
+    color: #4f3ff0;
+    letter-spacing: 5px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* =======================
+   GRID
+======================= */
+#grid {
+    background-color: #4f3ff0;
+    border: 3.5px solid #d5deff;
+    border-radius: 8px;
+    box-shadow: 2px 3px 7px grey;
+    margin-top: 50px;
+    padding: 3px;
+}
+
+.row {
+    display: flex;
+}
+
+.col {
+    background-color: #d5deff;
+    border: 1px solid #4f3ff0;
+    border-radius: 5px;
+    height: 75px;
+    width: 75px;
+    margin: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =======================
+   BUTTONS
+======================= */
+.btn {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+#reset-btn {
+    margin: 50px 0;
+    padding: 10px 40px;
+    font-size: 1.5rem;
+    border: 2px solid #4f3ff0;
+    background: transparent;
+    color: #4f3ff0;
+    border-radius: 5px;
+    text-transform: uppercase;
+    transition: 0.7s;
+}
+
+#reset-btn:hover {
+    background-color: #4f3ff0;
+    color: #d5deff;
+}
+
+/* =======================
+   PLAYER TOKENS
+======================= */
+.btn-player-1 {
+    background-color: #34c471;
+    border-radius: 50%;
+    height: 50px;
+    width: 50px;
+}
+
+.btn-player-2 {
+    background-color: #df3670;
+    border-radius: 50%;
+    height: 50px;
+    width: 50px;
+}
+
+/* =======================
+   RESPONSIVE
+======================= */
+@media (max-width: 550px) {
+    #player { width: 90%; }
+    .col { width: 50px; height: 50px; }
+    .btn-player-1,
+    .btn-player-2 { width: 30px; height: 30px; }
+    #reset-btn { font-size: 1rem; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="main-container">
+
+    <div id="player">
+        <h1 id="player-type">Player - 1</h1>
+    </div>
+
+    <div id="grid">
+        <!-- 6 rows × 7 columns = 42 buttons -->
+        <!-- Row 1 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-1"></button></div>
+            <div class="col"><button class="btn btn-2"></button></div>
+            <div class="col"><button class="btn btn-3"></button></div>
+            <div class="col"><button class="btn btn-4"></button></div>
+            <div class="col"><button class="btn btn-5"></button></div>
+            <div class="col"><button class="btn btn-6"></button></div>
+            <div class="col"><button class="btn btn-7"></button></div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-8"></button></div>
+            <div class="col"><button class="btn btn-9"></button></div>
+            <div class="col"><button class="btn btn-10"></button></div>
+            <div class="col"><button class="btn btn-11"></button></div>
+            <div class="col"><button class="btn btn-12"></button></div>
+            <div class="col"><button class="btn btn-13"></button></div>
+            <div class="col"><button class="btn btn-14"></button></div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-15"></button></div>
+            <div class="col"><button class="btn btn-16"></button></div>
+            <div class="col"><button class="btn btn-17"></button></div>
+            <div class="col"><button class="btn btn-18"></button></div>
+            <div class="col"><button class="btn btn-19"></button></div>
+            <div class="col"><button class="btn btn-20"></button></div>
+            <div class="col"><button class="btn btn-21"></button></div>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-22"></button></div>
+            <div class="col"><button class="btn btn-23"></button></div>
+            <div class="col"><button class="btn btn-24"></button></div>
+            <div class="col"><button class="btn btn-25"></button></div>
+            <div class="col"><button class="btn btn-26"></button></div>
+            <div class="col"><button class="btn btn-27"></button></div>
+            <div class="col"><button class="btn btn-28"></button></div>
+        </div>
+
+        <!-- Row 5 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-29"></button></div>
+            <div class="col"><button class="btn btn-30"></button></div>
+            <div class="col"><button class="btn btn-31"></button></div>
+            <div class="col"><button class="btn btn-32"></button></div>
+            <div class="col"><button class="btn btn-33"></button></div>
+            <div class="col"><button class="btn btn-34"></button></div>
+            <div class="col"><button class="btn btn-35"></button></div>
+        </div>
+
+        <!-- Row 6 -->
+        <div class="row">
+            <div class="col"><button class="btn btn-36"></button></div>
+            <div class="col"><button class="btn btn-37"></button></div>
+            <div class="col"><button class="btn btn-38"></button></div>
+            <div class="col"><button class="btn btn-39"></button></div>
+            <div class="col"><button class="btn btn-40"></button></div>
+            <div class="col"><button class="btn btn-41"></button></div>
+            <div class="col"><button class="btn btn-42"></button></div>
+        </div>
+    </div>
+
+    <button id="reset-btn">Play Again</button>
+
+</div>
+
+<script>
+/* =======================
+   CONNECT FOUR LOGIC
+======================= */
+const buttons = document.getElementsByClassName("btn");
+const resetBtn = document.getElementById("reset-btn");
+const playerType = document.getElementById("player-type");
+
+let playerNumber = 1;
+let filledCells = 0;
+let filledGrid = Array.from({ length: 6 }, () => Array(7).fill(-1));
+
+resetBtn.addEventListener("click", resetBoard);
+
+for (let i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener("click", function () {
+        const num = parseInt(this.classList[1].split("-")[1]);
+        makeMove(this, num);
+    });
+}
+
+function makeMove(button, num) {
+    const row = num % 7 === 0 ? Math.floor(num / 7) - 1 : Math.floor(num / 7);
+    const col = num % 7 === 0 ? 6 : (num % 7) - 1;
+
+    button.classList.add(playerNumber === 1 ? "btn-player-1" : "btn-player-2");
+    filledGrid[row][col] = playerNumber;
+    filledCells++;
+
+    if (checkWin(row, col, playerNumber)) {
+        setTimeout(() => {
+            alert(`Game Over: Player ${playerNumber} Wins`);
+            resetBoard();
+        }, 200);
+        return;
+    }
+
+    if (filledCells === 42) {
+        setTimeout(() => {
+            alert("Game Draw");
+            resetBoard();
+        }, 200);
+        return;
+    }
+
+    button.disabled = true;
+    playerNumber = playerNumber === 1 ? 2 : 1;
+    playerType.textContent = `Player - ${playerNumber}`;
+}
+
+function checkWin(r, c, p) {
+    const dirs = [
+        [[0,1],[0,-1]],
+        [[1,0],[-1,0]],
+        [[1,1],[-1,-1]],
+        [[1,-1],[-1,1]]
+    ];
+
+    for (let d of dirs) {
+        let count = 1;
+        for (let [dx,dy] of d) {
+            let x = r + dx, y = c + dy;
+            while (x>=0 && x<6 && y>=0 && y<7 && filledGrid[x][y] === p) {
+                count++; x+=dx; y+=dy;
+            }
+        }
+        if (count >= 4) return true;
+    }
+    return false;
+}
+
+function resetBoard() {
+    for (let btn of buttons) {
+        btn.disabled = false;
+        btn.classList.remove("btn-player-1","btn-player-2");
+    }
+    filledGrid = Array.from({ length: 6 }, () => Array(7).fill(-1));
+    filledCells = 0;
+    playerNumber = 1;
+    playerType.textContent = "Player - 1";
+}
+</script>
+
+</body>
+</html>

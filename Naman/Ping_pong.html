@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Ping Pong Arena - Standalone</title>
+    <style>
+      :root {
+        --bg-dark: #0a0a1a;
+        --bg-mid: #1a1a3a;
+        --cyan: #00ffff;
+        --pink: #ff00ff;
+        --yellow: #ffff00;
+        --green: #00ff88;
+        --purple: #7c3aed;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at top, #1b1b3a, #070712);
+        color: #fff;
+        overflow: hidden;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .screen {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Start Screen */
+      #start-screen {
+        position: relative;
+        overflow-y: auto;
+        padding: 32px 16px 96px;
+      }
+
+      #start-background {
+        position: fixed;
+        inset: 0;
+        opacity: 0.3;
+        pointer-events: none;
+      }
+
+      .neon-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.6;
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      .orb-1 {
+        width: 280px;
+        height: 280px;
+        background: rgba(255, 0, 255, 0.4);
+        top: 20%;
+        left: 10%;
+      }
+
+      .orb-2 {
+        width: 360px;
+        height: 360px;
+        background: rgba(0, 255, 255, 0.4);
+        bottom: 10%;
+        right: 10%;
+        animation-delay: 1s;
+      }
+
+      .orb-3 {
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 0, 0.3);
+        top: 50%;
+        left: 45%;
+        animation-delay: 0.5s;
+      }
+
+      @keyframes pulse {
+        50% {
+          transform: scale(1.05);
+          opacity: 0.85;
+        }
+      }
+
+      .start-content {
+        position: relative;
+        max-width: 980px;
+        margin: 0 auto;
+        text-align: center;
+        z-index: 1;
+      }
+
+      .title {
+        font-size: clamp(2.8rem, 4vw, 4.5rem);
+        font-weight: 900;
+        margin-bottom: 8px;
+        background: linear-gradient(90deg, #00ffff, #ff00ff, #ffff00);
+        -webkit-background-clip: text;
+        color: transparent;
+        text-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+      }
+
+      .subtitle {
+        color: #b8b8ff;
+        margin-bottom: 32px;
+      }
+
+      .panel {
+        background: rgba(8, 10, 24, 0.85);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(14px);
+      }
+
+      .section {
+        margin-bottom: 24px;
+        text-align: left;
+      }
+
+      .section-title {
+        font-weight: 700;
+        color: #7ef9ff;
+        margin-bottom: 12px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .btn {
+        padding: 12px 16px;
+        border-radius: 16px;
+        border: 2px solid transparent;
+        background: rgba(40, 40, 60, 0.6);
+        color: #d0d0ff;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn.active {
+        border-color: #00ffff;
+        background: rgba(0, 255, 255, 0.2);
+        color: #00ffff;
+        box-shadow: 0 10px 25px rgba(0, 255, 255, 0.2);
+      }
+
+      .btn.pink.active {
+        border-color: #ff00ff;
+        background: rgba(255, 0, 255, 0.2);
+        color: #ff66ff;
+      }
+
+      .btn.yellow.active {
+        border-color: #ffff00;
+        background: rgba(255, 255, 0, 0.2);
+        color: #ffff88;
+      }
+
+      .pill-toggle {
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .pill-toggle.on {
+        background: #00c96b;
+        color: #0b1f12;
+      }
+
+      .pill-toggle.off {
+        background: #555;
+        color: #ddd;
+      }
+
+      .slider {
+        width: 100%;
+      }
+
+      .slider-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #c4c4ff;
+        margin-bottom: 6px;
+      }
+
+      .start-button {
+        width: 100%;
+        padding: 16px;
+        border-radius: 20px;
+        background: linear-gradient(90deg, #00c96b, #10b981, #00c96b);
+        border: none;
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-top: 8px;
+        cursor: pointer;
+        box-shadow: 0 20px 40px rgba(0, 200, 140, 0.3);
+        transition: transform 0.2s ease;
+      }
+
+      .start-button:hover {
+        transform: scale(1.02);
+      }
+
+      .control-hint {
+        margin-top: 16px;
+        color: #b6b6ff;
+        font-size: 0.9rem;
+      }
+
+      .scroll-indicator {
+        margin-top: 24px;
+        color: #7ef9ff;
+        animation: bounce 1.2s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(6px);
+        }
+      }
+
+      /* Game Screen */
+      #game-screen {
+        position: relative;
+      }
+
+      #game-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay-btn {
+        position: absolute;
+        top: 16px;
+        padding: 10px 16px;
+        border-radius: 14px;
+        background: linear-gradient(90deg, #7c3aed, #ec4899);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(124, 58, 237, 0.3);
+        transition: transform 0.2s ease;
+      }
+
+      .overlay-btn:hover {
+        transform: scale(1.05);
+      }
+
+      #menu-btn {
+        left: 16px;
+        background: linear-gradient(90deg, #4b5563, #1f2937);
+      }
+
+      #options-btn {
+        right: 16px;
+        background: linear-gradient(90deg, #0891b2, #2563eb);
+      }
+
+      #controls-trigger {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      #controls-panel {
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 16px;
+        background: rgba(10, 12, 26, 0.95);
+        border: 1px solid rgba(0, 255, 255, 0.6);
+        border-radius: 16px;
+        min-width: 260px;
+        text-align: left;
+        display: none;
+        z-index: 20;
+      }
+
+      #controls-panel h3 {
+        text-align: center;
+        color: #7ef9ff;
+        margin-bottom: 10px;
+      }
+
+      .control-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+
+      .kbd {
+        padding: 4px 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        background: #1f2937;
+        font-family: monospace;
+        font-size: 0.75rem;
+      }
+
+      #hud {
+        position: absolute;
+        top: 70px;
+        left: 16px;
+        color: #cbd5f5;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      #game-controls {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+        z-index: 10;
+      }
+
+      .game-btn {
+        padding: 12px 20px;
+        border-radius: 16px;
+        border: none;
+        font-weight: 700;
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+      }
+
+      .game-btn:hover {
+        transform: scale(1.05);
+      }
+
+      #pause-btn {
+        background: linear-gradient(90deg, #f59e0b, #f97316);
+      }
+
+      #resume-btn {
+        background: linear-gradient(90deg, #22c55e, #10b981);
+      }
+
+      #restart-btn {
+        background: linear-gradient(90deg, #ef4444, #e11d48);
+      }
+
+      .modal {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 30;
+      }
+
+      .modal-content {
+        background: rgba(10, 12, 26, 0.95);
+        border: 2px solid rgba(0, 255, 255, 0.6);
+        padding: 32px;
+        border-radius: 24px;
+        text-align: center;
+        max-width: 420px;
+      }
+
+      .modal-content h2 {
+        margin-bottom: 12px;
+        font-size: 2rem;
+        background: linear-gradient(90deg, #facc15, #ff00ff, #00ffff);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+
+      .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+      }
+
+      .modal-actions button {
+        padding: 10px 18px;
+        border-radius: 14px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .modal-actions .play-again {
+        background: linear-gradient(90deg, #06b6d4, #2563eb);
+        color: #fff;
+      }
+
+      .modal-actions .menu {
+        background: #4b5563;
+        color: #fff;
+      }
+
+      #options-modal .modal-content {
+        width: 340px;
+      }
+
+      #pause-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        z-index: 25;
+        text-align: center;
+      }
+
+      #pause-overlay h2 {
+        font-size: 3rem;
+        margin-bottom: 8px;
+        background: linear-gradient(90deg, #00ffff, #ff00ff);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+
+      /* Music Player */
+      #music-trigger {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 96px;
+        height: 96px;
+        z-index: 50;
+      }
+
+      #music-player {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        width: 260px;
+        background: rgba(10, 12, 26, 0.95);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 0 20px 40px rgba(0, 255, 255, 0.2);
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.3s ease;
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      #music-player.visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      #music-player header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #7ef9ff;
+      }
+
+      #music-player .file-name {
+        background: rgba(31, 41, 55, 0.7);
+        padding: 6px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        color: #d1d5f5;
+        margin-bottom: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #music-player .upload-btn {
+        width: 100%;
+        padding: 8px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #7c3aed, #ec4899);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+
+      #music-player .progress {
+        height: 6px;
+        background: #1f2937;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      #music-player .progress span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #00ffff, #ff00ff);
+      }
+
+      #music-player .time {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        color: #9ca3af;
+        margin-top: 4px;
+      }
+
+      #music-player .controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      #music-player .controls button {
+        padding: 6px 10px;
+        border-radius: 10px;
+        border: none;
+        background: #374151;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      #music-play {
+        padding: 8px 16px;
+        background: linear-gradient(90deg, #22c55e, #10b981);
+      }
+
+      #music-play.paused {
+        background: linear-gradient(90deg, #f97316, #ef4444);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="start-screen" class="screen">
+      <canvas id="start-background"></canvas>
+      <div class="neon-orb orb-1"></div>
+      <div class="neon-orb orb-2"></div>
+      <div class="neon-orb orb-3"></div>
+
+      <div class="start-content">
+        <h1 class="title">🏓 PING PONG 3D</h1>
+        <p class="subtitle">Standalone Neon Arena</p>
+
+        <div class="panel">
+          <div class="section">
+            <div class="section-title">🎮 Game Mode</div>
+            <div class="grid grid-2">
+              <button class="btn active" data-mode="2player">👥 2 Players</button>
+              <button class="btn pink" data-mode="ai">🤖 vs AI</button>
+            </div>
+          </div>
+
+          <div id="ai-section" class="section hidden">
+            <div class="section-title">🤖 AI Difficulty</div>
+            <div class="grid grid-3" id="ai-levels"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">🏆 Points to Win</div>
+            <div class="grid grid-3" id="score-options"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">🚀 Paddle Speed</div>
+            <div class="slider-label">
+              <span>Speed</span>
+              <span id="paddle-speed-value">14 px/frame</span>
+            </div>
+            <input class="slider" type="range" id="paddle-speed" min="8" max="30" step="1" value="14" />
+          </div>
+
+          <div class="section">
+            <div class="section-title">⚡ Speed Increase on Hit</div>
+            <div class="slider-label">
+              <span>Enabled</span>
+              <button id="speed-toggle" class="pill-toggle on">ON</button>
+            </div>
+            <div id="speed-multiplier-wrap">
+              <div class="slider-label">
+                <span>Multiplier: <span id="speed-multiplier-value">0.20x</span></span>
+                <span id="speed-multiplier-label">Slow</span>
+              </div>
+              <input class="slider" type="range" id="speed-multiplier" min="0.05" max="10" step="0.05" value="0.2" />
+            </div>
+          </div>
+
+          <div class="section grid grid-2">
+            <div class="slider-label">
+              <span>🔊 Sound</span>
+              <button id="sound-toggle" class="pill-toggle on">ON</button>
+            </div>
+            <div class="slider-label">
+              <span>✨ Particles</span>
+              <button id="particle-toggle" class="pill-toggle on">ON</button>
+            </div>
+          </div>
+
+          <button id="start-btn" class="start-button">🎮 START GAME</button>
+
+          <div class="control-hint">
+            Player 1: W / S
+            <span id="player2-hint"> | Player 2: ↑ / ↓</span>
+          </div>
+        </div>
+
+        <div class="scroll-indicator">
+          <div>Scroll down for more options</div>
+          <div>⬇</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+      <canvas id="game-canvas"></canvas>
+      <button id="menu-btn" class="overlay-btn">← Menu</button>
+      <button id="controls-trigger" class="overlay-btn">🎮 Controls</button>
+      <button id="options-btn" class="overlay-btn">⚙ Options</button>
+
+      <div id="controls-panel">
+        <h3>Game Controls</h3>
+        <div class="control-row">
+          <span>Player 1</span>
+          <span>
+            <span class="kbd">W</span>
+            <span class="kbd">S</span>
+          </span>
+        </div>
+        <div id="control-right" class="control-row">
+          <span>Player 2</span>
+          <span>
+            <span class="kbd">↑</span>
+            <span class="kbd">↓</span>
+          </span>
+        </div>
+        <div id="control-ai" class="control-row hidden">
+          <span>AI Opponent</span>
+          <span id="ai-label">Intermediate</span>
+        </div>
+      </div>
+
+      <div id="hud">
+        <div>Mode: <span id="hud-mode"></span></div>
+        <div>First to: <span id="hud-score"></span></div>
+        <div id="hud-speed">Speed+: <span id="hud-speed-value"></span></div>
+        <div>Paddle: <span id="hud-paddle"></span></div>
+      </div>
+
+      <div id="game-controls">
+        <button id="pause-btn" class="game-btn">⏸ Pause</button>
+        <button id="resume-btn" class="game-btn hidden">▶ Resume</button>
+        <button id="restart-btn" class="game-btn">🔄 Restart</button>
+      </div>
+
+      <div id="pause-overlay">
+        <div>
+          <h2>⏸ PAUSED</h2>
+          <p>Press Resume to continue</p>
+        </div>
+      </div>
+
+      <div id="winner-modal" class="modal">
+        <div class="modal-content">
+          <div style="font-size: 48px;">🏆</div>
+          <h2>Game Over!</h2>
+          <p id="winner-text" style="font-size: 1.2rem; margin-top: 8px;"></p>
+          <p id="final-score" style="margin-top: 8px; color: #9ca3af;"></p>
+          <div class="modal-actions">
+            <button class="play-again" id="play-again">🎮 Play Again</button>
+            <button class="menu" id="winner-menu">📋 Menu</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="options-modal" class="modal">
+        <div class="modal-content">
+          <h2>Game Options</h2>
+          <div class="section">
+            <div class="slider-label">
+              <span>Sound Effects</span>
+              <button id="opt-sound" class="pill-toggle on">ON</button>
+            </div>
+          </div>
+          <div class="section">
+            <div class="slider-label">
+              <span>Particles</span>
+              <button id="opt-particles" class="pill-toggle on">ON</button>
+            </div>
+          </div>
+          <div class="section">
+            <div class="slider-label">
+              <span>Paddle Speed</span>
+              <span id="opt-paddle-value">14</span>
+            </div>
+            <input class="slider" type="range" id="opt-paddle" min="8" max="30" step="1" value="14" />
+          </div>
+          <button id="close-options" class="start-button" style="margin-top: 12px;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="music-file" accept="audio/*" class="hidden" />
+    <audio id="music-audio"></audio>
+    <div id="music-trigger"></div>
+    <div id="music-player">
+      <header>
+        <span>🎵 Music Player</span>
+        <button id="music-close">✕</button>
+      </header>
+      <div class="file-name" id="music-name">No file selected</div>
+      <button class="upload-btn" id="music-upload">📁 Choose MP3 File</button>
+      <div class="progress"><span id="music-progress"></span></div>
+      <div class="time">
+        <span id="music-current">0:00</span>
+        <span id="music-duration">0:00</span>
+      </div>
+      <div class="controls">
+        <button id="music-back">-10s</button>
+        <button id="music-play">▶</button>
+        <button id="music-forward">+10s</button>
+      </div>
+    </div>
+
+    <script>
+      const AI_CONFIGS = {
+        beginner: { speed: 3, reactionDelay: 200, accuracy: 0.4, name: "Beginner (Very Slow)" },
+        easy: { speed: 5, reactionDelay: 100, accuracy: 0.6, name: "Easy (Slow)" },
+        intermediate: { speed: 7, reactionDelay: 50, accuracy: 0.75, name: "Intermediate (Normal)" },
+        fast: { speed: 10, reactionDelay: 25, accuracy: 0.85, name: "Fast (Quick)" },
+        expert: { speed: 14, reactionDelay: 10, accuracy: 0.92, name: "Expert (Very Fast)" },
+        impossible: { speed: 20, reactionDelay: 0, accuracy: 0.98, name: "Impossible (Super Fast)" },
+      };
+
+      class AudioManager {
+        constructor() {
+          this.ctx = null;
+          this.enabled = true;
+        }
+        init() {
+          if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+        }
+        setEnabled(enabled) {
+          this.enabled = enabled;
+        }
+        playTone(freq, duration, type = "sine", volume = 0.3) {
+          if (!this.enabled || !this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = type;
+          gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+          osc.start(this.ctx.currentTime);
+          osc.stop(this.ctx.currentTime + duration);
+        }
+        paddleHit() {
+          this.playTone(440, 0.1, "square", 0.2);
+          this.playTone(880, 0.05, "sine", 0.1);
+        }
+        wallHit() {
+          this.playTone(220, 0.1, "triangle", 0.15);
+        }
+        score() {
+          this.playTone(523, 0.1, "sine", 0.2);
+          setTimeout(() => this.playTone(659, 0.1, "sine", 0.2), 100);
+          setTimeout(() => this.playTone(784, 0.2, "sine", 0.2), 200);
+        }
+        gameOver() {
+          this.playTone(392, 0.2, "sawtooth", 0.15);
+          setTimeout(() => this.playTone(349, 0.2, "sawtooth", 0.15), 200);
+          setTimeout(() => this.playTone(330, 0.3, "sawtooth", 0.15), 400);
+        }
+        buttonClick() {
+          this.playTone(600, 0.05, "sine", 0.1);
+        }
+      }
+
+      const audioManager = new AudioManager();
+
+      const settings = {
+        gameMode: "2player",
+        aiLevel: "intermediate",
+        maxScore: 5,
+        speedIncreaseEnabled: true,
+        speedIncreaseMultiplier: 0.2,
+        soundEnabled: true,
+        particlesEnabled: true,
+        paddleSpeed: 14,
+      };
+
+      const state = {
+        isRunning: false,
+        isPaused: false,
+        winner: null,
+        keys: {},
+        animationId: 0,
+        aiTarget: 0,
+        aiLastUpdate: 0,
+        game: {
+          ballX: 0,
+          ballY: 0,
+          ballVX: 0,
+          ballVY: 0,
+          currentSpeed: 8,
+          leftPaddleY: 0,
+          rightPaddleY: 0,
+          leftScore: 0,
+          rightScore: 0,
+          particles: [],
+          trailParticles: [],
+        },
+      };
+
+      const PADDLE_HEIGHT = 100;
+      const PADDLE_WIDTH = 15;
+      const BALL_RADIUS = 12;
+      const BASE_BALL_SPEED = 8;
+
+      const startScreen = document.getElementById("start-screen");
+      const gameScreen = document.getElementById("game-screen");
+      const startCanvas = document.getElementById("start-background");
+      const gameCanvas = document.getElementById("game-canvas");
+      const ctx = gameCanvas.getContext("2d");
+
+      const modeButtons = document.querySelectorAll("[data-mode]");
+      const aiSection = document.getElementById("ai-section");
+      const aiLevels = document.getElementById("ai-levels");
+      const scoreOptions = document.getElementById("score-options");
+      const paddleSpeedSlider = document.getElementById("paddle-speed");
+      const paddleSpeedValue = document.getElementById("paddle-speed-value");
+      const speedToggle = document.getElementById("speed-toggle");
+      const speedMultiplier = document.getElementById("speed-multiplier");
+      const speedMultiplierValue = document.getElementById("speed-multiplier-value");
+      const speedMultiplierLabel = document.getElementById("speed-multiplier-label");
+      const speedMultiplierWrap = document.getElementById("speed-multiplier-wrap");
+      const soundToggle = document.getElementById("sound-toggle");
+      const particleToggle = document.getElementById("particle-toggle");
+      const startBtn = document.getElementById("start-btn");
+      const player2Hint = document.getElementById("player2-hint");
+
+      const menuBtn = document.getElementById("menu-btn");
+      const optionsBtn = document.getElementById("options-btn");
+      const controlsTrigger = document.getElementById("controls-trigger");
+      const controlsPanel = document.getElementById("controls-panel");
+      const controlRight = document.getElementById("control-right");
+      const controlAi = document.getElementById("control-ai");
+      const aiLabel = document.getElementById("ai-label");
+      const hudMode = document.getElementById("hud-mode");
+      const hudScore = document.getElementById("hud-score");
+      const hudSpeed = document.getElementById("hud-speed");
+      const hudSpeedValue = document.getElementById("hud-speed-value");
+      const hudPaddle = document.getElementById("hud-paddle");
+
+      const pauseBtn = document.getElementById("pause-btn");
+      const resumeBtn = document.getElementById("resume-btn");
+      const restartBtn = document.getElementById("restart-btn");
+      const pauseOverlay = document.getElementById("pause-overlay");
+
+      const winnerModal = document.getElementById("winner-modal");
+      const winnerText = document.getElementById("winner-text");
+      const finalScore = document.getElementById("final-score");
+      const playAgainBtn = document.getElementById("play-again");
+      const winnerMenuBtn = document.getElementById("winner-menu");
+
+      const optionsModal = document.getElementById("options-modal");
+      const optSound = document.getElementById("opt-sound");
+      const optParticles = document.getElementById("opt-particles");
+      const optPaddle = document.getElementById("opt-paddle");
+      const optPaddleValue = document.getElementById("opt-paddle-value");
+      const closeOptions = document.getElementById("close-options");
+
+      const musicTrigger = document.getElementById("music-trigger");
+      const musicPlayer = document.getElementById("music-player");
+      const musicFile = document.getElementById("music-file");
+      const musicAudio = document.getElementById("music-audio");
+      const musicUpload = document.getElementById("music-upload");
+      const musicName = document.getElementById("music-name");
+      const musicPlay = document.getElementById("music-play");
+      const musicBack = document.getElementById("music-back");
+      const musicForward = document.getElementById("music-forward");
+      const musicProgress = document.getElementById("music-progress");
+      const musicCurrent = document.getElementById("music-current");
+      const musicDuration = document.getElementById("music-duration");
+      const musicClose = document.getElementById("music-close");
+
+      function formatTime(value) {
+        if (!isFinite(value)) return "0:00";
+        const minutes = Math.floor(value / 60);
+        const seconds = Math.floor(value % 60);
+        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+      }
+
+      function syncToggles() {
+        soundToggle.textContent = settings.soundEnabled ? "ON" : "OFF";
+        soundToggle.className = `pill-toggle ${settings.soundEnabled ? "on" : "off"}`;
+        particleToggle.textContent = settings.particlesEnabled ? "ON" : "OFF";
+        particleToggle.className = `pill-toggle ${settings.particlesEnabled ? "on" : "off"}`;
+        speedToggle.textContent = settings.speedIncreaseEnabled ? "ON" : "OFF";
+        speedToggle.className = `pill-toggle ${settings.speedIncreaseEnabled ? "on" : "off"}`;
+        speedMultiplierWrap.style.display = settings.speedIncreaseEnabled ? "block" : "none";
+        optSound.textContent = settings.soundEnabled ? "ON" : "OFF";
+        optSound.className = `pill-toggle ${settings.soundEnabled ? "on" : "off"}`;
+        optParticles.textContent = settings.particlesEnabled ? "ON" : "OFF";
+        optParticles.className = `pill-toggle ${settings.particlesEnabled ? "on" : "off"}`;
+      }
+
+      function updateSpeedLabel() {
+        speedMultiplierValue.textContent = settings.speedIncreaseMultiplier.toFixed(2) + "x";
+        let label = "Slow";
+        if (settings.speedIncreaseMultiplier > 0.5) label = "Normal";
+        if (settings.speedIncreaseMultiplier > 1) label = "Fast";
+        if (settings.speedIncreaseMultiplier > 3) label = "Extreme";
+        speedMultiplierLabel.textContent = label;
+      }
+
+      function updatePaddleSpeedLabel() {
+        paddleSpeedValue.textContent = `${settings.paddleSpeed} px/frame`;
+        optPaddleValue.textContent = settings.paddleSpeed;
+      }
+
+      function setupOptions() {
+        aiLevels.innerHTML = "";
+        Object.keys(AI_CONFIGS).forEach((level) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = AI_CONFIGS[level].name;
+          btn.dataset.ai = level;
+          aiLevels.appendChild(btn);
+        });
+
+        scoreOptions.innerHTML = "";
+        [3, 5, 7, 10, 15, 21].forEach((score) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = score;
+          btn.dataset.score = score;
+          scoreOptions.appendChild(btn);
+        });
+
+        updateModeUI();
+        updateScoreUI();
+        updateAIUI();
+        updatePaddleSpeedLabel();
+        updateSpeedLabel();
+        syncToggles();
+      }
+
+      function updateModeUI() {
+        modeButtons.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.mode === settings.gameMode);
+        });
+        aiSection.classList.toggle("hidden", settings.gameMode !== "ai");
+        player2Hint.style.display = settings.gameMode === "2player" ? "inline" : "none";
+      }
+
+      function updateAIUI() {
+        aiLevels.querySelectorAll(".btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.ai === settings.aiLevel);
+        });
+      }
+
+      function updateScoreUI() {
+        scoreOptions.querySelectorAll(".btn").forEach((btn) => {
+          btn.classList.toggle("active", parseInt(btn.dataset.score, 10) === settings.maxScore);
+        });
+      }
+
+      function createParticles(x, y, color, count = 10) {
+        if (!settings.particlesEnabled) return;
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+          const speed = 2 + Math.random() * 4;
+          state.game.particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            maxLife: 30 + Math.random() * 20,
+            color,
+            size: 3 + Math.random() * 4,
+          });
+        }
+      }
+
+      function createTrailParticle(x, y) {
+        if (!settings.particlesEnabled) return;
+        state.game.trailParticles.push({
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          life: 1,
+          maxLife: 15,
+          color: "#00ffff",
+          size: BALL_RADIUS * 0.8,
+        });
+      }
+
+      function initGame() {
+        const angle = (Math.random() - 0.5) * Math.PI / 3;
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        state.game = {
+          ballX: gameCanvas.width / 2,
+          ballY: gameCanvas.height / 2,
+          ballVX: direction * BASE_BALL_SPEED * Math.cos(angle),
+          ballVY: BASE_BALL_SPEED * Math.sin(angle),
+          currentSpeed: BASE_BALL_SPEED,
+          leftPaddleY: gameCanvas.height / 2 - PADDLE_HEIGHT / 2,
+          rightPaddleY: gameCanvas.height / 2 - PADDLE_HEIGHT / 2,
+          leftScore: 0,
+          rightScore: 0,
+          particles: [],
+          trailParticles: [],
+        };
+        state.winner = null;
+      }
+
+      function resetBall() {
+        const angle = (Math.random() - 0.5) * Math.PI / 3;
+        const direction = state.game.ballVX > 0 ? -1 : 1;
+        state.game.ballX = gameCanvas.width / 2;
+        state.game.ballY = gameCanvas.height / 2;
+        state.game.currentSpeed = BASE_BALL_SPEED;
+        state.game.ballVX = direction * BASE_BALL_SPEED * Math.cos(angle);
+        state.game.ballVY = BASE_BALL_SPEED * Math.sin(angle);
+        state.game.trailParticles = [];
+      }
+
+      function update() {
+        const game = state.game;
+        const canvas = gameCanvas;
+
+        if (state.keys.w || state.keys.W) {
+          game.leftPaddleY = Math.max(0, game.leftPaddleY - settings.paddleSpeed);
+        }
+        if (state.keys.s || state.keys.S) {
+          game.leftPaddleY = Math.min(canvas.height - PADDLE_HEIGHT, game.leftPaddleY + settings.paddleSpeed);
+        }
+
+        if (settings.gameMode === "2player") {
+          if (state.keys.ArrowUp) {
+            game.rightPaddleY = Math.max(0, game.rightPaddleY - settings.paddleSpeed);
+          }
+          if (state.keys.ArrowDown) {
+            game.rightPaddleY = Math.min(canvas.height - PADDLE_HEIGHT, game.rightPaddleY + settings.paddleSpeed);
+          }
+        } else {
+          const aiConfig = AI_CONFIGS[settings.aiLevel];
+          const now = Date.now();
+          if (now - state.aiLastUpdate > aiConfig.reactionDelay) {
+            if (game.ballVX > 0) {
+              const timeToReach = (canvas.width - PADDLE_WIDTH - 20 - game.ballX) / game.ballVX;
+              let predictedY = game.ballY + game.ballVY * timeToReach;
+              while (predictedY < 0 || predictedY > canvas.height) {
+                if (predictedY < 0) predictedY = -predictedY;
+                if (predictedY > canvas.height) predictedY = 2 * canvas.height - predictedY;
+              }
+              const inaccuracy = (1 - aiConfig.accuracy) * PADDLE_HEIGHT;
+              predictedY += (Math.random() - 0.5) * inaccuracy;
+              state.aiTarget = predictedY;
+            } else {
+              state.aiTarget = canvas.height / 2;
+            }
+            state.aiLastUpdate = now;
+          }
+          const paddleCenter = game.rightPaddleY + PADDLE_HEIGHT / 2;
+          const diff = state.aiTarget - paddleCenter;
+          const moveAmount = Math.min(Math.abs(diff), aiConfig.speed);
+          if (diff > 5) {
+            game.rightPaddleY = Math.min(canvas.height - PADDLE_HEIGHT, game.rightPaddleY + moveAmount);
+          } else if (diff < -5) {
+            game.rightPaddleY = Math.max(0, game.rightPaddleY - moveAmount);
+          }
+        }
+
+        createTrailParticle(game.ballX, game.ballY);
+
+        game.ballX += game.ballVX;
+        game.ballY += game.ballVY;
+
+        if (game.ballY - BALL_RADIUS < 0) {
+          game.ballY = BALL_RADIUS;
+          game.ballVY = -game.ballVY;
+          audioManager.wallHit();
+          createParticles(game.ballX, game.ballY, "#00ff88", 8);
+        }
+        if (game.ballY + BALL_RADIUS > canvas.height) {
+          game.ballY = canvas.height - BALL_RADIUS;
+          game.ballVY = -game.ballVY;
+          audioManager.wallHit();
+          createParticles(game.ballX, game.ballY, "#00ff88", 8);
+        }
+
+        if (
+          game.ballX - BALL_RADIUS < PADDLE_WIDTH + 20 &&
+          game.ballX - BALL_RADIUS > 20 &&
+          game.ballY > game.leftPaddleY &&
+          game.ballY < game.leftPaddleY + PADDLE_HEIGHT
+        ) {
+          const hitPos = (game.ballY - game.leftPaddleY) / PADDLE_HEIGHT;
+          const angle = (hitPos - 0.5) * Math.PI / 2;
+          if (settings.speedIncreaseEnabled) {
+            game.currentSpeed *= 1 + settings.speedIncreaseMultiplier;
+            game.currentSpeed = Math.min(game.currentSpeed, BASE_BALL_SPEED * 3);
+          }
+          game.ballVX = Math.abs(game.currentSpeed * Math.cos(angle));
+          game.ballVY = game.currentSpeed * Math.sin(angle);
+          game.ballX = PADDLE_WIDTH + 20 + BALL_RADIUS;
+          audioManager.paddleHit();
+          createParticles(game.ballX, game.ballY, "#ff00ff", 15);
+        }
+
+        if (
+          game.ballX + BALL_RADIUS > canvas.width - PADDLE_WIDTH - 20 &&
+          game.ballX + BALL_RADIUS < canvas.width - 20 &&
+          game.ballY > game.rightPaddleY &&
+          game.ballY < game.rightPaddleY + PADDLE_HEIGHT
+        ) {
+          const hitPos = (game.ballY - game.rightPaddleY) / PADDLE_HEIGHT;
+          const angle = (hitPos - 0.5) * Math.PI / 2;
+          if (settings.speedIncreaseEnabled) {
+            game.currentSpeed *= 1 + settings.speedIncreaseMultiplier;
+            game.currentSpeed = Math.min(game.currentSpeed, BASE_BALL_SPEED * 3);
+          }
+          game.ballVX = -Math.abs(game.currentSpeed * Math.cos(angle));
+          game.ballVY = game.currentSpeed * Math.sin(angle);
+          game.ballX = canvas.width - PADDLE_WIDTH - 20 - BALL_RADIUS;
+          audioManager.paddleHit();
+          createParticles(game.ballX, game.ballY, "#ffff00", 15);
+        }
+
+        if (game.ballX < 0) {
+          game.rightScore++;
+          audioManager.score();
+          createParticles(0, game.ballY, "#ff0000", 30);
+          if (game.rightScore >= settings.maxScore) {
+            declareWinner(settings.gameMode === "ai" ? "AI" : "Player 2 (Right)");
+          } else {
+            resetBall();
+          }
+        }
+
+        if (game.ballX > canvas.width) {
+          game.leftScore++;
+          audioManager.score();
+          createParticles(canvas.width, game.ballY, "#ff0000", 30);
+          if (game.leftScore >= settings.maxScore) {
+            declareWinner("Player 1 (Left)");
+          } else {
+            resetBall();
+          }
+        }
+
+        game.particles = game.particles.filter((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.95;
+          p.vy *= 0.95;
+          p.life -= 1 / p.maxLife;
+          return p.life > 0;
+        });
+
+        game.trailParticles = game.trailParticles.filter((p) => {
+          p.life -= 1 / p.maxLife;
+          return p.life > 0;
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, gameCanvas.height);
+        bgGradient.addColorStop(0, "#0a0a1a");
+        bgGradient.addColorStop(0.5, "#1a1a3a");
+        bgGradient.addColorStop(1, "#0a0a1a");
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.1)";
+        for (let i = 0; i <= 20; i++) {
+          const y = gameCanvas.height * 0.3 + (gameCanvas.height * 0.7 * i) / 20;
+          const perspective = 1 - i / 40;
+          ctx.globalAlpha = perspective * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(gameCanvas.width, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 20; i++) {
+          const x = (gameCanvas.width * i) / 20;
+          ctx.globalAlpha = 0.2;
+          ctx.beginPath();
+          ctx.moveTo(x, gameCanvas.height * 0.3);
+          ctx.lineTo(x, gameCanvas.height);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.shadowColor = "#00ffff";
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = "#00ffff";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([20, 15]);
+        ctx.beginPath();
+        ctx.moveTo(gameCanvas.width / 2, 0);
+        ctx.lineTo(gameCanvas.width / 2, gameCanvas.height);
+        ctx.stroke();
+        ctx.restore();
+
+        state.game.trailParticles.forEach((p) => {
+          ctx.save();
+          ctx.globalAlpha = p.life * 0.5;
+          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+          gradient.addColorStop(0, "rgba(0, 255, 255, 0.8)");
+          gradient.addColorStop(1, "rgba(0, 255, 255, 0)");
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        state.game.particles.forEach((p) => {
+          ctx.save();
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        const drawPaddle = (x, y, isLeft) => {
+          ctx.save();
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.fillRect(x + 5, y + 5, PADDLE_WIDTH, PADDLE_HEIGHT);
+          const gradient = ctx.createLinearGradient(x, y, x + PADDLE_WIDTH, y);
+          if (isLeft) {
+            gradient.addColorStop(0, "#ff00ff");
+            gradient.addColorStop(0.5, "#ff66ff");
+            gradient.addColorStop(1, "#ff00ff");
+            ctx.shadowColor = "#ff00ff";
+          } else {
+            gradient.addColorStop(0, "#ffff00");
+            gradient.addColorStop(0.5, "#ffff88");
+            gradient.addColorStop(1, "#ffff00");
+            ctx.shadowColor = "#ffff00";
+          }
+          ctx.shadowBlur = 25;
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT, 5);
+          ctx.fill();
+          ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, PADDLE_WIDTH / 3, PADDLE_HEIGHT - 4, 3);
+          ctx.fill();
+          ctx.restore();
+        };
+
+        drawPaddle(20, state.game.leftPaddleY, true);
+        drawPaddle(gameCanvas.width - PADDLE_WIDTH - 20, state.game.rightPaddleY, false);
+
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.ellipse(state.game.ballX + 5, state.game.ballY + 10, BALL_RADIUS, BALL_RADIUS * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowColor = "#00ffff";
+        ctx.shadowBlur = 30;
+        const ballGradient = ctx.createRadialGradient(
+          state.game.ballX - BALL_RADIUS / 3,
+          state.game.ballY - BALL_RADIUS / 3,
+          0,
+          state.game.ballX,
+          state.game.ballY,
+          BALL_RADIUS
+        );
+        ballGradient.addColorStop(0, "#ffffff");
+        ballGradient.addColorStop(0.3, "#00ffff");
+        ballGradient.addColorStop(1, "#0088ff");
+        ctx.fillStyle = ballGradient;
+        ctx.beginPath();
+        ctx.arc(state.game.ballX, state.game.ballY, BALL_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.beginPath();
+        ctx.arc(state.game.ballX - BALL_RADIUS / 3, state.game.ballY - BALL_RADIUS / 3, BALL_RADIUS / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = "bold 72px Arial";
+        ctx.textAlign = "center";
+        ctx.shadowColor = "#ff00ff";
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = "#ff00ff";
+        ctx.fillText(state.game.leftScore.toString(), gameCanvas.width / 4, 80);
+        ctx.shadowColor = "#ffff00";
+        ctx.fillStyle = "#ffff00";
+        ctx.fillText(state.game.rightScore.toString(), (gameCanvas.width * 3) / 4, 80);
+        ctx.restore();
+
+        if (settings.speedIncreaseEnabled && state.isRunning) {
+          const speedMultiplier = state.game.currentSpeed / BASE_BALL_SPEED;
+          ctx.save();
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "#00ffff";
+          ctx.textAlign = "center";
+          ctx.fillText(`Speed: ${speedMultiplier.toFixed(2)}x`, gameCanvas.width / 2, gameCanvas.height - 20);
+          ctx.restore();
+        }
+      }
+
+      function gameLoop() {
+        if (!state.isPaused) {
+          update();
+        }
+        draw();
+        state.animationId = requestAnimationFrame(gameLoop);
+      }
+
+      function resizeCanvas() {
+        gameCanvas.width = window.innerWidth;
+        gameCanvas.height = window.innerHeight;
+        startCanvas.width = window.innerWidth;
+        startCanvas.height = window.innerHeight;
+        if (!state.isRunning) {
+          initGame();
+          draw();
+        }
+      }
+
+      function drawStartBackground() {
+        const sctx = startCanvas.getContext("2d");
+        sctx.clearRect(0, 0, startCanvas.width, startCanvas.height);
+        sctx.fillStyle = "rgba(0, 255, 255, 0.05)";
+        for (let i = 0; i < 20; i++) {
+          sctx.fillRect(Math.random() * startCanvas.width, Math.random() * startCanvas.height, 2, 2);
+        }
+      }
+
+      function updateHud() {
+        hudMode.textContent = settings.gameMode === "ai" ? `vs AI (${settings.aiLevel})` : "2 Players";
+        hudScore.textContent = settings.maxScore;
+        hudPaddle.textContent = `${settings.paddleSpeed} px/frame`;
+        hudSpeed.style.display = settings.speedIncreaseEnabled ? "block" : "none";
+        hudSpeedValue.textContent = settings.speedIncreaseMultiplier.toFixed(2) + "x";
+        controlRight.classList.toggle("hidden", settings.gameMode !== "2player");
+        controlAi.classList.toggle("hidden", settings.gameMode !== "ai");
+        aiLabel.textContent = AI_CONFIGS[settings.aiLevel].name;
+      }
+
+      function startGame() {
+        audioManager.init();
+        audioManager.buttonClick();
+        startScreen.classList.add("hidden");
+        gameScreen.classList.remove("hidden");
+        initGame();
+        updateHud();
+        state.isRunning = true;
+        state.isPaused = false;
+        pauseOverlay.style.display = "none";
+        resumeBtn.classList.add("hidden");
+        pauseBtn.classList.remove("hidden");
+        cancelAnimationFrame(state.animationId);
+        state.animationId = requestAnimationFrame(gameLoop);
+      }
+
+      function stopGame() {
+        state.isRunning = false;
+        cancelAnimationFrame(state.animationId);
+      }
+
+      function togglePause() {
+        if (!state.isRunning) return;
+        audioManager.buttonClick();
+        state.isPaused = !state.isPaused;
+        pauseOverlay.style.display = state.isPaused ? "flex" : "none";
+        pauseBtn.classList.toggle("hidden", state.isPaused);
+        resumeBtn.classList.toggle("hidden", !state.isPaused);
+      }
+
+      function restartGame() {
+        audioManager.buttonClick();
+        initGame();
+        state.isPaused = false;
+        pauseOverlay.style.display = "none";
+        pauseBtn.classList.remove("hidden");
+        resumeBtn.classList.add("hidden");
+      }
+
+      function backToMenu() {
+        audioManager.buttonClick();
+        stopGame();
+        startScreen.classList.remove("hidden");
+        gameScreen.classList.add("hidden");
+        winnerModal.style.display = "none";
+        optionsModal.style.display = "none";
+        state.isPaused = false;
+        pauseOverlay.style.display = "none";
+        resizeCanvas();
+        draw();
+      }
+
+      function declareWinner(name) {
+        state.winner = name;
+        state.isRunning = false;
+        audioManager.gameOver();
+        winnerText.textContent = `${name} Wins!`;
+        finalScore.textContent = `Final Score: ${state.game.leftScore} - ${state.game.rightScore}`;
+        winnerModal.style.display = "flex";
+      }
+
+      modeButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          settings.gameMode = btn.dataset.mode;
+          updateModeUI();
+          updateHud();
+        });
+      });
+
+      aiLevels.addEventListener("click", (e) => {
+        const button = e.target.closest("button");
+        if (!button) return;
+        settings.aiLevel = button.dataset.ai;
+        updateAIUI();
+        updateHud();
+      });
+
+      scoreOptions.addEventListener("click", (e) => {
+        const button = e.target.closest("button");
+        if (!button) return;
+        settings.maxScore = parseInt(button.dataset.score, 10);
+        updateScoreUI();
+        updateHud();
+      });
+
+      paddleSpeedSlider.addEventListener("input", (e) => {
+        settings.paddleSpeed = parseInt(e.target.value, 10);
+        updatePaddleSpeedLabel();
+        updateHud();
+      });
+
+      optPaddle.addEventListener("input", (e) => {
+        settings.paddleSpeed = parseInt(e.target.value, 10);
+        paddleSpeedSlider.value = settings.paddleSpeed;
+        updatePaddleSpeedLabel();
+        updateHud();
+      });
+
+      speedToggle.addEventListener("click", () => {
+        settings.speedIncreaseEnabled = !settings.speedIncreaseEnabled;
+        syncToggles();
+        updateHud();
+      });
+
+      speedMultiplier.addEventListener("input", (e) => {
+        settings.speedIncreaseMultiplier = parseFloat(e.target.value);
+        updateSpeedLabel();
+        updateHud();
+      });
+
+      soundToggle.addEventListener("click", () => {
+        settings.soundEnabled = !settings.soundEnabled;
+        audioManager.setEnabled(settings.soundEnabled);
+        syncToggles();
+      });
+
+      particleToggle.addEventListener("click", () => {
+        settings.particlesEnabled = !settings.particlesEnabled;
+        syncToggles();
+      });
+
+      optSound.addEventListener("click", () => {
+        settings.soundEnabled = !settings.soundEnabled;
+        audioManager.setEnabled(settings.soundEnabled);
+        syncToggles();
+      });
+
+      optParticles.addEventListener("click", () => {
+        settings.particlesEnabled = !settings.particlesEnabled;
+        syncToggles();
+      });
+
+      startBtn.addEventListener("click", startGame);
+      menuBtn.addEventListener("click", backToMenu);
+      restartBtn.addEventListener("click", restartGame);
+      pauseBtn.addEventListener("click", togglePause);
+      resumeBtn.addEventListener("click", togglePause);
+      playAgainBtn.addEventListener("click", () => {
+        winnerModal.style.display = "none";
+        restartGame();
+        state.isRunning = true;
+      });
+      winnerMenuBtn.addEventListener("click", backToMenu);
+
+      optionsBtn.addEventListener("click", () => {
+        audioManager.buttonClick();
+        optionsModal.style.display = "flex";
+      });
+      closeOptions.addEventListener("click", () => {
+        optionsModal.style.display = "none";
+      });
+
+      controlsTrigger.addEventListener("mouseenter", () => {
+        controlsPanel.style.display = "block";
+      });
+      controlsTrigger.addEventListener("mouseleave", () => {
+        controlsPanel.style.display = "none";
+      });
+      controlsPanel.addEventListener("mouseenter", () => {
+        controlsPanel.style.display = "block";
+      });
+      controlsPanel.addEventListener("mouseleave", () => {
+        controlsPanel.style.display = "none";
+      });
+
+      window.addEventListener("keydown", (e) => {
+        state.keys[e.key] = true;
+        if (["ArrowUp", "ArrowDown", "w", "W", "s", "S"].includes(e.key)) {
+          e.preventDefault();
+        }
+      });
+
+      window.addEventListener("keyup", (e) => {
+        state.keys[e.key] = false;
+      });
+
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        drawStartBackground();
+      });
+
+      musicTrigger.addEventListener("mouseenter", () => {
+        musicPlayer.classList.add("visible");
+      });
+      musicPlayer.addEventListener("mouseleave", () => {
+        musicPlayer.classList.remove("visible");
+      });
+      musicClose.addEventListener("click", () => {
+        musicPlayer.classList.remove("visible");
+      });
+      musicUpload.addEventListener("click", () => musicFile.click());
+      musicFile.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          musicAudio.src = URL.createObjectURL(file);
+          musicName.textContent = file.name;
+          musicPlay.textContent = "▶";
+          musicPlay.classList.remove("paused");
+        }
+      });
+      musicPlay.addEventListener("click", () => {
+        if (!musicAudio.src) return;
+        if (musicAudio.paused) {
+          musicAudio.play();
+          musicPlay.textContent = "⏸";
+          musicPlay.classList.add("paused");
+        } else {
+          musicAudio.pause();
+          musicPlay.textContent = "▶";
+          musicPlay.classList.remove("paused");
+        }
+      });
+      musicBack.addEventListener("click", () => {
+        musicAudio.currentTime = Math.max(0, musicAudio.currentTime - 10);
+      });
+      musicForward.addEventListener("click", () => {
+        musicAudio.currentTime = Math.min(musicAudio.duration || 0, musicAudio.currentTime + 10);
+      });
+      musicAudio.addEventListener("timeupdate", () => {
+        const progress = musicAudio.duration ? (musicAudio.currentTime / musicAudio.duration) * 100 : 0;
+        musicProgress.style.width = progress + "%";
+        musicCurrent.textContent = formatTime(musicAudio.currentTime);
+        musicDuration.textContent = formatTime(musicAudio.duration);
+      });
+      musicAudio.addEventListener("ended", () => {
+        musicPlay.textContent = "▶";
+        musicPlay.classList.remove("paused");
+      });
+
+      setupOptions();
+      resizeCanvas();
+      drawStartBackground();
+      initGame();
+      draw();
+    </script>
+  </body>
+</html>
